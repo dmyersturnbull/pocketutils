@@ -1,0 +1,50 @@
+{
+    "@context":"https://doi.org/10.5063/schema/codemeta-2.0",
+    "@type":"SoftwareSourceCode",
+    "identifier":"pocketutils",
+    "name":"pocketutils",
+    "description":"Adorable little Python utils for you to copy.",
+    "codeRepository":"https://github.com/dmyersturnbull/pocketutils",
+    "issueTracker":"https://github.com/dmyersturnbull/pocketutils/issues",
+    "license":"https://www.apache.org/licenses/LICENSE-2.0",
+    "version":"0.1.0",
+    "author":[
+        {
+            "@type":"Person",
+            "givenName":"Douglas",
+            "familyName":"Myers-Turnbull",
+            "@id":"https://orcid.org/0000-0003-3610-4808"
+        }
+    ],
+    "contributor":[
+        {
+            "@type":"Person",
+            "givenName":"Chris S",
+            "familyName":"Ki"
+        },
+        {
+            "@type":"Person",
+            "givenName":"Cole",
+            "familyName":"Helsell",
+            "@id":"https://orcid.org/0000-0002-8869-3125"
+        }
+    ],
+    "maintainer":{
+        "@type":"Person",
+        "givenName":"Douglas",
+        "familyName":"Myers-Turnbull",
+        "@id":"https://orcid.org/0000-0003-3610-4808"
+    },
+    "contIntegration":"https://github.com/dmyersturnbull/pocketutils/actions",
+    "developmentStatus":"active",
+    "downloadUrl":"https://pypi.org/project/pocketutils/",
+    "keywords":[
+        "python",
+		"snippets",
+		"utils",
+		"gists"
+    ],
+    "dateCreated":"2018-05-18",
+    "datePublished":"2020-05-23",
+    "programmingLanguage":"Python"
+}
