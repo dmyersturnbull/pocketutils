@@ -1,22 +1,22 @@
 import numpy as np
 import pandas as pd
-from littlesnippets.core.chars import *
-from littlesnippets.core import frozenlist, SmartEnum
-from littlesnippets.core.io import *
-from littlesnippets.tools.call_tools import *
-from littlesnippets.tools.common_tools import *
-from littlesnippets.tools.console_tools import *
-from littlesnippets.tools.loop_tools import *
-from littlesnippets.tools.numeric_tools import *
-from littlesnippets.tools.pandas_tools import *
-from littlesnippets.tools.path_tools import *
-from littlesnippets.tools.program_tools import *
-from littlesnippets.tools.string_tools import *
-from littlesnippets.tools.filesys_tools import *
-from littlesnippets.tools.unit_tools import *
-from littlesnippets.core.exceptions import *
-from littlesnippets.core.iterators import *
-from littlesnippets.core import SmartEnum, OptRow
+from pocketutils.core.chars import *
+from pocketutils.core import frozenlist, SmartEnum
+from pocketutils.core.io import *
+from pocketutils.tools.call_tools import *
+from pocketutils.tools.common_tools import *
+from pocketutils.tools.console_tools import *
+from pocketutils.tools.loop_tools import *
+from pocketutils.tools.numeric_tools import *
+from pocketutils.tools.pandas_tools import *
+from pocketutils.tools.path_tools import *
+from pocketutils.tools.program_tools import *
+from pocketutils.tools.string_tools import *
+from pocketutils.tools.filesys_tools import *
+from pocketutils.tools.unit_tools import *
+from pocketutils.core.exceptions import *
+from pocketutils.core.iterators import *
+from pocketutils.core import SmartEnum, OptRow
 
 
 class Tools(

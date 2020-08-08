@@ -3,8 +3,8 @@ import hashlib
 import os
 import codecs
 import gzip
-from littlesnippets.core.exceptions import FileDoesNotExistError
-from littlesnippets.core.exceptions import HashValidationFailedError
+from pocketutils.core.exceptions import FileDoesNotExistError
+from pocketutils.core.exceptions import HashValidationFailedError
 
 
 class FileHasher:
@@ -53,18 +53,14 @@ class FileHasher:
             return hash_str == self.hashsum(file_name)
 
     def check_and_open(self, file_name: str, *args):
-        return self._o(
-            file_name, opener=lambda f: codecs.open(f, encoding="utf-8"), *args
-        )
+        return self._o(file_name, opener=lambda f: codecs.open(f, encoding="utf-8"), *args)
 
     def check_and_open_gzip(self, file_name: str, *args):
         return self._o(file_name, opener=gzip.open, *args)
 
     def _o(self, file_name: str, opener, *args):
         if not os.path.isfile(file_name + self.extension):
-            raise FileDoesNotExistError(
-                "Hash for file {} does not exist".format(file_name)
-            )
+            raise FileDoesNotExistError("Hash for file {} does not exist".format(file_name))
         with open(file_name + self.extension, "r", encoding="utf8") as f:
             exp, act = f.read(), self.hashsum(file_name)
             if exp != act:

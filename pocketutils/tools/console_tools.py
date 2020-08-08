@@ -2,10 +2,10 @@ import sys
 from typing import Union, Callable
 import logging
 import time
-from littlesnippets.tools.base_tools import BaseTools
-from littlesnippets.tools.filesys_tools import FilesysTools
+from pocketutils.tools.base_tools import BaseTools
+from pocketutils.tools.filesys_tools import FilesysTools
 
-logger = logging.getLogger("littlesnippets")
+logger = logging.getLogger("pocketutils")
 
 
 class ConsoleTools(BaseTools):
@@ -14,9 +14,7 @@ class ConsoleTools(BaseTools):
     ERASE_LINE = "\x1b[2K"
 
     @classmethod
-    def prompt_yes_no(
-        cls, msg: str, writer: Callable[[str], None] = sys.stdout.write
-    ) -> bool:
+    def prompt_yes_no(cls, msg: str, writer: Callable[[str], None] = sys.stdout.write) -> bool:
         while True:
             writer(msg + " ")
             command = input("")
@@ -78,9 +76,7 @@ class ConsoleTools(BaseTools):
                 return False
 
     @classmethod
-    def clear_line(
-        cls, n: int = 1, writer: Callable[[str], None] = sys.stdout.write
-    ) -> None:
+    def clear_line(cls, n: int = 1, writer: Callable[[str], None] = sys.stdout.write) -> None:
         """
         Writes control characters to stdout to delete the previous line and move the curser up.
         This only works in a shell.

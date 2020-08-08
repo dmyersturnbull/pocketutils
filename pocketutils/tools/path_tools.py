@@ -3,11 +3,11 @@ import logging
 import re
 from typing import Optional, Sequence
 from typing import Mapping
-from littlesnippets.tools.base_tools import BaseTools
-from littlesnippets.core import PathLike
-from littlesnippets.core.exceptions import *
+from pocketutils.tools.base_tools import BaseTools
+from pocketutils.core import PathLike
+from pocketutils.core.exceptions import *
 
-logger = logging.getLogger("littlesnippets")
+logger = logging.getLogger("pocketutils")
 
 
 class PathTools(BaseTools):
@@ -71,9 +71,7 @@ class PathTools(BaseTools):
         # check for errors first; don't make the dirs and then fail
         if exists and not exist_ok:
             raise FileExistsError("Path {} already exists".format(path))
-        elif (
-            exists and not path.is_file() and not path.is_symlink()
-        ):  # TODO check link?
+        elif exists and not path.is_file() and not path.is_symlink():  # TODO check link?
             raise FileDoesNotExistError("Path {} exists but is not a file".format(path))
         # NOTE! exist_ok in mkdir throws an error on Windows
         if not path.parent.exists():
@@ -112,9 +110,7 @@ class PathTools(BaseTools):
         return Path(new_path)
 
     @classmethod
-    def sanitize_path_nodes(
-        cls, bits: Sequence[PathLike], is_file: Optional[bool] = None
-    ) -> Path:
+    def sanitize_path_nodes(cls, bits: Sequence[PathLike], is_file: Optional[bool] = None) -> Path:
         fixed_bits = [
             bit + os.sep
             if i == 0 and bit.strip() in ["", ".", ".."]
@@ -125,12 +121,9 @@ class PathTools(BaseTools):
             )
             for i, bit in enumerate(bits)
             if bit.strip() not in ["", "."]
-            or i
-            == 0  # ignore // (empty) just like Path does (but fail on sanitize_path_node(' '))
+            or i == 0  # ignore // (empty) just like Path does (but fail on sanitize_path_node(' '))
         ]
-        fixed_bits = [
-            bit for i, bit in enumerate(fixed_bits) if i == 0 or bit not in ["", "."]
-        ]
+        fixed_bits = [bit for i, bit in enumerate(fixed_bits) if i == 0 or bit not in ["", "."]]
         # unfortunately POSIX turns Path('C:\', '5') into C:\/5
         # this isn't an ideal way to fix it, but it works
         if (
@@ -167,9 +160,7 @@ class PathTools(BaseTools):
         """
         # since is_file and is_root_or_drive are both Optional[bool], let's be explicit and use 'is' for clarity
         if is_file is True and is_root_or_drive is True:
-            raise ContradictoryRequestError(
-                "is_file and is_root_or_drive are both true"
-            )
+            raise ContradictoryRequestError("is_file and is_root_or_drive are both true")
         if is_file is True and is_root_or_drive is None:
             is_root_or_drive = False
         if is_root_or_drive is True and is_file is None:
@@ -197,9 +188,7 @@ class PathTools(BaseTools):
                 # I can't handle that here, but sanitize_path() will account for it
                 return m.group(1) + "\\"
             if is_root_or_drive is True:
-                raise IllegalPathError(
-                    "Node '{}' is not the root or a drive letter".format(bit)
-                )
+                raise IllegalPathError("Node '{}' is not the root or a drive letter".format(bit))
         # note that we can't call WindowsPath.is_reserved because it can't be instantiated on non-Linux
         # also, these appear to be different from the ones defined there
         bad_chars = {
@@ -265,9 +254,7 @@ class PathTools(BaseTools):
             )
         # do this after
         if len(bit) > 254:
-            raise IllegalPathError(
-                "Node '{}'has more than 254 characters".format(source_bit)
-            )
+            raise IllegalPathError("Node '{}'has more than 254 characters".format(source_bit))
         bit = bit.strip()
         if is_file is not True and (bit == "." or bit == ".."):
             return bit

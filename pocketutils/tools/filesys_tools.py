@@ -21,20 +21,20 @@ from contextlib import contextmanager
 import logging
 import dill
 import pandas as pd
-from littlesnippets.core.web_resource import *
-from littlesnippets.core import JsonEncoder
-from littlesnippets.core.io import Writeable, PathLike, OpenMode
-from littlesnippets.core.hasher import *
-from littlesnippets.core.exceptions import (
+from pocketutils.core.web_resource import *
+from pocketutils.core import JsonEncoder
+from pocketutils.core.io import Writeable, PathLike, OpenMode
+from pocketutils.core.hasher import *
+from pocketutils.core.exceptions import (
     ParsingError,
     FileDoesNotExistError,
     ContradictoryRequestError,
     AlreadyUsedError,
 )
-from littlesnippets.tools.base_tools import BaseTools
-from littlesnippets.tools.path_tools import PathTools
+from pocketutils.tools.base_tools import BaseTools
+from pocketutils.tools.path_tools import PathTools
 
-logger = logging.getLogger("littlesnippets")
+logger = logging.getLogger("pocketutils")
 COMPRESS_LEVEL = 9
 ENCODING = "utf8"
 
@@ -76,9 +76,7 @@ class FilesysTools(BaseTools):
         return WebResource(url, archive_member, local_path)
 
     @classmethod
-    def get_env_info(
-        cls, extras: Optional[Mapping[str, Any]] = None
-    ) -> Mapping[str, str]:
+    def get_env_info(cls, extras: Optional[Mapping[str, Any]] = None) -> Mapping[str, str]:
         """
         Get a dictionary of some system and environment information.
         Includes os_release, hostname, username, mem + disk, shell, etc.
@@ -155,9 +153,7 @@ class FilesysTools(BaseTools):
                 logger.error("Permission error preventing deleting {}".format(path))
 
     @classmethod
-    def read_lines_file(
-        cls, path: PathLike, ignore_comments: bool = False
-    ) -> Sequence[str]:
+    def read_lines_file(cls, path: PathLike, ignore_comments: bool = False) -> Sequence[str]:
         """
         Returns a list of lines in the file, optionally skipping lines starting with '#' or that only contain whitespace.
         """
@@ -165,11 +161,7 @@ class FilesysTools(BaseTools):
         with FilesysTools.open_file(path, "r") as f:
             for line in f.readlines():
                 line = line.strip()
-                if (
-                    not ignore_comments
-                    or not line.startswith("#")
-                    and not len(line.strip()) == 0
-                ):
+                if not ignore_comments or not line.startswith("#") and not len(line.strip()) == 0:
                     lines.append(line)
         return lines
 
@@ -193,9 +185,7 @@ class FilesysTools(BaseTools):
                 k, v = line.split("=")
                 k, v = k.strip(), v.strip()
                 if k in dct:
-                    raise AlreadyUsedError(
-                        "Duplicate property {} (line {})".format(k, i), key=k
-                    )
+                    raise AlreadyUsedError("Duplicate property {} (line {})".format(k, i), key=k)
                 dct[k] = v
         return dct
 
@@ -204,9 +194,7 @@ class FilesysTools(BaseTools):
         cls, properties: Mapping[Any, Any], path: Union[str, PurePath], mode: str = "o"
     ):
         if not OpenMode(mode).write:
-            raise ContradictoryRequestError(
-                "Cannot write text to {} in mode {}".format(path, mode)
-            )
+            raise ContradictoryRequestError("Cannot write text to {} in mode {}".format(path, mode))
         with FilesysTools.open_file(path, mode) as f:
             bads = []
             for k, v in properties.items():
@@ -317,9 +305,7 @@ class FilesysTools(BaseTools):
 
             ElementTree.parse(path).getroot()
         else:
-            raise TypeError(
-                "Did not recognize resource file type for file {}".format(path)
-            )
+            raise TypeError("Did not recognize resource file type for file {}".format(path))
 
     @classmethod
     def read_bytes(cls, path: PathLike) -> bytes:
@@ -341,9 +327,7 @@ class FilesysTools(BaseTools):
     @classmethod
     def write_text(cls, data: Any, path: PathLike, mode: str = "w"):
         if not OpenMode(mode).write or OpenMode(mode).binary:
-            raise ContradictoryRequestError(
-                "Cannot write text to {} in mode {}".format(path, mode)
-            )
+            raise ContradictoryRequestError("Cannot write text to {} in mode {}".format(path, mode))
         with cls.open_file(path, mode) as f:
             f.write(str(data))
 
@@ -373,9 +357,7 @@ class FilesysTools(BaseTools):
             yield open(path, mode.internal, encoding=ENCODING)
 
     @classmethod
-    def write_lines(
-        cls, iterable: Iterable[Any], path: PathLike, mode: str = "w"
-    ) -> int:
+    def write_lines(cls, iterable: Iterable[Any], path: PathLike, mode: str = "w") -> int:
         """
         Just writes an iterable line-by-line to a file, using '\n'.
         Makes the parent directory if needed.
@@ -387,9 +369,7 @@ class FilesysTools(BaseTools):
         path = Path(path)
         mode = OpenMode(mode)
         if not mode.overwrite or mode.binary:
-            raise ContradictoryRequestError(
-                "Wrong mode for writing a text file: {}".format(mode)
-            )
+            raise ContradictoryRequestError("Wrong mode for writing a text file: {}".format(mode))
         if not cls.is_true_iterable(iterable):
             raise TypeError("Not a true iterable")  # TODO include iterable if small
         PathTools.prep_file(path, exist_ok=mode.overwrite or mode.append)
@@ -429,9 +409,7 @@ class FilesysTools(BaseTools):
         path.write_text(data, encoding="utf-8")
 
     @classmethod
-    def tmppath(
-        cls, path: Optional[PathLike] = None, **kwargs
-    ) -> Generator[Path, None, None]:
+    def tmppath(cls, path: Optional[PathLike] = None, **kwargs) -> Generator[Path, None, None]:
         """
         Makes a temporary Path. Won't create `path` but will delete it at the end.
         If `path` is None, will use `tempfile.mktemp`.

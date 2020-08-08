@@ -2,18 +2,16 @@ from typing import Union, Mapping, TypeVar, Any, Sequence, Dict, Optional
 from pathlib import Path
 import pandas as pd
 from typeddfs import ConvertibleFrame, SimpleFrame, FinalFrame
-from littlesnippets.core import PathLike
-from littlesnippets.core.exceptions import LengthError, XTypeError
-from littlesnippets.tools.base_tools import BaseTools
+from pocketutils.core import PathLike
+from pocketutils.core.exceptions import LengthError, XTypeError
+from pocketutils.tools.base_tools import BaseTools
 
 V = TypeVar("V")
 
 
 class PandasTools(BaseTools):
     @classmethod
-    def cfirst(
-        cls, df: pd.DataFrame, cols: Union[str, int, Sequence[str]]
-    ) -> pd.DataFrame:
+    def cfirst(cls, df: pd.DataFrame, cols: Union[str, int, Sequence[str]]) -> pd.DataFrame:
         """
         Moves some columns of a Pandas dataframe to the front, returning a copy.
         Returns: a copy of the dataframe with col_seq as the first columns
@@ -54,11 +52,7 @@ class PandasTools(BaseTools):
 
     @classmethod
     def dict_to_csv(
-        cls,
-        dct: Mapping[Any, Any],
-        path: PathLike,
-        keys: str = "name",
-        values: str = "value",
+        cls, dct: Mapping[Any, Any], path: PathLike, keys: str = "name", values: str = "value",
     ) -> None:
         cls.dict_to_df(dct, keys, values).to_csv(Path(path))
 

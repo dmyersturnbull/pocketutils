@@ -7,10 +7,10 @@ import shutil
 from typing import Optional, Mapping
 from datetime import datetime
 from pathlib import Path
-from littlesnippets.core import PathLike
-from littlesnippets.core.abcd import *
+from pocketutils.core import PathLike
+from pocketutils.core.abcd import *
 
-logger = logging.getLogger("littlesnippets")
+logger = logging.getLogger("pocketutils")
 
 
 @enum.unique

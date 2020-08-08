@@ -9,7 +9,6 @@ from pathlib import Path
 
 import tomlkit
 
-
 root = Path(__file__).parent.parent.absolute()
 toml = tomlkit.loads((root / "pyproject.toml").read_text(encoding="utf8"))
 
@@ -23,7 +22,7 @@ project = find("name")
 version = find("version")
 release = find("version")
 author = ", ".join(find("authors"))
-copyright = "Copyright (2015–2020)"
+copyright = "Copyright (2020)"
 
 
 extensions = ["autoapi.extension", "sphinx.ext.napoleon", "sphinx_rtd_theme"]

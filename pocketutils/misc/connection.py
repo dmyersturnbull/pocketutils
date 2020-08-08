@@ -1,6 +1,6 @@
 import os, json, logging
 from typing import Tuple, Iterator, Dict, Optional, Union
-from littlesnippets.core.exceptions import FileDoesNotExistError, ContradictoryRequestError
+from pocketutils.core.exceptions import FileDoesNotExistError, ContradictoryRequestError
 
 
 class Connection:
@@ -76,9 +76,7 @@ class Connection:
                 return cls(**params)
         else:
             raise FileDoesNotExistError(
-                "{} does not exist, is not a file, or is not readable".format(
-                    config_path
-                )
+                "{} does not exist, is not a file, or is not readable".format(config_path)
             )
 
     @classmethod
@@ -88,9 +86,7 @@ class Connection:
     def connect_with_peewee(self):
         import peewee
 
-        self.peewee_database = peewee.MySQLDatabase(
-            self._db_name, **self._connection_params()
-        )
+        self.peewee_database = peewee.MySQLDatabase(self._db_name, **self._connection_params())
         self.peewee_database.connect()
         return self.peewee_database
 
@@ -98,13 +94,9 @@ class Connection:
         import pymysql
 
         self.plain_sql_database = pymysql.connect(
-            **self._connection_params(),
-            db=self._db_name,
-            cursorclass=pymysql.cursors.DictCursor
+            **self._connection_params(), db=self._db_name, cursorclass=pymysql.cursors.DictCursor
         )
-        logging.debug(
-            "Opened raw pymysql connection to database {}".format(self._db_name)
-        )
+        logging.debug("Opened raw pymysql connection to database {}".format(self._db_name))
 
     def execute(self, statement: str, vals: Tuple = ()) -> None:
         with self.plain_sql_database.cursor() as cursor:
@@ -124,14 +116,10 @@ class Connection:
         if self._tunnel is not None:
             self._tunnel.start()
             logging.info(
-                "Opened SSH tunnel to host {} on port {}".format(
-                    self._ssh_host, self._ssh_port
-                )
+                "Opened SSH tunnel to host {} on port {}".format(self._ssh_host, self._ssh_port)
             )
         else:
-            logging.info(
-                "Assuming an SSH tunnel already exists for database connection."
-            )
+            logging.info("Assuming an SSH tunnel already exists for database connection.")
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.close()
@@ -149,9 +137,7 @@ class Connection:
 
     def _connection_params(self):
         local_bind_port = (
-            self._tunnel.local_bind_port
-            if self._tunnel is not None
-            else self._local_bind_port
+            self._tunnel.local_bind_port if self._tunnel is not None else self._local_bind_port
         )
         return {
             "user": self._db_username,

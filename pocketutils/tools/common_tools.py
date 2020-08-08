@@ -15,10 +15,10 @@ from typing import (
 import sys
 from collections import defaultdict
 import numpy as np
-from littlesnippets.tools.base_tools import BaseTools
-from littlesnippets.core.internal import nicesize
-from littlesnippets.core.io import DevNull
-from littlesnippets.core.exceptions import RefusingRequestError
+from pocketutils.tools.base_tools import BaseTools
+from pocketutils.core.internal import nicesize
+from pocketutils.core.io import DevNull
+from pocketutils.core.exceptions import RefusingRequestError
 
 Y = TypeVar("Y")
 T = TypeVar("T")
@@ -34,10 +34,7 @@ class CommonTools(BaseTools):
 
     @classmethod
     def try_none(
-        cls,
-        function: Callable[[], T],
-        fail_val: Optional[T] = None,
-        exception=Exception,
+        cls, function: Callable[[], T], fail_val: Optional[T] = None, exception=Exception,
     ) -> Optional[T]:
         """
         Returns the value of a function or None if it raised an exception.
@@ -153,9 +150,7 @@ class CommonTools(BaseTools):
         return [x for x in sequence if not (x in seen or seen.add(x))]
 
     @classmethod
-    def first(
-        cls, collection: Iterable[Any], attr: Optional[str] = None
-    ) -> Optional[Any]:
+    def first(cls, collection: Iterable[Any], attr: Optional[str] = None) -> Optional[Any]:
         """
         Returns:
             - The attribute of the first element if `attr` is defined on an element
@@ -175,9 +170,7 @@ class CommonTools(BaseTools):
             return None
 
     @classmethod
-    def iter_rowcol(
-        cls, n_rows: int, n_cols: int
-    ) -> Generator[Tuple[int, int], None, None]:
+    def iter_rowcol(cls, n_rows: int, n_cols: int) -> Generator[Tuple[int, int], None, None]:
         """
         An iterator over (row column) pairs for a row-first traversal of a grid with `n_cols` columns.
         Ex:

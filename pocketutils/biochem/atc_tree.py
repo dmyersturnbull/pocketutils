@@ -6,10 +6,10 @@ from datetime import datetime
 from functools import total_ordering
 from pathlib import Path
 from typing import Iterator, Set, Sequence, Any
-from littlesnippets.core.exceptions import IllegalStateError
-from littlesnippets.core import PathLike
+from pocketutils.core.exceptions import IllegalStateError
+from pocketutils.core import PathLike
 
-logger = logging.getLogger("littlesnippets")
+logger = logging.getLogger("pocketutils")
 
 
 @total_ordering
@@ -151,24 +151,18 @@ class AtcParser:
         for i in range(1, n_pages + 1):  # downloading page 1 twice, but whatever
             response = requests.get(AtcParser.URL.format(page=i))
             logger.debug("Downloading page {} of {}.".format(i, n_pages))
-            (self.cache_dir / "page-{}.txt".format(i)).write_text(
-                response.text, encoding="utf-8"
-            )
+            (self.cache_dir / "page-{}.txt".format(i)).write_text(response.text, encoding="utf-8")
             data = response.json()["Annotations"]
             for atc in self._parse(data["Annotation"], atcs):
                 pass
-            (self.cache_dir / ".is_done").write_text(
-                str(datetime.now()), encoding="utf-8"
-            )
+            (self.cache_dir / ".is_done").write_text(str(datetime.now()), encoding="utf-8")
 
     def _parse(self, items: list, atcs: dict):
         pat = re.compile(r"^(?:<[^>]+>)? *([^ ]+) +- +(?:<[^>]+>)? *([^<]+).*$")
         root = atcs["/"]
         for item in items:
             for v0 in [
-                _["Value"]["String"][0]
-                for _ in item["Data"]
-                if _["TOCHeading"] == "ATC Code"
+                _["Value"]["String"][0] for _ in item["Data"] if _["TOCHeading"] == "ATC Code"
             ]:
                 parent = root
                 for v in v0.split("<br>"):

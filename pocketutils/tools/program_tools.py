@@ -1,9 +1,9 @@
 import re
 import subprocess
-from littlesnippets.core import PathLike
-from littlesnippets.core.exceptions import ParsingError, CalledProcessError
-from littlesnippets.core import abcd
-from littlesnippets.tools.base_tools import BaseTools
+from pocketutils.core import PathLike
+from pocketutils.core.exceptions import ParsingError, CalledProcessError
+from pocketutils.core import abcd
+from pocketutils.tools.base_tools import BaseTools
 
 
 @abcd.dataclass(frozen=True)

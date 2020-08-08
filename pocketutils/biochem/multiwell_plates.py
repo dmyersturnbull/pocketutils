@@ -1,7 +1,7 @@
 import typing, re
 from typing import Iterator, Sequence, Type
 from decorateme import abcd
-from littlesnippets.core.exceptions import OutOfRangeError, StringPatternError
+from pocketutils.core.exceptions import OutOfRangeError, StringPatternError
 
 
 @abcd.auto_eq(only=["base", "n_rows", "n_columns"])
@@ -142,9 +142,7 @@ class _WB(abcd.ABC):
         ] + "%02d" % (index % self.n_columns + 1,)
 
     def _label_to_ind(self, name: str) -> int:
-        return (
-            (ord(name[0]) % 32) * self.n_columns - 1 - (self.n_columns - int(name[1:]))
-        )
+        return (ord(name[0]) % 32) * self.n_columns - 1 - (self.n_columns - int(name[1:]))
 
 
 class WbFactory:
@@ -185,9 +183,7 @@ class ParsingWB(_WB, abcd.ABC):
         match = ParsingWB._pattern.fullmatch(expression)
         if match is None:
             raise StringPatternError(
-                "{} is wrong".format(expression),
-                value=expression,
-                pattern=ParsingWB._pattern,
+                "{} is wrong".format(expression), value=expression, pattern=ParsingWB._pattern,
             )
         a, x, b = match.group(1), match.group(2), match.group(3)
         if x is None:

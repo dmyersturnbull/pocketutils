@@ -5,19 +5,17 @@ from urllib import request
 import uniprot
 import pandas as pd
 import os
-from littlesnippets.core.exceptions import StringPatternError, MultipleMatchesError
+from pocketutils.core.exceptions import StringPatternError, MultipleMatchesError
 
 # noinspection PyProtectedMember
-from littlesnippets.core.io import silenced
+from pocketutils.core.io import silenced
 from goatools import obo_parser  # uses https://github.com/tanghaibao/goatools
 from goatools.obo_parser import (
     GOTerm,
 )  # NOT the same as FlatGoTerm, which has no knowledge of hierarchy
 
-go_pattern = re.compile(
-    r"GO:(\d+); ([CFP]):([\dA-Za-z- ,()]+); ([A-Z]+):([A-Za-z-_]+)\."
-)
-logger = logging.getLogger("littlesnippets")
+go_pattern = re.compile(r"GO:(\d+); ([CFP]):([\dA-Za-z- ,()]+); ([A-Z]+):([A-Za-z-_]+)\.")
+logger = logging.getLogger("pocketutils")
 
 
 class FlatGoTerm:
@@ -33,12 +31,7 @@ class FlatGoTerm:
     """
 
     def __init_(
-        self,
-        identifier: str,
-        kind: str,
-        description: str,
-        source_id: str,
-        source_name: str,
+        self, identifier: str, kind: str, description: str, source_id: str, source_name: str,
     ):
         self.ID = identifier
         self.kind = kind
@@ -68,9 +61,7 @@ class FlatGoTerm:
 
 
 class UniprotGoTerms:
-    def fetch_uniprot_data(
-        self, uniprot_ids: Union[str, List[str]]
-    ) -> List[Mapping[str, str]]:
+    def fetch_uniprot_data(self, uniprot_ids: Union[str, List[str]]) -> List[Mapping[str, str]]:
         """
         Fetches a list of dicts of UniProt metadata, one per UniProt ID.
         Raises a ValueError if a UniProt ID wasn't found.
@@ -83,14 +74,8 @@ class UniprotGoTerms:
             raise MultipleMatchesError("Set of UniProt IDs cannot contain duplicates")
         with silenced(no_stderr=False):
             uniprot_data = uniprot.fetch_uniprot_metadata(uniprot_ids)
-        if (
-            uniprot_data is None
-            or uniprot_data == {}
-            or len(uniprot_data) != len(uniprot_ids)
-        ):
-            raise LookupError(
-                "At least one UniProt ID not found in {}".format(str(uniprot_ids))
-            )
+        if uniprot_data is None or uniprot_data == {} or len(uniprot_data) != len(uniprot_ids):
+            raise LookupError("At least one UniProt ID not found in {}".format(str(uniprot_ids)))
         return list(uniprot_data.values())
 
     def go_terms_for_uniprot_id(self, uniprot_id: str) -> List[FlatGoTerm]:
@@ -100,9 +85,7 @@ class UniprotGoTerms:
 
     def go_terms_for_uniprot_id_as_df(self, uniprot_id: str) -> pd.DataFrame:
         """Returns a Pandas DataFrame of GO terms from a UniProt ID."""
-        df = pd.DataFrame(
-            columns=["ID", "kind", "description", "sourceId", "sourceName"]
-        )
+        df = pd.DataFrame(columns=["ID", "kind", "description", "sourceId", "sourceName"])
         for term in self.go_terms_for_uniprot_id(uniprot_id):
             df.loc[len(df)] = term.to_series()
         return df.set_index("ID")
@@ -189,12 +172,8 @@ class GoTermsAtLevel:
             kinds_allowed = ["P", "F", "C"]
         """See go_term_ancestors_for_uniprot_id. Returns a Pandas DataFrame with columns IDand name."""
         df = pd.DataFrame(columns=["ID", "name"])
-        for term in self.go_term_ancestors_for_uniprot_id(
-            uniprot_id, level, kinds_allowed
-        ):
-            df.loc[len(df)] = pd.Series(
-                {"ID": term.id, "name": term.name, "level": term.level}
-            )
+        for term in self.go_term_ancestors_for_uniprot_id(uniprot_id, level, kinds_allowed):
+            df.loc[len(df)] = pd.Series({"ID": term.id, "name": term.name, "level": term.level})
         return df.set_index("ID")
 
 

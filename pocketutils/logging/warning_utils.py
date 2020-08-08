@@ -1,7 +1,7 @@
 import os
 from copy import copy
 import warnings
-from littlesnippets.core.exceptions import NotConstructableError
+from pocketutils.core.exceptions import NotConstructableError
 
 
 class GlobalWarningUtils:
@@ -17,9 +17,7 @@ class GlobalWarningUtils:
     """
 
     def __init__(self):
-        raise NotConstructableError(
-            "Do not instantiate {}".format(self.__class__.__name__)
-        )
+        raise NotConstructableError("Do not instantiate {}".format(self.__class__.__name__))
 
     @classmethod
     def init(cls):
@@ -29,8 +27,7 @@ class GlobalWarningUtils:
 
         def new_formatter(message, category, filename, lineno, line=None):
             return (
-                "%s:%s: %s: %s\n"
-                % (os.path.basename(filename), lineno, category.__name__, message)
+                "%s:%s: %s: %s\n" % (os.path.basename(filename), lineno, category.__name__, message)
             ).replace("WARNING:py.warnings:", "")
 
         warnings.formatwarning = new_formatter
@@ -73,9 +70,7 @@ class GlobalWarningUtils:
                 "your performance may suffer as PyTables will pickle object types that it cannot map directly to c-types"
             )
             .substring_once("Trying to unpickle estimator")
-            .substring_once(
-                "Passing require_full to OrganizingFrame.convert is deprecated"
-            )
+            .substring_once("Passing require_full to OrganizingFrame.convert is deprecated")
         )
 
     @classmethod

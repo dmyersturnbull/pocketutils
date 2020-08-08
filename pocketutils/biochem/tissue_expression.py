@@ -1,10 +1,10 @@
 from __future__ import annotations
 from typing import Callable, Optional
 import pandas as pd
-from littlesnippets.core import PathLike
-from littlesnippets.core.web_resource import WebResource
-from littlesnippets.core.extended_df import *
-from littlesnippets.core.exceptions import LookupFailedError
+from pocketutils.core import PathLike
+from pocketutils.core.web_resource import WebResource
+from pocketutils.core.extended_df import *
+from pocketutils.core.exceptions import LookupFailedError
 
 
 class TissueTable(SimpleFrame):
@@ -49,14 +49,10 @@ class TissueTable(SimpleFrame):
     def level(self, gene_name: str, group_by: str) -> TissueTable:
         """Returns a DataFrame of the mean expression levels by tissue or cell type."""
         if gene_name not in self.index.get_level_values("Gene name"):
-            raise LookupFailedError(
-                "Gene with HGNC symbol {} not found.".format(gene_name)
-            )
+            raise LookupFailedError("Gene with HGNC symbol {} not found.".format(gene_name))
         gene = self[self.index.get_level_values("Gene name") == gene_name]
         assert gene is not None
-        return self.convert(
-            gene.groupby(group_by).mean().sort_values("Level", ascending=False)
-        )
+        return self.convert(gene.groupby(group_by).mean().sort_values("Level", ascending=False))
 
     def tissue(self, name: str) -> TissueTable:
         return self.level(name, group_by="Tissue")

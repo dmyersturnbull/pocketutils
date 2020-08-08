@@ -3,29 +3,23 @@ from typing import Mapping, Callable, Union, Any, Optional, Generic, TypeVar, Ty
 from datetime import datetime
 import logging
 from pathlib import PurePath, Path
-from littlesnippets.core import PathLike, LazyWrap
+from pocketutils.core import PathLike, LazyWrap
 
-logger = logging.getLogger("littlesnippets")
+logger = logging.getLogger("pocketutils")
 
 
 class MagicTemplate:
     @classmethod
-    def from_path(
-        cls, path: PathLike, prefix: str = "${{", suffix: str = "}}"
-    ) -> MagicTemplate:
+    def from_path(cls, path: PathLike, prefix: str = "${{", suffix: str = "}}") -> MagicTemplate:
         return MagicTemplate(
             lambda: Path(path).read_text(encoding="utf8"), prefix=prefix, suffix=suffix
         )
 
     @classmethod
-    def from_text(
-        cls, text: str, prefix: str = "${{", suffix: str = "}}"
-    ) -> MagicTemplate:
+    def from_text(cls, text: str, prefix: str = "${{", suffix: str = "}}") -> MagicTemplate:
         return MagicTemplate(lambda: text, prefix=prefix, suffix=suffix)
 
-    def __init__(
-        self, reader: Callable[[], str], prefix: str = "${{", suffix: str = "}}"
-    ):
+    def __init__(self, reader: Callable[[], str], prefix: str = "${{", suffix: str = "}}"):
         self._reader = reader
         self._entries = {}
         self._prefix, self._suffix = prefix, suffix
@@ -39,12 +33,8 @@ class MagicTemplate:
             {
                 "version": semantic_version,
                 "major": semantic_version.split(".")[0],
-                "minor": semantic_version.split(".")[1]
-                if semantic_version.count(".") > 0
-                else "-",
-                "patch": semantic_version.split(".")[2]
-                if semantic_version.count(".") > 1
-                else "-",
+                "minor": semantic_version.split(".")[1] if semantic_version.count(".") > 0 else "-",
+                "patch": semantic_version.split(".")[2] if semantic_version.count(".") > 1 else "-",
             }
         )
         return self
@@ -64,9 +54,7 @@ class MagicTemplate:
                 "second": lambda _: str(now.get().second),
                 "datestr": lambda _: str(now.get().date()),
                 "timestr": lambda _: str(now.get().time()),
-                "datetuple": lambda _: str(
-                    (now.get().year, now.get().month, now.get().day)
-                ),
+                "datetuple": lambda _: str((now.get().year, now.get().month, now.get().day)),
                 "datetime": lambda _: str(
                     (
                         now.get().year,
@@ -86,9 +74,7 @@ class MagicTemplate:
             from IPython import get_ipython
 
             shell = get_ipython()
-        shell.register_magic_function(
-            self._fill, magic_kind="line_cell", magic_name=name
-        )
+        shell.register_magic_function(self._fill, magic_kind="line_cell", magic_name=name)
 
     def parse(self, line: str = "") -> str:
         return self.__replace(self._reader(), line)

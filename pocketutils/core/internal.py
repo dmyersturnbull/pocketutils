@@ -8,17 +8,13 @@ import operator
 T = TypeVar("T", covariant=True)
 Y = TypeVar("Y")
 Z = TypeVar("Z")
-logger = logging.getLogger("littlesnippets")
+logger = logging.getLogger("pocketutils")
 
 PathLike = Union[str, PurePath, os.PathLike]
 
 
 def pathlike_isinstance(value):
-    return (
-        isinstance(value, str)
-        or isinstance(value, os.PathLike)
-        or isinstance(value, PurePath)
-    )
+    return isinstance(value, str) or isinstance(value, os.PathLike) or isinstance(value, PurePath)
 
 
 PathLike.isinstance = pathlike_isinstance
@@ -61,9 +57,7 @@ class Pretty:
         elif isinstance(item, (list, set)):
             return (
                 "[\n"
-                + "\n".join(
-                    ["\t" * (depth + 1) + cls.expanded(v, depth + 1) for v in item]
-                )
+                + "\n".join(["\t" * (depth + 1) + cls.expanded(v, depth + 1) for v in item])
                 + "\n"
                 + "\t" * depth
                 + "]"

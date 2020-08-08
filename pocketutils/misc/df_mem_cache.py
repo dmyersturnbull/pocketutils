@@ -6,7 +6,7 @@ import sys
 import numpy as np
 from psutil import virtual_memory
 import pandas as pd
-from littlesnippets.core.internal import nicesize
+from pocketutils.core.internal import nicesize
 
 
 K = TypeVar("K")
@@ -54,8 +54,7 @@ class MemoryLimitingPolicy(MemCachePolicy, Generic[K], ABC):
 
     def should_archive(self) -> bool:
         return (
-            self._max_memory_bytes is not None
-            and self._total_memory_bytes > self._max_memory_bytes
+            self._max_memory_bytes is not None and self._total_memory_bytes > self._max_memory_bytes
         ) or (
             self._max_fraction_available_bytes is not None
             and self._total_memory_bytes
@@ -133,14 +132,7 @@ class MemoryLimitingPolicy(MemCachePolicy, Generic[K], ABC):
 
 class MemoryLruPolicy(MemoryLimitingPolicy, Generic[K]):
     def items(self) -> Iterator[K]:
-        return iter(
-            [
-                k
-                for k, v in sorted(
-                    self._last_accessed.items(), key=operator.itemgetter(1)
-                )
-            ]
-        )
+        return iter([k for k, v in sorted(self._last_accessed.items(), key=operator.itemgetter(1))])
 
 
 class MemoryMruPolicy(MemoryLimitingPolicy, Generic[K]):
@@ -180,9 +172,7 @@ class DfMemCache(Generic[K]):
         it = self._policy.items()
         archived = []
         while self._policy.can_archive() and (
-            at_least is not None
-            and len(archived) < at_least
-            or self._policy.should_archive()
+            at_least is not None and len(archived) < at_least or self._policy.should_archive()
         ):
             key = next(it)
             self._policy.removed(key)
@@ -210,9 +200,7 @@ class DfMemCache(Generic[K]):
         self.remove(key)
 
     def __repr__(self):
-        return "{}({})@{}".format(
-            type(self).__name__, repr(self._policy), hex(id(self))
-        )
+        return "{}({})@{}".format(type(self).__name__, repr(self._policy), hex(id(self)))
 
     def __str__(self):
         return "{}({})".format(type(self).__name__, self._policy)

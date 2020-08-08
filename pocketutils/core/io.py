@@ -5,22 +5,18 @@ import abc
 import contextlib
 
 # noinspection PyUnresolvedReferences
-from littlesnippets.core import PathLike
+from pocketutils.core import PathLike
 
 T = TypeVar("T", covariant=True)
 Y = TypeVar("Y")
 Z = TypeVar("Z")
-logger = logging.getLogger("littlesnippets")
+logger = logging.getLogger("pocketutils")
 
 
 class Writeable(metaclass=abc.ABCMeta):
     @classmethod
     def isinstance(cls, value: Any):
-        return (
-            hasattr(value, "write")
-            and hasattr(value, "flush")
-            and hasattr(value, "close")
-        )
+        return hasattr(value, "write") and hasattr(value, "flush") and hasattr(value, "close")
 
     def write(self, msg):
         raise NotImplementedError()

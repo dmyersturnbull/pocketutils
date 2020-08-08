@@ -13,7 +13,7 @@ from copy import copy
 from subprocess import CalledProcessError
 import logging
 
-logger = logging.getLogger("littlesnippets")
+logger = logging.getLogger("pocketutils")
 KeyLike = Any
 PathLike = Union[Path, str, os.PathLike]
 _DW = DeprecationWarning
@@ -31,9 +31,7 @@ class ErrorUtils:
         The __init__ will set: (self.name =value if name is passed else None) for all name in names.
         :param names: A map from str to Type
         """
-        assert not any(
-            [s == "info" or s.startswith("__") and s.endswith("__") for s in names]
-        )
+        assert not any([s == "info" or s.startswith("__") and s.endswith("__") for s in names])
 
         @wraps(names)
         def dec(cls):
@@ -61,11 +59,7 @@ class ErrorUtils:
                 kwargs = copy(kwargs)
                 # when we call super(), we need to know which class we're on and which should be called next
                 # note that self will always be the first class
-                thisclass = (
-                    kwargs.pop("__thisclass")
-                    if "__thisclass" in kwargs
-                    else self.__class__
-                )
+                thisclass = kwargs.pop("__thisclass") if "__thisclass" in kwargs else self.__class__
                 for name, reqtype in names.items():
                     if name in kwargs:
                         value = kwargs.pop(name)
@@ -76,9 +70,7 @@ class ErrorUtils:
                     nextclass = thisclass.__mro__[1]
                     # noinspection PyArgumentList
                     # be careful! use `thisclass` as an argument (not self)
-                    super(thisclass, self).__init__(
-                        *args, __thisclass=nextclass, **kwargs
-                    )
+                    super(thisclass, self).__init__(*args, __thisclass=nextclass, **kwargs)
 
             cls.__init__ = _init
             cls.__doc__ = _doc(cls.__doc__)
@@ -96,9 +88,7 @@ class _FnUtils:
         return (
             type(self) == type(other)
             and str(self) == str(other)
-            and all(
-                [getattr(self, name) == getattr(other, name) for name in self.__dict__]
-            )
+            and all([getattr(self, name) == getattr(other, name) for name in self.__dict__])
         )
 
     def info(self) -> str:

@@ -1,6 +1,6 @@
 from typing import SupportsFloat, SupportsInt, TypeVar, Optional
 import numpy as np
-from littlesnippets.tools.base_tools import BaseTools
+from pocketutils.tools.base_tools import BaseTools
 
 V = TypeVar("V")
 
@@ -59,9 +59,7 @@ class NumericTools(BaseTools):
         return int(np.max(f))
 
     @classmethod
-    def slice_bounded(
-        cls, arr: np.array, i: Optional[int], j: Optional[int]
-    ) -> np.array:
+    def slice_bounded(cls, arr: np.array, i: Optional[int], j: Optional[int]) -> np.array:
         """
         Slices `arr[max(i,0), min(j, len(arr))`.
         Converts `i` and `j` to int.

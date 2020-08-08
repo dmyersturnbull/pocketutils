@@ -6,14 +6,14 @@ import json
 from datetime import date, datetime
 import abc
 import numpy as np
-from littlesnippets.core.exceptions import ImmutableError
+from pocketutils.core.exceptions import ImmutableError
 
 # noinspection PyProtectedMember
-from littlesnippets.core.internal import PathLike, look as _look
+from pocketutils.core.internal import PathLike, look as _look
 
 T = TypeVar("T", covariant=True)
 
-logger = logging.getLogger("littlesnippets")
+logger = logging.getLogger("pocketutils")
 
 
 class Sentinel:

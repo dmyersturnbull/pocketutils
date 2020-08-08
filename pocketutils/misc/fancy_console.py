@@ -4,12 +4,12 @@ import enum
 from pathlib import Path
 from colorama import Fore, Style
 import colorama
-from littlesnippets.core import PathLike
-from littlesnippets.misc.messages import *
-from littlesnippets.core.exceptions import RefusingRequestError
-from littlesnippets.tools.filesys_tools import FilesysTools
+from pocketutils.core import PathLike
+from pocketutils.misc.messages import *
+from pocketutils.core.exceptions import RefusingRequestError
+from pocketutils.tools.filesys_tools import FilesysTools
 
-logger = logging.getLogger("littlesnippets")
+logger = logging.getLogger("pocketutils")
 
 
 class ColorMessages:
@@ -62,9 +62,7 @@ class ColorMessages:
         line_length: int = 100,
     ):
         def cl(text: str):
-            print(
-                str(color) + sides + text.center(line_length - 2 * len(sides)) + sides
-            )
+            print(str(color) + sides + text.center(line_length - 2 * len(sides)) + sides)
 
         print(str(color) + top * line_length)
         self._log(top * line_length)
@@ -118,8 +116,7 @@ class DeletePrompter:
             )
         while True:
             print(
-                Fore.BLUE + "Delete? [{}]".format("/".join(DeletePrompter.CHOICES)),
-                end="",
+                Fore.BLUE + "Delete? [{}]".format("/".join(DeletePrompter.CHOICES)), end="",
             )
             cmdd = input("").strip()
             logger.debug("Received user input {}".format(cmdd))
@@ -143,11 +140,7 @@ class DeletePrompter:
                 print(Style.BRIGHT + "Trashed {}.".format(path))
             return Deletion.TRASH
         # IGNORE
-        elif (
-            command.lower() == Deletion.NO.name.lower()
-            or len(command) == 0
-            and self.allow_ignore
-        ):
+        elif command.lower() == Deletion.NO.name.lower() or len(command) == 0 and self.allow_ignore:
             return Deletion.NO
         # INVALID
         else:

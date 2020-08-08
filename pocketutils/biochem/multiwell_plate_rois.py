@@ -1,7 +1,7 @@
 import typing
 from typing import Dict
 from enum import Enum
-from littlesnippets.core.exceptions import OutOfRangeError
+from pocketutils.core.exceptions import OutOfRangeError
 
 
 class Edge(Enum):
@@ -42,13 +42,9 @@ class FlippedRoiBoundsError(RoiError):
 class Roi:
     def __init__(self, x0: int, y0: int, x1: int, y1: int) -> None:
         if x0 < 0:
-            raise RoiOutOfBoundsError("x0 is negative ({})".format(x0)).on_edge(
-                Edge.LEFT
-            )
+            raise RoiOutOfBoundsError("x0 is negative ({})".format(x0)).on_edge(Edge.LEFT)
         if y0 < 0:
-            raise RoiOutOfBoundsError("y0 is negative ({})".format(y0)).on_edge(
-                Edge.TOP
-            )
+            raise RoiOutOfBoundsError("y0 is negative ({})".format(y0)).on_edge(Edge.TOP)
         if x0 >= x1:
             raise FlippedRoiBoundsError(
                 "x0 ({}) is past (or equal to) x1 ({})".format(x0, x1)
@@ -70,9 +66,7 @@ class Roi:
 
 
 class WellRoi(Roi):
-    def __init__(
-        self, row: int, column: int, x0: int, y0: int, x1: int, y1: int
-    ) -> None:
+    def __init__(self, row: int, column: int, x0: int, y0: int, x1: int, y1: int) -> None:
         if row < 0:
             raise OutOfRangeError("Row is negative ({})".format(row), value=row)
         if column < 0:
@@ -106,9 +100,7 @@ class PlateRois:
         self.well_rois = self._get_roi_coordinates(top_left_roi, padx, pady)
 
     def __repr__(self) -> str:
-        return "PlateRois(img={}; wells={}".format(
-            self.image_roi, self.well_rois.values()
-        )
+        return "PlateRois(img={}; wells={}".format(self.image_roi, self.well_rois.values())
 
     def __str__(self) -> str:
         return repr(self)

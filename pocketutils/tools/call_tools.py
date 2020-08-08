@@ -8,10 +8,10 @@ from enum import Enum
 from copy import copy
 from queue import Queue
 from threading import Thread
-from littlesnippets.core.io import DevNull
-from littlesnippets.tools.base_tools import BaseTools
+from pocketutils.core.io import DevNull
+from pocketutils.tools.base_tools import BaseTools
 
-logger = logging.getLogger("littlesnippets")
+logger = logging.getLogger("pocketutils")
 
 
 class PipeType(Enum):
@@ -34,9 +34,7 @@ class CallTools(BaseTools):
         Context manager that suppresses stdout and stderr.
         """
         with contextlib.redirect_stdout(DevNull()) if no_stdout else cls.null_context():
-            with contextlib.redirect_stderr(
-                DevNull()
-            ) if no_stderr else cls.null_context():
+            with contextlib.redirect_stderr(DevNull()) if no_stderr else cls.null_context():
                 yield
 
     @classmethod
@@ -47,9 +45,7 @@ class CallTools(BaseTools):
         :param kwargs: Passed to subprocess.run
         """
         logger.debug("Calling '{}'".format(" ".join(cmd)))
-        return subprocess.run(
-            *[str(c) for c in cmd], capture_output=True, check=True, **kwargs
-        )
+        return subprocess.run(*[str(c) for c in cmd], capture_output=True, check=True, **kwargs)
 
     @classmethod
     def call_cmd_utf(
@@ -86,10 +82,7 @@ class CallTools(BaseTools):
 
     @classmethod
     def log_called_process_error(
-        cls,
-        e: subprocess.CalledProcessError,
-        log_fn: Callable[[str], None],
-        wrap_length: int = 80,
+        cls, e: subprocess.CalledProcessError, log_fn: Callable[[str], None], wrap_length: int = 80,
     ) -> None:
         """
         Outputs some formatted text describing the error with its full stdout and stderr.
@@ -108,17 +101,13 @@ class CallTools(BaseTools):
         log_fn("Received exit code {}".format(e.returncode))
         if e.stdout is not None and len(e.stdout.strip()) > 0:
             log_fn(" STDOUT ".center(wrap_length, "."))
-            log_fn(
-                textwrap.indent(textwrap.wrap(e.stdout.strip(), wrap_length - 4), "\t")
-            )
+            log_fn(textwrap.indent(textwrap.wrap(e.stdout.strip(), wrap_length - 4), "\t"))
             log_fn("." * wrap_length)
         else:
             log_fn("《no stdout》")
         if e.stderr is not None and len(e.stderr.strip()) > 0:
             log_fn(" STDERR ".center(wrap_length, "."))
-            log_fn(
-                textwrap.indent(textwrap.wrap(e.stderr.strip(), wrap_length - 4), "\t")
-            )
+            log_fn(textwrap.indent(textwrap.wrap(e.stderr.strip(), wrap_length - 4), "\t"))
             log_fn("." * wrap_length)
         else:
             log_fn("《no stderr》")
@@ -144,9 +133,7 @@ class CallTools(BaseTools):
             log_callback = cls._smart_log_callback
         cmd = [str(p) for p in cmd]
         logger.debug("Streaming '{}'".format(" ".join(cmd)))
-        p = subprocess.Popen(
-            cmd, stdout=stdout, stderr=stderr, cwd=cwd, bufsize=bufsize
-        )
+        p = subprocess.Popen(cmd, stdout=stdout, stderr=stderr, cwd=cwd, bufsize=bufsize)
         try:
             q = Queue()
             Thread(target=cls._reader, args=[PipeType.STDOUT, p.stdout, q]).start()

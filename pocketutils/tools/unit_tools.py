@@ -2,12 +2,12 @@ from typing import SupportsFloat, Optional, Tuple, Union
 import re
 import logging
 import math
-from littlesnippets.core.exceptions import OutOfRangeError, StringPatternError
-from littlesnippets.core.internal import nicesize
-from littlesnippets.tools.base_tools import BaseTools
-from littlesnippets.tools.string_tools import StringTools
+from pocketutils.core.exceptions import OutOfRangeError, StringPatternError
+from pocketutils.core.internal import nicesize
+from pocketutils.tools.base_tools import BaseTools
+from pocketutils.tools.string_tools import StringTools
 
-logger = logging.getLogger("littlesnippets")
+logger = logging.getLogger("pocketutils")
 
 
 class UnitTools(BaseTools):
@@ -24,20 +24,12 @@ class UnitTools(BaseTools):
         """
         if abs(delta_sec) > 60 * 60 * 3:
             return (
-                StringTools.strip_empty_decimal(str(round(delta_sec / 60 / 60, 2)))
-                + space
-                + "hr"
+                StringTools.strip_empty_decimal(str(round(delta_sec / 60 / 60, 2))) + space + "hr"
             )
         elif abs(delta_sec) > 180:
-            return (
-                StringTools.strip_empty_decimal(str(round(delta_sec / 60, 2)))
-                + space
-                + "min"
-            )
+            return StringTools.strip_empty_decimal(str(round(delta_sec / 60, 2))) + space + "min"
         else:
-            return (
-                StringTools.strip_empty_decimal(str(round(delta_sec, 1))) + space + "s"
-            )
+            return StringTools.strip_empty_decimal(str(round(delta_sec, 1))) + space + "s"
 
     @classmethod
     def ms_to_minsec(cls, ms: int, space: str = "") -> str:
@@ -63,16 +55,10 @@ class UnitTools(BaseTools):
             s = "{}{}ms".format(space, ms)
         elif days > 1:
             s = "{}{}d:{}:{}:{}".format(
-                days,
-                space,
-                str(hours).zfill(2),
-                str(minutes).zfill(2),
-                str(seconds).zfill(2),
+                days, space, str(hours).zfill(2), str(minutes).zfill(2), str(seconds).zfill(2),
             )
         elif hours > 1:
-            s = "{}:{}:{}".format(
-                str(hours).zfill(2), str(minutes).zfill(2), str(seconds).zfill(2)
-            )
+            s = "{}:{}:{}".format(str(hours).zfill(2), str(minutes).zfill(2), str(seconds).zfill(2))
         else:
             s = "{}:{}".format(str(minutes).zfill(2), str(seconds).zfill(2))
         return "−" + s if is_neg else s
@@ -204,9 +190,7 @@ class UnitTools(BaseTools):
             return next(iter(matches))
         elif len(matches) > 1:
             logger.warning(
-                "Found {} potential doses: {} . Returning None.".format(
-                    len(matches), matches
-                )
+                "Found {} potential doses: {} . Returning None.".format(len(matches), matches)
             )
         return None
 
@@ -217,15 +201,7 @@ class UnitTools(BaseTools):
         """
         return (
             float(digits)
-            * {
-                "M": 1e6,
-                "mM": 1e3,
-                "µM": 1,
-                "uM": 1,
-                "nM": 1e-3,
-                "pM": 1e-6,
-                "fM": 1e-9,
-            }[units]
+            * {"M": 1e6, "mM": 1e3, "µM": 1, "uM": 1, "nM": 1e-3, "pM": 1e-6, "fM": 1e-9,}[units]
         )
 
 

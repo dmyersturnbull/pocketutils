@@ -3,7 +3,7 @@ import datetime
 from typing import Optional
 import os, logging
 from datetime import datetime
-from littlesnippets.core.exceptions import DirDoesNotExistError
+from pocketutils.core.exceptions import DirDoesNotExistError
 
 
 class BasicFlexLogger:
@@ -41,13 +41,12 @@ class BasicFlexLogger:
         return self
 
     def _make_dirs(self, output_dir: str) -> None:
-        # note that we can't import from littlesnippets.files (common shouldn't depend on files)
+        # note that we can't import from pocketutils.files (common shouldn't depend on files)
         if not os.path.exists(output_dir):
             os.makedirs(output_dir)
         elif not os.path.isdir(output_dir):
             raise DirDoesNotExistError(
-                "{} already exists and is not a directory".format(output_dir),
-                path=output_dir,
+                "{} already exists and is not a directory".format(output_dir), path=output_dir,
             )
 
 

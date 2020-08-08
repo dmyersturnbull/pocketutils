@@ -13,14 +13,14 @@ from typing import (
 import sys
 from contextlib import contextmanager
 import logging
-from littlesnippets.core.internal import look as _look
-from littlesnippets.core.exceptions import (
+from pocketutils.core.internal import look as _look
+from pocketutils.core.exceptions import (
     LengthMismatchError,
     LengthError,
     MultipleMatchesError,
 )
 
-logger = logging.getLogger("littlesnippets")
+logger = logging.getLogger("pocketutils")
 Y = TypeVar("Y")
 T = TypeVar("T")
 Z = TypeVar("Z")
@@ -112,9 +112,7 @@ class BaseTools:
                 yield tuple(values)
             elif len(failures) == 1:
                 raise LengthError(
-                    "Too few elements ({}) along axis {}".format(
-                        n_elements, failures[0]
-                    )
+                    "Too few elements ({}) along axis {}".format(n_elements, failures[0])
                 )
             elif len(failures) < len(iters):
                 raise LengthError(
@@ -133,9 +131,7 @@ class BaseTools:
             return list(cls.zip_strict(*args))
         except LengthMismatchError:
             raise LengthMismatchError(
-                "Length mismatch in zip_strict: Sizes are {}".format(
-                    [len(x) for x in args]
-                )
+                "Length mismatch in zip_strict: Sizes are {}".format([len(x) for x in args])
             ) from None
 
     @classmethod
@@ -193,9 +189,7 @@ class BaseTools:
         yield
 
     @classmethod
-    def look(
-        cls, obj: Y, attrs: Union[str, Iterable[str], Callable[[Y], Z]]
-    ) -> Optional[Z]:
+    def look(cls, obj: Y, attrs: Union[str, Iterable[str], Callable[[Y], Z]]) -> Optional[Z]:
         """
         Returns the value of a chain of attributes on object `obj`,
         or None any object in that chain is None or lacks the next attribute.

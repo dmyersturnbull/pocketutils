@@ -3,10 +3,10 @@ import re
 import json
 from copy import copy
 import numpy as np
-from littlesnippets.core import JsonEncoder
-from littlesnippets.core.exceptions import OutOfRangeError
-from littlesnippets.core.chars import *
-from littlesnippets.tools.base_tools import BaseTools
+from pocketutils.core import JsonEncoder
+from pocketutils.core.exceptions import OutOfRangeError
+from pocketutils.core.chars import *
+from pocketutils.tools.base_tools import BaseTools
 
 T = TypeVar("T")
 V = TypeVar("V")
@@ -21,11 +21,7 @@ class StringTools(BaseTools):
         # return Pretty.condensed(dct)
         return cls.retab(
             json.dumps(
-                dct,
-                default=JsonEncoder().default,
-                sort_keys=True,
-                indent=1,
-                ensure_ascii=False,
+                dct, default=JsonEncoder().default, sort_keys=True, indent=1, ensure_ascii=False,
             ),
             1,
         )
@@ -57,9 +53,7 @@ class StringTools(BaseTools):
             return t
 
     @classmethod
-    def truncate(
-        cls, s: Optional[str], n: int, always_dots: bool = False
-    ) -> Optional[str]:
+    def truncate(cls, s: Optional[str], n: int, always_dots: bool = False) -> Optional[str]:
         """
         Returns a string if it has `n` or fewer characters;
         otherwise truncates to length `n-1` and appends `…` (UTF character).
@@ -171,10 +165,7 @@ class StringTools(BaseTools):
 
     @classmethod
     def strip_any_ends(
-        cls,
-        s: str,
-        prefixes: Union[str, Sequence[str]],
-        suffixes: Union[str, Sequence[str]],
+        cls, s: str, prefixes: Union[str, Sequence[str]], suffixes: Union[str, Sequence[str]],
     ) -> str:
         """
         Flexible variant that strips any number of prefixes and any number of suffixes.
@@ -301,36 +292,28 @@ class StringTools(BaseTools):
         """
         Replaces digits, +, =, (, and ) with equivalent Unicode superscript chars (ex ¹).
         """
-        return "".join(
-            dict(zip("0123456789-+=()", "⁰¹²³⁴⁵⁶⁷⁸⁹⁻⁺⁼⁽⁾")).get(c, c) for c in s
-        )
+        return "".join(dict(zip("0123456789-+=()", "⁰¹²³⁴⁵⁶⁷⁸⁹⁻⁺⁼⁽⁾")).get(c, c) for c in s)
 
     @classmethod
     def subscript(cls, s: Union[str, float]) -> str:
         """
         Replaces digits, +, =, (, and ) with equivalent Unicode subscript chars (ex ₁).
         """
-        return "".join(
-            dict(zip("0123456789+-=()", "₀₁₂₃₄₅₆₇₈₉₊₋₌₍₎")).get(c, c) for c in s
-        )
+        return "".join(dict(zip("0123456789+-=()", "₀₁₂₃₄₅₆₇₈₉₊₋₌₍₎")).get(c, c) for c in s)
 
     @classmethod
     def unsuperscript(cls, s: Union[str, float]) -> str:
         """
         Replaces Unicode superscript digits, +, =, (, and ) with normal chars.
         """
-        return "".join(
-            dict(zip("⁰¹²³⁴⁵⁶⁷⁸⁹⁻⁺⁼⁽⁾", "0123456789-+=()")).get(c, c) for c in s
-        )
+        return "".join(dict(zip("⁰¹²³⁴⁵⁶⁷⁸⁹⁻⁺⁼⁽⁾", "0123456789-+=()")).get(c, c) for c in s)
 
     @classmethod
     def unsubscript(cls, s: Union[str, float]) -> str:
         """
         Replaces Unicode superscript digits, +, =, (, and ) with normal chars.
         """
-        return "".join(
-            dict(zip("₀₁₂₃₄₅₆₇₈₉₊₋₌₍₎", "0123456789+-=()")).get(c, c) for c in s
-        )
+        return "".join(dict(zip("₀₁₂₃₄₅₆₇₈₉₊₋₌₍₎", "0123456789+-=()")).get(c, c) for c in s)
 
     @classmethod
     def dashes_to_hm(cls, s: str) -> str:
@@ -370,9 +353,7 @@ class StringTools(BaseTools):
         # TODO this seems absurdly long for what it does
         if n_sigfigs is None or n_sigfigs < 1:
             raise OutOfRangeError(
-                "Sigfigs of {} is nonpositive".format(n_sigfigs),
-                value=n_sigfigs,
-                minimum=1,
+                "Sigfigs of {} is nonpositive".format(n_sigfigs), value=n_sigfigs, minimum=1,
             )
         # first, handle NaN and infinities
         if np.isneginf(v):
@@ -423,9 +404,7 @@ class StringTools(BaseTools):
         """
         if function is None:
             return Chars.null
-        n_args = (
-            str(function.__code__.co_argcount) if hasattr(function, "__code__") else "?"
-        )
+        n_args = str(function.__code__.co_argcount) if hasattr(function, "__code__") else "?"
         boundmatch = re.compile(r"^<bound method [^ .]+\.([^ ]+) of (.+)>$").fullmatch(
             str(function)
         )
@@ -439,22 +418,9 @@ class StringTools(BaseTools):
         elif boundmatch is not None:
             # it's a method (bound function)
             # don't show the address of the instance AND its method
-            s = (
-                re.compile(r"@ ?0x[0-9a-hA-H]+\)?$")
-                .sub("", boundmatch.group(2))
-                .strip()
-            )
+            s = re.compile(r"@ ?0x[0-9a-hA-H]+\)?$").sub("", boundmatch.group(2)).strip()
             return (
-                prefix
-                + "`"
-                + s
-                + "`."
-                + boundmatch.group(1)
-                + "("
-                + n_args
-                + ")"
-                + addr
-                + suffix
+                prefix + "`" + s + "`." + boundmatch.group(1) + "(" + n_args + ")" + addr + suffix
             )
         elif isinstance(function, type):
             # it's a class
@@ -511,8 +477,7 @@ class StringTools(BaseTools):
         # If we just sort from longest to shortest, we can't replace substrings by accident
         # For example we'll replace 'beta' before 'eta', so '1-beta' won't become '1-bη'
         greek = sorted(
-            [(v, k) for k, v in StringTools._greek_alphabet.items()],
-            key=lambda t: -len(t[1]),
+            [(v, k) for k, v in StringTools._greek_alphabet.items()], key=lambda t: -len(t[1]),
         )
         for k, v in greek:
             if k[0].isupper() and lowercase:
@@ -553,12 +518,7 @@ class StringTools(BaseTools):
 
     @classmethod
     def join_kv(
-        cls,
-        seq: Mapping[T, V],
-        sep: str = "\t",
-        eq: str = "=",
-        prefix: str = "",
-        suffix: str = "",
+        cls, seq: Mapping[T, V], sep: str = "\t", eq: str = "=", prefix: str = "", suffix: str = "",
     ) -> str:
         """
         Joins dict elements into a str like 'a=1, b=2, c=3`.
@@ -570,9 +530,7 @@ class StringTools(BaseTools):
         :param suffix: Append after every value
         :return: A string
         """
-        return sep.join(
-            [prefix + str(k) + eq + str(v) + suffix for k, v in seq.items()]
-        )
+        return sep.join([prefix + str(k) + eq + str(v) + suffix for k, v in seq.items()])
 
     _greek_alphabet = {
         "\u0391": "Alpha",
