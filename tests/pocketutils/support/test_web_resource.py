@@ -1,5 +1,5 @@
 import pytest
-from dscience.core.web_resource import *
+from pocketutils.core.web_resource import *
 
 
 class TestWebResource:

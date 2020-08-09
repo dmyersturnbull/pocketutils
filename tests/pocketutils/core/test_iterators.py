@@ -1,4 +1,4 @@
-from dscience.core.iterators import *
+from pocketutils.core.iterators import *
 
 import pytest
 

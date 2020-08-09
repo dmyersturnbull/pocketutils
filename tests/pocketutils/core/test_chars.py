@@ -1,5 +1,5 @@
 import pytest
-from dscience.core.chars import Chars
+from pocketutils.core.chars import Chars
 
 raises = pytest.raises
 

@@ -1,5 +1,5 @@
 import pytest
-from dscience.core.messages import *
+from pocketutils.misc.messages import *
 
 raises = pytest.raises
 

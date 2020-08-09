@@ -1,7 +1,6 @@
 from typing import Union, Mapping, TypeVar, Any, Sequence, Dict, Optional
 from pathlib import Path
 import pandas as pd
-from typeddfs import ConvertibleFrame, SimpleFrame, FinalFrame
 from pocketutils.core import PathLike
 from pocketutils.core.exceptions import LengthError, XTypeError
 from pocketutils.tools.base_tools import BaseTools
@@ -58,7 +57,7 @@ class PandasTools(BaseTools):
 
     @classmethod
     def series_to_df(cls, series, column: str) -> pd.DataFrame:
-        return SimpleFrame(series).reset_index().rename(columns={0: column})
+        return pd.DataFrame(series).reset_index().rename(columns={0: column})
 
 
 __all__ = ["PandasTools"]

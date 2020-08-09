@@ -1,7 +1,7 @@
 import pytest
 from datetime import datetime
-from dscience.core import *
-from dscience.core.exceptions import ImmutableError
+from pocketutils.core import *
+from pocketutils.core.exceptions import ImmutableError
 
 raises = pytest.raises
 

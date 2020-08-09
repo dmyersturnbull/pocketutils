@@ -1,7 +1,7 @@
 import pytest
 from pathlib import Path
-from dscience.core.exceptions import ParsingError
-from dscience.tools.filesys_tools import FilesysTools
+from pocketutils.core.exceptions import ParsingError
+from pocketutils.tools.filesys_tools import FilesysTools
 
 
 def load(parts):
@@ -19,9 +19,11 @@ class TestFilesysTools:
             "#line3",
             "line4 = a",
         ]
-        assert list(
-            FilesysTools.read_lines_file(load("lines.lines"), ignore_comments=True)
-        ) == ["line1 = 5", "line2=5", "line4 = a",]
+        assert list(FilesysTools.read_lines_file(load("lines.lines"), ignore_comments=True)) == [
+            "line1 = 5",
+            "line2=5",
+            "line4 = a",
+        ]
 
     def test_read_properties(self):
         f = FilesysTools.read_properties_file

@@ -30,9 +30,7 @@ class AxisTicks:
             "max" if self.ceiling is None else round(self.ceiling, 5),
         )
 
-    def adjusted(
-        self, ticks: np.array, bottom: float, top: float
-    ) -> typing.Tuple[float, float]:
+    def adjusted(self, ticks: np.array, bottom: float, top: float) -> typing.Tuple[float, float]:
         if len(ticks) < 2:
             return (bottom, top)
         floor = ticks[0] if self.floor is None else self.floor
@@ -87,12 +85,8 @@ class TickBounder:
         xs = ax.xaxis.get_majorticklocs() if self.major else ax.get_xticks()
         ys = ax.yaxis.get_majorticklocs() if self.major else ax.get_yticks()
         return (
-            (xmin, xmax)
-            if self.x_ticks is None
-            else self.x_ticks.adjusted(xs, xmin, xmax),
-            (ymin, ymax)
-            if self.y_ticks is None
-            else self.y_ticks.adjusted(ys, ymin, ymax),
+            (xmin, xmax) if self.x_ticks is None else self.x_ticks.adjusted(xs, xmin, xmax),
+            (ymin, ymax) if self.y_ticks is None else self.y_ticks.adjusted(ys, ymin, ymax),
         )
 
 

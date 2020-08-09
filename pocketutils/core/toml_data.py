@@ -71,9 +71,7 @@ class TomlData:
         for i, s in enumerate(items):
             if s not in item:
                 raise LookupError(
-                    "{} is not in the TOML; failed at {}".format(
-                        key, ".".join(items[: i + 1])
-                    )
+                    "{} is not in the TOML; failed at {}".format(key, ".".join(items[: i + 1]))
                 )
             item = item[s]
         return TomlData(item)
@@ -91,9 +89,7 @@ class TomlData:
         for lst in self.nested_key_lists(self.top):
             yield separator.join(lst)
 
-    def nested_key_lists(
-        self, dictionary: Dict[str, object], prefix=None
-    ) -> Iterator[List[str]]:
+    def nested_key_lists(self, dictionary: Dict[str, object], prefix=None) -> Iterator[List[str]]:
         prefix = prefix[:] if prefix else []
         if isinstance(dictionary, dict):
             for key, value in dictionary.items():

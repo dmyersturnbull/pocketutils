@@ -75,11 +75,7 @@ class TieredIterator(SeqIterator):
     # noinspection PyMissingConstructor
     def __init__(self, sequence):
         self.seqs = list([SeqIterator(s) for s in reversed(sequence)])
-        self.__total = (
-            0
-            if len(self.seqs) == 0
-            else int(np.product([i.total() for i in self.seqs]))
-        )
+        self.__total = 0 if len(self.seqs) == 0 else int(np.product([i.total() for i in self.seqs]))
         self.__i = 0
 
     def position(self) -> int:
@@ -108,9 +104,7 @@ class TieredIterator(SeqIterator):
                 self.__set(i + 1)  # recurse
 
     def __repr__(self):
-        return "{}({} items)".format(
-            self.__class__.__name__, [it.total() for it in self.seqs]
-        )
+        return "{}({} items)".format(self.__class__.__name__, [it.total() for it in self.seqs])
 
     def __str__(self):
         return repr(self)

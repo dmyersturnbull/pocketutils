@@ -1,5 +1,5 @@
 import pytest
-from dscience.core.warning_utils import *
+from pocketutils.logging.warning_utils import *
 
 raises = pytest.raises
 

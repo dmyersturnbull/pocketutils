@@ -1,7 +1,7 @@
 import pytest
 import os
-from dscience.core.exceptions import IllegalPathError
-from dscience.tools.path_tools import *
+from pocketutils.core.exceptions import IllegalPathError
+from pocketutils.tools.path_tools import *
 
 raises = pytest.raises
 
@@ -42,9 +42,7 @@ class TestPathTools:
 
     def test_sanitize_path(self):
         def x(s, **kwargs):
-            return str(
-                PathTools.sanitize_path(s, **kwargs, show_warnings=False)
-            ).replace("\\", "/")
+            return str(PathTools.sanitize_path(s, **kwargs, show_warnings=False)).replace("\\", "/")
 
         assert x("abc\\./22") == "abc/22"
         assert x("/abc\\./22") == "/abc/22"

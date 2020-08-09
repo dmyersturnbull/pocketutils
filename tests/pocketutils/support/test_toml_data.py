@@ -1,5 +1,5 @@
 import pytest
-from dscience.support.toml_data import *
+from pocketutils.core.toml_data import *
 
 
 class TestTomlData:

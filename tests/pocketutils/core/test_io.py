@@ -1,7 +1,7 @@
 import pytest
 from io import StringIO
-from dscience.core.io import *
-from dscience.core.mocks import *
+from pocketutils.core.io import *
+from pocketutils.core.mocks import *
 
 
 class TestIo:

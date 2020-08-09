@@ -3,11 +3,10 @@ from typing import Callable, Optional
 import pandas as pd
 from pocketutils.core import PathLike
 from pocketutils.core.web_resource import WebResource
-from pocketutils.core.extended_df import *
 from pocketutils.core.exceptions import LookupFailedError
 
 
-class TissueTable(SimpleFrame):
+class TissueTable(pd.DataFrame):
     """
     Contains a Pandas DataFrame of tissue- and cell type-level expression for genes from the Human Protein Atlas.
     Example usage:
@@ -52,7 +51,7 @@ class TissueTable(SimpleFrame):
             raise LookupFailedError("Gene with HGNC symbol {} not found.".format(gene_name))
         gene = self[self.index.get_level_values("Gene name") == gene_name]
         assert gene is not None
-        return self.convert(gene.groupby(group_by).mean().sort_values("Level", ascending=False))
+        return TissueTable(gene.groupby(group_by).mean().sort_values("Level", ascending=False))
 
     def tissue(self, name: str) -> TissueTable:
         return self.level(name, group_by="Tissue")

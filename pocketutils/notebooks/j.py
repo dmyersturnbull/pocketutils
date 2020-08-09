@@ -26,11 +26,7 @@ class J:
 
     @classmethod
     def full_width(cls, percent: bool = 100):
-        display(
-            HTML(
-                "<style>.container { width:" + str(percent) + "% !important; }</style>"
-            )
-        )
+        display(HTML("<style>.container { width:" + str(percent) + "% !important; }</style>"))
 
     @classmethod
     def full(cls, df: pd.DataFrame) -> None:
@@ -94,8 +90,7 @@ class J:
         """
         main = ";".join(main)
         css = ";".join(
-            "{}: {}".format(k.replace("_", "-").replace(" ", "-"), str(v))
-            for k, v in css.items()
+            "{}: {}".format(k.replace("_", "-").replace(" ", "-"), str(v)) for k, v in css.items()
         )
         if len(main) > 0 and not main.endswith(";"):
             main += ";"

@@ -1,12 +1,12 @@
 import re
 import subprocess
+from dataclasses import dataclass
 from pocketutils.core import PathLike
 from pocketutils.core.exceptions import ParsingError, CalledProcessError
-from pocketutils.core import abcd
 from pocketutils.tools.base_tools import BaseTools
 
 
-@abcd.dataclass(frozen=True)
+@dataclass(frozen=True)
 class GitDescription:
     """
     Data collected from running `git describe --long --dirty --broken --abbrev=40 --tags`

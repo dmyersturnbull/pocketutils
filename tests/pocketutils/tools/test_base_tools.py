@@ -1,8 +1,8 @@
 import pytest
 import numpy as np
-from dscience.core.exceptions import MultipleMatchesError, LengthMismatchError
-from dscience.tools.base_tools import *
-from dscience.core.mocks import *
+from pocketutils.core.exceptions import MultipleMatchesError, LengthMismatchError
+from pocketutils.tools.base_tools import *
+from pocketutils.core.mocks import *
 
 raises = pytest.raises
 
@@ -87,16 +87,11 @@ class TestBaseTools:
 
     def test_get_log_function(self):
         f = BaseTools.get_log_function
+        assert str(f(None)) == "<bound method Logger.info of <Logger pocketutils (WARNING)>>"
         assert (
-            str(f(None)) == "<bound method Logger.info of <Logger dscience (WARNING)>>"
+            str(f("WARNING")) == "<bound method Logger.warning of <Logger pocketutils (WARNING)>>"
         )
-        assert (
-            str(f("WARNING"))
-            == "<bound method Logger.warning of <Logger dscience (WARNING)>>"
-        )
-        assert (
-            str(f(10)) == "<bound method Logger.debug of <Logger dscience (WARNING)>>"
-        )
+        assert str(f(10)) == "<bound method Logger.debug of <Logger pocketutils (WARNING)>>"
         w = MockWritable()
         f(w)("testing")
         assert w.data == "write:testing"

@@ -1,6 +1,6 @@
 import pytest
 from pathlib import Path
-from dscience.biochem.tissue_expression import *
+from pocketutils.biochem.tissue_expression import *
 
 
 class TestTissueExpression:

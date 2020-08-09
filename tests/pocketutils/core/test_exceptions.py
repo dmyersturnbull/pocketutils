@@ -1,5 +1,5 @@
 import pytest
-from dscience.core.exceptions import *
+from pocketutils.core.exceptions import *
 
 raises = pytest.raises
 E = HashValidationFailedError

@@ -1,5 +1,5 @@
 import pytest
-from dscience.core.hasher import *
+from pocketutils.core.hasher import *
 
 raises = pytest.raises
 

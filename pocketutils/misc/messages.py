@@ -16,9 +16,7 @@ class MsgFormatter:
 
 
 class MsgFormatterSimple(MsgFormatter):
-    def __init__(
-        self, prefixes: Mapping[MsgLevel, str], suffixes: Mapping[MsgLevel, str]
-    ):
+    def __init__(self, prefixes: Mapping[MsgLevel, str], suffixes: Mapping[MsgLevel, str]):
         self.prefixes, self.suffixes = prefixes, suffixes
 
     def __call__(self, message: str, level: MsgLevel) -> str:

@@ -8,7 +8,6 @@ from typing import Optional, Mapping
 from datetime import datetime
 from pathlib import Path
 from pocketutils.core import PathLike
-from pocketutils.core.abcd import *
 
 logger = logging.getLogger("pocketutils")
 
@@ -21,8 +20,6 @@ class ArchiveType(enum.Enum):
     TARGZ = 4
 
 
-@auto_eq()
-@auto_hash()
 class WebResource:
     """
     Useful for extracting files from ZIP and GZIPing them.

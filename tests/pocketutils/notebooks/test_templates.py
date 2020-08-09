@@ -1,6 +1,6 @@
 import pytest
 from datetime import datetime
-from dscience.support.magic_template import *
+from pocketutils.notebooks.magic_template import *
 
 
 class TestTemplates:
@@ -18,10 +18,7 @@ class TestTemplates:
             == "abc (2001, 2, 2)"
         )
         assert (
-            MagicTemplate.from_text("abc ${{datetuple}}")
-            .add_datetime()
-            .parse()
-            .startswith("abc")
+            MagicTemplate.from_text("abc ${{datetuple}}").add_datetime().parse().startswith("abc")
         )
 
 

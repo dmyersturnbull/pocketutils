@@ -51,69 +51,65 @@ Download = "https://pypi.org/project/pocketutils/"
 #########################################################################################
 
 [tool.poetry.dependencies]
-python                   = ">=3.7, <4"
+python                 = ">=3.7, <4"
 # poetry requires < 0.6 right now
-tomlkit                  = ">=0.5,<1.0"
-importlib-metadata       = "^1.7"
-typer                    = "^0.3"
-requests                 = "^2.24"
-urllib3                  = {extras = ["secure"], version = "^1.25"}
+tomlkit                = "^0"
+importlib-metadata     = "^1"
+typer                  = "^0"
+requests               = "^2"
+urllib3                = {extras = ["secure"], version = "^1"}
 dill                   = "^0.3"
-jsonpickle             = "^1.4"
-natsort                = "^7.0"
-numpy                  = "^1.19"
-pandas                 = "^1.1"
-decorateme             = "^0.1"
+jsonpickle             = "^1"
+natsort                = "^7"
+numpy                  = "^1"
+pandas                 = "^1"
 
+joblib                 = "^0"
+scikit-image           = "^0"
+scikit-learn           = "^0"
+scipy                  = "^1"
 
-joblib                 = {optional = true, version = "^0.16"}
-scikit-image           = {optional = true, version = "^0.17"}
-scikit-learn           = {optional = true, version = "^0.23"}
-scipy                  = {optional = true, version = "^1.5"}
+matplotlib             = "^3"
 
-matplotlib             = {optional = true, version = "^3.3"}
+PyMySQL                = "^0"
+peewee                 = "^3"
+sshtunnel              = "^0"
 
-PyMySQL                = {optional = true, version = "^0.10"}
-peewee                 = {optional = true, version = "^3.13"}
-sshtunnel              = {optional = true, version = "^0.1"}
+goatools               = "^1"
+uniprot                = "^1"
 
-goatools               = {optional = true, version = "^1.0"}
-uniprot                = {optional = true, version = "^1.3"}
+colorama               = "^0"
+psutil                 = "^5"
 
-colorama               = {optional = true, version = "^0.4"}
-psutil                 = {optional = true, version = "^5.7"}
-
-ipython                = {optional = true, version = "^7.17"}
+ipython                = ">=7"
 
 
 [tool.poetry.dev-dependencies]
-pre-commit               = "^2.6"
-pytest                   = "^6.0"
-coverage                 = {extras = ["toml"], version = "^5.2"}
-pytest-cov               = "^2.10"
-sphinx                   = "^3.1"
-sphinx-autoapi           = "^1.4"
-sphinx-rtd-theme         = "^0.5"
-mypy                     = "^0.782"
-flake8                   = "^3.8"
-flake8-docstrings        = "^1.5"
+pre-commit               = "^2"
+pytest                   = "^6"
+coverage                 = {extras = ["toml"], version = "^5"}
+pytest-cov               = "^2"
+sphinx                   = "^3"
+sphinx-autoapi           = "^1"
+sphinx-rtd-theme         = "^0"
+mypy                     = "^0"
+flake8                   = "^3"
+flake8-docstrings        = "^1"
 black                    = "=19.10b0"
-isort                    = "^5.2"
-sphinx-autodoc-typehints = "^1.11"
-xdoctest                 = "^0.13"
-hypothesis               = "^5.23"
-flake8-bandit            = "^2.1"
-flake8-bugbear           = "^20.1"
-coveralls                = "^2.1"
-tyrannosaurus            = "^0.7"
+isort                    = "^5"
+sphinx-autodoc-typehints = "^1"
+xdoctest                 = "^0"
+hypothesis               = "^5"
+flake8-bandit            = "^2"
+flake8-bugbear           = "^20"
+coveralls                = "^2"
 
 [tool.poetry.extras]
 # manually listed
-docs    = ["sphinx", "sphinx-rtd-theme", "sphinx-autoapi", "sphinx-autodoc-typehints"]
+docs    = ["sphinx", "sphinx-rtd-theme", "sphinx-autoapi"]
 # auto-filled from dev-deps
 dev     = [
-        "tyrannosaurus",
-        "pre-commit", "pytest", "coverage", "xdoctest", "hypothesis",
+        "pre-commit", "pytest", "coverage", "pytest-cov", "xdoctest", "hypothesis",
         "sphinx", "sphinx-autodoc-typehints", "sphinx-autoapi",
         "mypy",
         "flake8", "flake8-docstrings",
@@ -131,7 +127,7 @@ align    = true
 
 [tool.tyrannosaurus.sources]
 status             = "'Development'"
-date               = "'2020-08-06'"
+date               = "${today}"
 copyright          = "'Copyright 2016–2020'"
 version            = "tool.poetry.version"
 release            = "tool.poetry.version"

@@ -77,12 +77,7 @@ class LogLevel:
     def nonstandard(cls) -> Mapping[str, int]:
         return {
             e.name: e.value
-            for e in [
-                _LogLevel.TRACE,
-                _LogLevel.MINOR,
-                _LogLevel.CAUTION,
-                _LogLevel.NOTICE,
-            ]
+            for e in [_LogLevel.TRACE, _LogLevel.MINOR, _LogLevel.CAUTION, _LogLevel.NOTICE,]
         }
 
     @classmethod
@@ -221,9 +216,7 @@ class AdvancedLogger(logging.Logger):
         if self.isEnabledFor(LogLevel.TRACE):
             self._log(LogLevel.TRACE, msg, args, **kwargs)
 
-    def _log(
-        self, level, msg, args, exc_info=None, extra=None, stack_info=False
-    ) -> None:
+    def _log(self, level, msg, args, exc_info=None, extra=None, stack_info=False) -> None:
         if not self._suppressed and level < logging.CRITICAL:
             super()._log(level, msg, args, exc_info, extra, stack_info)
 

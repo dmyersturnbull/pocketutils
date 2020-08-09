@@ -1,13 +1,12 @@
 import typing, re
 from typing import Iterator, Sequence, Type
-from decorateme import abcd
+from abc import ABCMeta
+from functools import total_ordering
 from pocketutils.core.exceptions import OutOfRangeError, StringPatternError
 
 
-@abcd.auto_eq(only=["base", "n_rows", "n_columns"])
-@abcd.auto_hash(only=["base", "n_rows", "n_columns"])
-@abcd.total_ordering
-class _WB(abcd.ABC):
+@total_ordering
+class _WB(metaclass=ABCMeta):
     """
     A set of conversion utils between well labels, indices, and coordinates.
     This class is preferred over the functions above.
@@ -27,9 +26,20 @@ class _WB(abcd.ABC):
         self.__rc_to_i0 = lambda r, c: self.n_columns * r + c
 
     @classmethod
-    # @abcd.abstractmethod
     def get_base(cls) -> int:
         raise NotImplementedError()
+
+    def __hash__(self):
+        return hash((self.base, self.n_rows, self.n_columns))
+
+    def __eq__(self, other):
+        if not isinstance(other, _WB):
+            raise TypeError("Cannot compare type {}".format(type(other)))
+        return (self.base, self.n_rows, self.n_columns) == (
+            other.base,
+            other.n_rows,
+            other.n_columns,
+        )
 
     def label_to_index(self, label: str) -> int:
         return self.__well_index0(label) + self.base
@@ -154,7 +164,7 @@ class WbFactory:
         return new_class
 
 
-class ParsingWB(_WB, abcd.ABC):
+class ParsingWB(_WB, metaclass=ABCMeta):
     """
     An abstract WB that can parse expressions.
     Usage:
@@ -205,7 +215,6 @@ class WB1(_WB):
     """
 
     @classmethod
-    @abcd.overrides
     def get_base(cls):
         return 1
 
@@ -218,19 +227,19 @@ class WB0(_WB):
     """
 
     @classmethod
-    @abcd.overrides
     def get_base(cls):
         return 0
 
 
-@abcd.copy_docstring(WB0)
 class ParsingWB0(WB0, ParsingWB):
     pass
 
 
-@abcd.copy_docstring(WB1)
 class ParsingWB1(WB1, ParsingWB):
     pass
 
+
+ParsingWB0.__doc__ = WB0.__doc__
+ParsingWB1.__doc__ = WB1.__doc__
 
 __all__ = ["WB1", "WB0", "ParsingWB0", "ParsingWB1", "WbFactory"]
