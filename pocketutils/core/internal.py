@@ -1,9 +1,10 @@
 from __future__ import annotations
+
 import logging
+import operator
 import os
 from pathlib import PurePath
-from typing import Iterable, TypeVar, Union, Callable, Optional
-import operator
+from typing import Callable, Iterable, Optional, TypeVar, Union
 
 T = TypeVar("T", covariant=True)
 Y = TypeVar("Y")

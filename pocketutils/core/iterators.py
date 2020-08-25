@@ -1,6 +1,7 @@
-from typing import Generic, TypeVar, Iterable, Any
 import abc
 import collections
+from typing import Any, Generic, Iterable, TypeVar
+
 import numpy as np
 
 T = TypeVar("T")

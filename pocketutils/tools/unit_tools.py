@@ -1,7 +1,8 @@
-from typing import SupportsFloat, Optional, Tuple, Union
-import re
 import logging
 import math
+import re
+from typing import Optional, SupportsFloat, Tuple, Union
+
 from pocketutils.core.exceptions import OutOfRangeError, StringPatternError
 from pocketutils.core.internal import nicesize
 from pocketutils.tools.base_tools import BaseTools

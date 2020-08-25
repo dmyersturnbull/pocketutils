@@ -1,8 +1,9 @@
 import re
 import subprocess
 from dataclasses import dataclass
+
 from pocketutils.core import PathLike
-from pocketutils.core.exceptions import ParsingError, CalledProcessError
+from pocketutils.core.exceptions import CalledProcessError, ParsingError
 from pocketutils.tools.base_tools import BaseTools
 
 

@@ -1,6 +1,7 @@
 import typing
-from typing import Dict
 from enum import Enum
+from typing import Dict
+
 from pocketutils.core.exceptions import OutOfRangeError
 
 

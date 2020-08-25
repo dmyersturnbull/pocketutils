@@ -1,11 +1,9 @@
-import os, sys
-import logging
 import re
-from typing import Optional, Sequence
-from typing import Mapping
-from pocketutils.tools.base_tools import BaseTools
-from pocketutils.core import PathLike
+import sys
+from typing import Mapping, Optional, Sequence
+
 from pocketutils.core.exceptions import *
+from pocketutils.tools.base_tools import BaseTools
 
 logger = logging.getLogger("pocketutils")
 

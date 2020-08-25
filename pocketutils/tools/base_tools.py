@@ -1,24 +1,21 @@
-from typing import (
-    Any,
-    Iterable,
-    Union,
-    Callable,
-    Optional,
-    TypeVar,
-    Generator,
-    Tuple,
-    List,
-    Iterator,
-)
+import logging
 import sys
 from contextlib import contextmanager
-import logging
-from pocketutils.core.internal import look as _look
-from pocketutils.core.exceptions import (
-    LengthMismatchError,
-    LengthError,
-    MultipleMatchesError,
+from typing import (
+    Any,
+    Callable,
+    Generator,
+    Iterable,
+    Iterator,
+    List,
+    Optional,
+    Tuple,
+    TypeVar,
+    Union,
 )
+
+from pocketutils.core.exceptions import LengthError, LengthMismatchError, MultipleMatchesError
+from pocketutils.core.internal import look as _look
 
 logger = logging.getLogger("pocketutils")
 Y = TypeVar("Y")

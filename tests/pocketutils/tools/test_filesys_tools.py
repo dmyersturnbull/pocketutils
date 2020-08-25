@@ -1,5 +1,7 @@
-import pytest
 from pathlib import Path
+
+import pytest
+
 from pocketutils.core.exceptions import ParsingError
 from pocketutils.tools.filesys_tools import FilesysTools
 

@@ -1,36 +1,35 @@
-from typing import (
-    SupportsBytes,
-    Sequence,
-    Mapping,
-    Iterable,
-    Any,
-    Union,
-    Optional,
-    Generator,
-)
-from pathlib import PurePath, Path
-import stat
-import tempfile
-from datetime import datetime
+import gzip
+import hashlib
+import json
+import logging
+import os
+import platform
 import re
 import shutil
-import os, platform, socket, sys
-from getpass import getuser
-import gzip, json, hashlib
+import socket
+import stat
+import sys
+import tempfile
 from contextlib import contextmanager
-import logging
+from datetime import datetime
+from getpass import getuser
+from pathlib import Path, PurePath
+from typing import Any, Generator, Iterable, Mapping, Optional, Sequence, SupportsBytes, Union
+
 import dill
+import numpy as np
 import pandas as pd
-from pocketutils.core.web_resource import *
+
 from pocketutils.core import JsonEncoder
-from pocketutils.core.io import Writeable, PathLike, OpenMode
-from pocketutils.core.hasher import *
 from pocketutils.core.exceptions import (
-    ParsingError,
-    FileDoesNotExistError,
-    ContradictoryRequestError,
     AlreadyUsedError,
+    ContradictoryRequestError,
+    FileDoesNotExistError,
+    ParsingError,
 )
+from pocketutils.core.hasher import *
+from pocketutils.core.io import OpenMode, PathLike, Writeable
+from pocketutils.core.web_resource import *
 from pocketutils.tools.base_tools import BaseTools
 from pocketutils.tools.path_tools import PathTools
 
@@ -54,16 +53,15 @@ except ImportError:
 
 class FilesysTools(BaseTools):
     @classmethod
-    def pkl(cls, stuff, path: PathLike, protocol: int = 4) -> None:
+    def pkl(cls, stuff: Any, path: PathLike) -> None:
         """Save to a file with dill."""
-        with Path(path).open("wb") as f:
-            dill.dump(stuff, f, protocol=protocol)
+        Path(path).write_bytes(dill.dumps(stuff, protocol=5))
 
     @classmethod
     def unpkl(cls, path: PathLike):
         """Load a file with dill."""
-        with Path(path).open("rb") as f:
-            return dill.load(f)
+        # ignore encoding param, which is only useful for unpickling Python 2-generated
+        return dill.loads(Path(path).read_bytes())
 
     @classmethod
     def new_hasher(cls, algorithm: str = "sha1"):
@@ -228,14 +226,13 @@ class FilesysTools(BaseTools):
             Path(s).mkdir(exist_ok=True, parents=True)
 
     @classmethod
-    def save_json(cls, data, path: PathLike, mode: str = "w") -> None:
+    def save_json(cls, data: Any, path: PathLike, mode: str = "w") -> None:
         with cls.open_file(path, mode) as f:
             json.dump(data, f, ensure_ascii=False, cls=JsonEncoder)
 
     @classmethod
     def load_json(cls, path: PathLike):
-        with cls.open_file(path, "r") as f:
-            return json.load(f)
+        return json.loads(Path(path).read_text(encoding="utf8"))
 
     @classmethod
     def save_jsonpkl(cls, data, path: PathLike, mode: str = "w") -> None:
@@ -290,6 +287,10 @@ class FilesysTools(BaseTools):
             return path.read_bytes()
         elif ext == "json":
             return FilesysTools.load_json(path)
+        elif ext == "pkl":
+            return FilesysTools.unpkl(path)
+        elif ext in ["npy", "npz"]:
+            return np.load(str(path), allow_pickle=True)
         elif ext == "properties":
             return FilesysTools.read_properties_file(path)
         elif ext == "csv":

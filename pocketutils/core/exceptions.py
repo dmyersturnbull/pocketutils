@@ -3,15 +3,16 @@ The motivation here is simply that Python lacks some standard exceptions that I 
 Projects can/should subclass from these in addition to the normal Python ones.
 """
 from __future__ import annotations
-from typing import Collection, Any, Union
+
+import logging
 import os
-from pathlib import Path
-from functools import wraps
 from copy import copy
+from functools import wraps
+from pathlib import Path
 
 # noinspection PyUnresolvedReferences
 from subprocess import CalledProcessError
-import logging
+from typing import Any, Collection, Union
 
 logger = logging.getLogger("pocketutils")
 KeyLike = Any

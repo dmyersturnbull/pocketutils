@@ -1,6 +1,7 @@
 import pytest
-from pocketutils.tools.unit_tools import *
+
 from pocketutils.core.chars import *
+from pocketutils.tools.unit_tools import *
 
 raises = pytest.raises
 

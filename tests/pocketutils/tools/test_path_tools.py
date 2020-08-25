@@ -1,5 +1,7 @@
-import pytest
 import os
+
+import pytest
+
 from pocketutils.core.exceptions import IllegalPathError
 from pocketutils.tools.path_tools import *
 

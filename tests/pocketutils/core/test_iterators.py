@@ -1,6 +1,6 @@
-from pocketutils.core.iterators import *
-
 import pytest
+
+from pocketutils.core.iterators import *
 
 
 class TestIterators:

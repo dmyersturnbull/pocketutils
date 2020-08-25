@@ -1,18 +1,10 @@
-from typing import (
-    Collection,
-    TypeVar,
-    Iterator,
-    Union,
-    Callable,
-    Optional,
-    Iterable,
-    Any,
-)
-from datetime import datetime
-import time
-import logging
 import itertools
+import logging
 import multiprocessing
+import time
+from datetime import datetime
+from typing import Any, Callable, Collection, Iterable, Iterator, Optional, TypeVar, Union
+
 from pocketutils.tools.base_tools import BaseTools
 from pocketutils.tools.unit_tools import UnitTools
 

@@ -1,6 +1,8 @@
-from typing import Union, Mapping, TypeVar, Any, Sequence, Dict, Optional
 from pathlib import Path
+from typing import Any, Dict, Mapping, Optional, Sequence, TypeVar, Union
+
 import pandas as pd
+
 from pocketutils.core import PathLike
 from pocketutils.core.exceptions import LengthError, XTypeError
 from pocketutils.tools.base_tools import BaseTools
@@ -57,7 +59,7 @@ class PandasTools(BaseTools):
 
     @classmethod
     def series_to_df(cls, series, column: str) -> pd.DataFrame:
-        return pd.DataFrame(series).reset_index().rename(columns={0: column})
+        return pd.DataFrame(series).reset_index(drop=True).rename(columns={0: column})
 
 
 __all__ = ["PandasTools"]

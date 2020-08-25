@@ -1,4 +1,4 @@
-from typing import Iterator, Dict, List, ItemsView, KeysView, ValuesView
+from typing import Dict, ItemsView, Iterator, KeysView, List, ValuesView
 
 
 class TomlData:

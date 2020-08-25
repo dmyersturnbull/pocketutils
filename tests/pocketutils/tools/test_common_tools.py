@@ -1,8 +1,10 @@
-import pytest
 import re
+
 import numpy as np
-from pocketutils.tools.common_tools import CommonTools
+import pytest
+
 from pocketutils.core.mocks import *
+from pocketutils.tools.common_tools import CommonTools
 
 raises = pytest.raises
 

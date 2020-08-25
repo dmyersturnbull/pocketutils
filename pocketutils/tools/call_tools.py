@@ -1,13 +1,14 @@
-import logging
-import textwrap
 import contextlib
+import logging
 import subprocess
-from typing import Callable, Optional, Sequence, Generator
-from pathlib import PurePath
-from enum import Enum
+import textwrap
 from copy import copy
+from enum import Enum
+from pathlib import PurePath
 from queue import Queue
 from threading import Thread
+from typing import Callable, Generator, Optional, Sequence
+
 from pocketutils.core.io import DevNull
 from pocketutils.tools.base_tools import BaseTools
 

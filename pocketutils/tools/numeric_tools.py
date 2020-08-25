@@ -1,5 +1,7 @@
-from typing import SupportsFloat, SupportsInt, TypeVar, Optional
+from typing import Optional, SupportsFloat, SupportsInt, TypeVar
+
 import numpy as np
+
 from pocketutils.tools.base_tools import BaseTools
 
 V = TypeVar("V")

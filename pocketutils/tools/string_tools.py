@@ -1,11 +1,13 @@
-from typing import Optional, Sequence, Union, Iterable, Tuple, Mapping, TypeVar, Any
-import re
 import json
+import re
 from copy import copy
+from typing import Any, Iterable, Mapping, Optional, Sequence, Tuple, TypeVar, Union
+
 import numpy as np
+
 from pocketutils.core import JsonEncoder
-from pocketutils.core.exceptions import OutOfRangeError
 from pocketutils.core.chars import *
+from pocketutils.core.exceptions import OutOfRangeError
 from pocketutils.tools.base_tools import BaseTools
 
 T = TypeVar("T")

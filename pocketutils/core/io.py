@@ -1,8 +1,9 @@
 from __future__ import annotations
-import logging
-from typing import TypeVar, Union, Any
+
 import abc
 import contextlib
+import logging
+from typing import Any, TypeVar, Union
 
 # noinspection PyUnresolvedReferences
 from pocketutils.core import PathLike

@@ -9,12 +9,13 @@
 [![Conda-Forge](https://img.shields.io/conda/vn/conda-forge/pocketutils?label=Conda-Forge)](https://anaconda.org/conda-forge/pocketutils)
 [![Documentation status](https://readthedocs.org/projects/pocketutils/badge/?version=latest&style=flat-square)](https://pocketutils.readthedocs.io/en/stable/)
 [![Build & test](https://github.com/dmyersturnbull/pocketutils/workflows/Build%20&%20test/badge.svg)](https://github.com/dmyersturnbull/pocketutils/actions)
-[![Travis](https://img.shields.io/travis/dmyersturnbull/pocketutils?label=Travis)](https://travis-ci.org/dmyersturnbull/pocketutils)
-[![Azure DevOps builds](https://img.shields.io/azure-devops/build/dmyersturnbull/<<key>>/<<defid>>?label=Azure)](https://dev.azure.com/dmyersturnbull/pocketutils/_build?definitionId=1&_a=summary)
 [![Maintainability](https://api.codeclimate.com/v1/badges/<<apikey>>/maintainability)](https://codeclimate.com/github/dmyersturnbull/pocketutils/maintainability)
 [![Coverage](https://coveralls.io/repos/github/dmyersturnbull/pocketutils/badge.svg?branch=master)](https://coveralls.io/github/dmyersturnbull/pocketutils?branch=master)
 
 Adorable little Python functions for you to copy or import.
+
+`pip install pocketutils`. To get the optional packages, use:
+`pip install pocketutils[biochem,db,misc,notebooks,plotting]`
 
 Among the more useful are `zip_strict`, `frozenlist`, `SmartEnum`, `is_lambda`, `strip_paired_brackets`,
 `sanitize_path_node`, `TomlData`, `PrettyRecordFactory`, `parallel_with_cursor`, `groupby_parallel`,
@@ -25,8 +26,8 @@ Some of the more useful are `ConfusionMatrix`, `DecisionFrame`,
 [`PeakFinder`](https://en.wikipedia.org/wiki/Topographic_prominence), `AtcParser` (for PubChem ATC codes),
 `WellBase1` (for multiwell plates), and [`TissueTable`]("https://www.proteinatlas.org/).
 
-[See the docs](https://littlesnippets.readthedocs.io/en/stable/), or just
-[browse the code](https://github.com/dmyersturnbull/littlesnippets/tree/master/littlesnippets).
+[See the docs](https://pocketutils.readthedocs.io/en/stable/), or just
+[browse the code](https://github.com/dmyersturnbull/pocketutils/tree/master/pocketutils).
 
 [New issues](https://github.com/dmyersturnbull/pocketutils/issues) and pull requests are welcome.
 Please refer to the [contributing guide](https://github.com/dmyersturnbull/pocketutils/blob/master/CONTRIBUTING.md).

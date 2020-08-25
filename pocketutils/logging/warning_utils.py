@@ -1,6 +1,7 @@
 import os
-from copy import copy
 import warnings
+from copy import copy
+
 from pocketutils.core.exceptions import NotConstructableError
 
 

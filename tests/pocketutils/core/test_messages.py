@@ -1,4 +1,5 @@
 import pytest
+
 from pocketutils.misc.messages import *
 
 raises = pytest.raises

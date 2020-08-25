@@ -1,24 +1,26 @@
-from typing import (
-    Iterable,
-    Any,
-    Tuple,
-    Generator,
-    Iterator,
-    Mapping,
-    Union,
-    Callable,
-    Optional,
-    Sequence,
-    TypeVar,
-    Type,
-)
 import sys
 from collections import defaultdict
+from typing import (
+    Any,
+    Callable,
+    Generator,
+    Iterable,
+    Iterator,
+    Mapping,
+    Optional,
+    Sequence,
+    Tuple,
+    Type,
+    TypeVar,
+    Union,
+)
+
 import numpy as np
-from pocketutils.tools.base_tools import BaseTools
+
+from pocketutils.core.exceptions import RefusingRequestError
 from pocketutils.core.internal import nicesize
 from pocketutils.core.io import DevNull
-from pocketutils.core.exceptions import RefusingRequestError
+from pocketutils.tools.base_tools import BaseTools
 
 Y = TypeVar("Y")
 T = TypeVar("T")

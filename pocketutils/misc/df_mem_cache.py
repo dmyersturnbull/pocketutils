@@ -1,13 +1,15 @@
-from typing import TypeVar, Optional, Iterator, Dict, Callable, Generic, List
+import logging
+import operator
+import sys
 from abc import ABC
 from datetime import datetime
-import operator, logging
-import sys
-import numpy as np
-from psutil import virtual_memory
-import pandas as pd
-from pocketutils.core.internal import nicesize
+from typing import Callable, Dict, Generic, Iterator, List, Optional, TypeVar
 
+import numpy as np
+import pandas as pd
+from psutil import virtual_memory
+
+from pocketutils.core.internal import nicesize
 
 K = TypeVar("K")
 

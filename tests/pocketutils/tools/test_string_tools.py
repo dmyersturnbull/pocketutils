@@ -1,8 +1,9 @@
 import pytest
 from hypothesis import given, strategies
-from pocketutils.tools.string_tools import *
+
 from pocketutils.core.chars import *
 from pocketutils.core.mocks import *
+from pocketutils.tools.string_tools import *
 
 raises = pytest.raises
 

@@ -1,7 +1,8 @@
 import re
 from typing import Optional
-from IPython.display import display, Markdown, HTML
+
 import pandas as pd
+from IPython.display import HTML, Markdown, display
 
 _color_pattern = re.compile("#?[A-Z0-9a-z]{6}")
 
@@ -12,7 +13,7 @@ class J:
     Convenience user tools to display HTML text in Jupyter notebooks.
     """
 
-    from IPython.display import display, clear_output
+    from IPython.display import clear_output, display
     from IPython.utils import io as __io
 
     RED, GREEN, BLUE, PURPLE, CYAN, BOLD = (

@@ -1,6 +1,9 @@
-import os, json, logging
-from typing import Tuple, Iterator, Dict, Optional, Union
-from pocketutils.core.exceptions import FileDoesNotExistError, ContradictoryRequestError
+import json
+import logging
+import os
+from typing import Dict, Iterator, Optional, Tuple, Union
+
+from pocketutils.core.exceptions import ContradictoryRequestError, FileDoesNotExistError
 
 
 class Connection:

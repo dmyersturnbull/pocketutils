@@ -1,8 +1,11 @@
 from __future__ import annotations
+
 import datetime
-from typing import Optional
-import os, logging
+import logging
+import os
 from datetime import datetime
+from typing import Optional
+
 from pocketutils.core.exceptions import DirDoesNotExistError
 
 

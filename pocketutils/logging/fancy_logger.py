@@ -1,8 +1,10 @@
 from __future__ import annotations
-import logging, enum
-from functools import total_ordering
+
+import enum
+import logging
 from contextlib import contextmanager
-from typing import Union, Mapping, Generator
+from functools import total_ordering
+from typing import Generator, Mapping, Union
 
 
 @enum.unique

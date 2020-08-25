@@ -1,8 +1,9 @@
-import pytest
 import numpy as np
-from pocketutils.core.exceptions import MultipleMatchesError, LengthMismatchError
-from pocketutils.tools.base_tools import *
+import pytest
+
+from pocketutils.core.exceptions import LengthMismatchError, MultipleMatchesError
 from pocketutils.core.mocks import *
+from pocketutils.tools.base_tools import *
 
 raises = pytest.raises
 

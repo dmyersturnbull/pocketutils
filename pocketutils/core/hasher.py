@@ -1,10 +1,10 @@
-from typing import Callable, Any, Union, Optional
-import hashlib
-import os
 import codecs
 import gzip
-from pocketutils.core.exceptions import FileDoesNotExistError
-from pocketutils.core.exceptions import HashValidationFailedError
+import hashlib
+import os
+from typing import Any, Callable, Optional, Union
+
+from pocketutils.core.exceptions import FileDoesNotExistError, HashValidationFailedError
 
 
 class FileHasher:

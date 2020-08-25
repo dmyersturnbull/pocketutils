@@ -1,15 +1,19 @@
 from __future__ import annotations
-import enum
-import logging
-from typing import Sequence, Iterable, TypeVar, Any, Callable, Generic, Type
-import json
-from datetime import date, datetime
+
 import abc
+import enum
+import json
+import logging
+from datetime import date, datetime
+from typing import Any, Callable, Generic, Iterable, Sequence, Type, TypeVar
+
 import numpy as np
+
 from pocketutils.core.exceptions import ImmutableError
 
 # noinspection PyProtectedMember
-from pocketutils.core.internal import PathLike, look as _look
+from pocketutils.core.internal import PathLike
+from pocketutils.core.internal import look as _look
 
 T = TypeVar("T", covariant=True)
 

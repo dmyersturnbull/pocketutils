@@ -1,5 +1,7 @@
-import pytest
 from datetime import datetime
+
+import pytest
+
 from pocketutils.notebooks.magic_template import *
 
 

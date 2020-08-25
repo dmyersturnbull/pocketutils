@@ -1,18 +1,20 @@
-from typing import Iterable, Union, Mapping, List, Optional
 import logging
-import re
-from urllib import request
-import uniprot
-import pandas as pd
 import os
-from pocketutils.core.exceptions import StringPatternError, MultipleMatchesError
+import re
+from typing import Iterable, List, Mapping, Optional, Union
+from urllib import request
 
-# noinspection PyProtectedMember
-from pocketutils.core.io import silenced
+import pandas as pd
+import uniprot
 from goatools import obo_parser  # uses https://github.com/tanghaibao/goatools
 from goatools.obo_parser import (
     GOTerm,
 )  # NOT the same as FlatGoTerm, which has no knowledge of hierarchy
+
+from pocketutils.core.exceptions import MultipleMatchesError, StringPatternError
+
+# noinspection PyProtectedMember
+from pocketutils.core.io import silenced
 
 go_pattern = re.compile(r"GO:(\d+); ([CFP]):([\dA-Za-z- ,()]+); ([A-Z]+):([A-Za-z-_]+)\.")
 logger = logging.getLogger("pocketutils")

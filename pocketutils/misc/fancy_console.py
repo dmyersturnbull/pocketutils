@@ -1,12 +1,14 @@
-from typing import Iterable, Callable, Optional, Mapping
-import logging
 import enum
+import logging
 from pathlib import Path
-from colorama import Fore, Style
+from typing import Callable, Iterable, Mapping, Optional
+
 import colorama
+from colorama import Fore, Style
+
 from pocketutils.core import PathLike
-from pocketutils.misc.messages import *
 from pocketutils.core.exceptions import RefusingRequestError
+from pocketutils.misc.messages import *
 from pocketutils.tools.filesys_tools import FilesysTools
 
 logger = logging.getLogger("pocketutils")

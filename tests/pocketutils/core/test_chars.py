@@ -1,4 +1,5 @@
 import pytest
+
 from pocketutils.core.chars import Chars
 
 raises = pytest.raises

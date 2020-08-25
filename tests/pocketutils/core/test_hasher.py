@@ -1,4 +1,5 @@
 import pytest
+
 from pocketutils.core.hasher import *
 
 raises = pytest.raises

@@ -7,7 +7,8 @@ from pathlib import Path, PurePath
 from typing import Union
 
 # importlib.metadata is compat with Python 3.8 only
-from importlib_metadata import PackageNotFoundError, metadata as __load
+from importlib_metadata import PackageNotFoundError
+from importlib_metadata import metadata as __load
 
 logger = logging.getLogger(Path(__file__).parent.name)
 
@@ -16,7 +17,7 @@ try:
     metadata = __load(Path(__file__).absolute().parent.name)
     __status__ = "Development"
     __copyright__ = "Copyright 2016–2020"
-    __date__ = "2020-08-09"
+    __date__ = "2020-08-24"
     __uri__ = metadata["home-page"]
     __title__ = metadata["name"]
     __summary__ = metadata["summary"]

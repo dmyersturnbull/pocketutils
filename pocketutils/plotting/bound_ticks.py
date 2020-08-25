@@ -1,5 +1,6 @@
 import typing
 from typing import Optional
+
 import numpy as np
 from matplotlib.axes import Axes
 

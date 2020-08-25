@@ -1,7 +1,8 @@
-import sys
-from typing import Union, Callable
 import logging
+import sys
 import time
+from typing import Callable, Union
+
 from pocketutils.tools.base_tools import BaseTools
 from pocketutils.tools.filesys_tools import FilesysTools
 

@@ -1,13 +1,15 @@
-import logging
 import json
-import requests
+import logging
 import re
 from datetime import datetime
 from functools import total_ordering
 from pathlib import Path
-from typing import Iterator, Set, Sequence, Any
-from pocketutils.core.exceptions import IllegalStateError
+from typing import Any, Iterator, Sequence, Set
+
+import requests
+
 from pocketutils.core import PathLike
+from pocketutils.core.exceptions import IllegalStateError
 
 logger = logging.getLogger("pocketutils")
 

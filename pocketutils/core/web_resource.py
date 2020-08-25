@@ -1,12 +1,13 @@
-from urllib import request
-import zipfile
-import logging
-import gzip
 import enum
+import gzip
+import logging
 import shutil
-from typing import Optional, Mapping
+import zipfile
 from datetime import datetime
 from pathlib import Path
+from typing import Mapping, Optional
+from urllib import request
+
 from pocketutils.core import PathLike
 
 logger = logging.getLogger("pocketutils")

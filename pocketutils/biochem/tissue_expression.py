@@ -1,9 +1,12 @@
 from __future__ import annotations
+
 from typing import Callable, Optional
+
 import pandas as pd
+
 from pocketutils.core import PathLike
-from pocketutils.core.web_resource import WebResource
 from pocketutils.core.exceptions import LookupFailedError
+from pocketutils.core.web_resource import WebResource
 
 
 class TissueTable(pd.DataFrame):

@@ -1,5 +1,7 @@
-import pytest
 from io import StringIO
+
+import pytest
+
 from pocketutils.core.io import *
 from pocketutils.core.mocks import *
 

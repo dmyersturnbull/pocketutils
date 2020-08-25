@@ -1,7 +1,9 @@
-import typing, re
-from typing import Iterator, Sequence, Type
+import re
+import typing
 from abc import ABCMeta
 from functools import total_ordering
+from typing import Iterator, Sequence, Type
+
 from pocketutils.core.exceptions import OutOfRangeError, StringPatternError
 
 

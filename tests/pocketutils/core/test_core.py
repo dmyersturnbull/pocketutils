@@ -1,5 +1,7 @@
-import pytest
 from datetime import datetime
+
+import pytest
+
 from pocketutils.core import *
 from pocketutils.core.exceptions import ImmutableError
 
