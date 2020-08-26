@@ -6,10 +6,9 @@
 [![Docker](https://img.shields.io/docker/v/dmyersturnbull/pocketutils?color=green&label=DockerHub)](https://hub.docker.com/repository/docker/dmyersturnbull/pocketutils)
 [![GitHub release (latest SemVer including pre-releases)](https://img.shields.io/github/v/release/dmyersturnbull/pocketutils?include_prereleases&label=GitHub)](https://github.com/dmyersturnbull/pocketutils/releases)
 [![Latest version on PyPi](https://badge.fury.io/py/pocketutils.svg)](https://pypi.org/project/pocketutils/)
-[![Conda-Forge](https://img.shields.io/conda/vn/conda-forge/pocketutils?label=Conda-Forge)](https://anaconda.org/conda-forge/pocketutils)
 [![Documentation status](https://readthedocs.org/projects/pocketutils/badge/?version=latest&style=flat-square)](https://pocketutils.readthedocs.io/en/stable/)
 [![Build & test](https://github.com/dmyersturnbull/pocketutils/workflows/Build%20&%20test/badge.svg)](https://github.com/dmyersturnbull/pocketutils/actions)
-[![Maintainability](https://api.codeclimate.com/v1/badges/<<apikey>>/maintainability)](https://codeclimate.com/github/dmyersturnbull/pocketutils/maintainability)
+[![Maintainability](https://api.codeclimate.com/v1/badges/eea2b741dbbbb74ad18a/maintainability)](https://codeclimate.com/github/dmyersturnbull/pocketutils/maintainability)
 [![Coverage](https://coveralls.io/repos/github/dmyersturnbull/pocketutils/badge.svg?branch=master)](https://coveralls.io/github/dmyersturnbull/pocketutils?branch=master)
 
 Adorable little Python functions for you to copy or import.
