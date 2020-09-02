@@ -4,8 +4,10 @@ import datetime
 import logging
 import os
 from datetime import datetime
+from pathlib import Path
 from typing import Optional
 
+from pocketutils.core import PathLike
 from pocketutils.core.exceptions import DirDoesNotExistError
 
 
@@ -26,9 +28,9 @@ class BasicFlexLogger:
         self._formatter = formatter
         self.datetime_started = datetime.datetime.now()
 
-    def add_file(self, path: str, level: int = logging.DEBUG):
-        self._make_dirs(os.path.dirname(path))
-        return self._add(logging.FileHandler(path), level)
+    def add_file(self, path: PathLike, level: int = logging.DEBUG):
+        Path(path).parent.mkdir(parents=True, exist_ok=True)
+        return self._add(logging.FileHandler(str(path)), level)
 
     def add_stdout(self, level: int = logging.INFO):
         return self._add(logging.StreamHandler(), level)
@@ -42,15 +44,6 @@ class BasicFlexLogger:
         handler.setFormatter(self._formatter)
         self._underlying.addHandler(handler)
         return self
-
-    def _make_dirs(self, output_dir: str) -> None:
-        # note that we can't import from pocketutils.files (common shouldn't depend on files)
-        if not os.path.exists(output_dir):
-            os.makedirs(output_dir)
-        elif not os.path.isdir(output_dir):
-            raise DirDoesNotExistError(
-                "{} already exists and is not a directory".format(output_dir), path=output_dir,
-            )
 
 
 __all__ = ["BasicFlexLogger"]

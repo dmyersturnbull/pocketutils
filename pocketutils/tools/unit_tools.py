@@ -18,10 +18,12 @@ class UnitTools(BaseTools):
         Returns a pretty string from a difference in time in seconds.
         Rounds hours and minutes to 2 decimal places, and seconds to 1.
         Ex: delta_time_to_str(313) == 5.22min
-        :param delta_sec: The time in seconds
-        :param space: Space char between digits and units;
+            delta_sec: The time in seconds
+            space: Space char between digits and units;
                 good choices are empty, ASCII space, Chars.narrownbsp, Chars.thinspace, and Chars.nbsp.
-        :return: A string with units 'hr', 'min', or 's'
+
+        Returns:
+            A string with units 'hr', 'min', or 's'
         """
         if abs(delta_sec) > 60 * 60 * 3:
             return (
@@ -41,10 +43,14 @@ class UnitTools(BaseTools):
             - 10:15:33     if < 1 day
             - 5d:10:15:33  if > 1 day
         Prepends a minus sign (−) if negative.
-        :param ms: The milliseconds
-        :param space: Space char between digits and 'ms' or 'd' for day (if used);
-        good choices are empty, ASCII space, Chars.narrownbsp, Chars.thinspace, and Chars.nbsp.
-        :return: A string of one of the formats above
+
+        Args:
+            ms: The milliseconds
+            space: Space char between digits and 'ms' or 'd' for day (if used);
+                   good choices are empty, ASCII space, Chars.narrownbsp, Chars.thinspace, and Chars.nbsp.
+
+        Returns:
+            A string of one of the formats above
         """
         is_neg = ms < 0
         ms = abs(int(ms))
@@ -76,9 +82,13 @@ class UnitTools(BaseTools):
     def round_to_sigfigs(cls, num: SupportsFloat, sig_figs: int) -> int:
         """
         Round to specified number of sigfigs.
-        :param num: A Python or Numpy float or something that supports __float__
-        :param sig_figs: The number of significant figures, non-negative
-        :return: A Python integer
+
+        Args:
+            num: A Python or Numpy float or something that supports __float__
+            sig_figs: The number of significant figures, non-negative
+
+        Returns:
+            A Python integer
         """
         if sig_figs < 0:
             raise OutOfRangeError("sig_figs {} is negative".format(sig_figs), minimum=0)
@@ -100,13 +110,17 @@ class UnitTools(BaseTools):
         """
         Returns a dose with units, with the units scaled as needed.
         Can handle millimolar, micromolar, nanomolar, and picomolar.
-        :param use_sigfigs: If True, rounds to a number of significant figures; otherwise round to decimal places
-        :param micromolar_dose: The dose in micromolar
-        :param n_sigfigs: For rounding; no rounding if None
-        :param adjust_units: If False, will always use micromolar
-        :param space: Space char between digits and units;
+
+        Args:
+            use_sigfigs: If True, rounds to a number of significant figures; otherwise round to decimal places
+            micromolar_dose: The dose in micromolar
+            n_sigfigs: For rounding; no rounding if None
+            adjust_units: If False, will always use micromolar
+            space: Space char between digits and units;
         good choices are empty, ASCII space, Chars.narrownbsp, Chars.thinspace, and Chars.nbsp.
-        :return: The dose with a suffix of µM, mM, nM, or mM
+
+        Returns:
+            The dose with a suffix of µM, mM, nM, or mM
         """
         d = micromolar_dose
         m = abs(d)

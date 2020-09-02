@@ -7,15 +7,16 @@ from copy import deepcopy
 class LogFormatBuilder:
     """
     Builder for those of us who hate the Python logging Formatter syntax and can't remember the options.
-    Example usage:
-    formatter = (
-        LoggingFormatterBuilder()
-        .level_name_fixed_width()
-        .asc_time()
-        .thread_name(left=' [', right=':')
-        .line_num(left='', right=']')
-        .message(left=': ')
-    ).build()
+
+    Example:
+        >>> formatter = (
+        >>>     LogFormatBuilder()
+        >>>     .level_name_fixed_width()
+        >>>     .asc_time()
+        >>>     .thread_name(left=' [', right=':')
+        >>>     .line_num(left='', right=']')
+        >>>     .message(left=': ')
+        >>> ).build()
     """
 
     _s = None
@@ -79,14 +80,12 @@ class LogFormatBuilder:
 
 class PrettyRecordFactory:
     """
-    A `logging` formatter
+    A ``logging`` formatter
     Makes beautiful aligned log output.
 
-    To create:
-    ```
+    Example:
         logger = logging.getLogger('myproject')
         log_factory = KaleRecordFactory(7, 13, 5).modifying(logger)
-    ```
 
     For example:
         [20191228:14:20:06] kale⟩    datasets      :77    INFO    | Downloading QC-DR...
@@ -142,11 +141,15 @@ class PrettyRecordFactory:
     def formatter(self) -> logging.Formatter:
         return logging.Formatter(self.format, self.time_format)
 
-    def modifying(self, ell):
+    def modifying(self, ell) -> PrettyRecordFactory:
         """
         Set the log factory of a logger to this, and set all of its (current) handlers to use it.
-        :param ell: A logger (ex logging.getLogger(''))
-        :return: This instance
+
+        Args:
+            ell: A logger (ex logging.getLogger(''))
+
+        Returns:
+            This instance
         """
         logging.setLogRecordFactory(self.factory)
         for handler in ell.handlers:

@@ -85,9 +85,11 @@ class J:
     def styled(cls, text: str, *main, **css: str) -> None:
         """
         Display a span element styled with free CSS arguments.
-        :param text: The text to include in an HTML span
-        :param main: Any free text of CSS, or a list of parameters
-        :param css: Any free dict of CSS style paramters; spaces and underscores in the keys will be replaced with hypens
+
+        Args:
+            text: The text to include in an HTML span
+            main: Any free text of CSS, or a list of parameters
+            css: Any free dict of CSS style parameters; spaces and underscores in the keys will be replaced with hypens
         """
         main = ";".join(main)
         css = ";".join(
@@ -121,8 +123,8 @@ class JFonts:
     def mine(cls) -> None:
         """
         Shows all typefaces currently in the matplotlib rcParams.
-        Each typeface is renderered as itself. Ex; will show Helvetica in Helvetica.
-        Each font family (`plt.rcParams['font.family']`) is shown separately, with all its fonts underneath.
+        Each typeface is rendered as itself. Ex; will show Helvetica in Helvetica.
+        Each font family (``plt.rcParams['font.family']``) is shown separately, with all its fonts underneath.
         """
         import matplotlib.pyplot as plt
 
@@ -147,7 +149,9 @@ class JFonts:
         Shows an HTML table of all typefaces rendered as themselves. Ex; will show Helvetica in Helvetica.
         Displays as an HTML table with `n_cols`.
         Thanks to http://jonathansoma.com/lede/data-studio/matplotlib/list-all-fonts-available-in-matplotlib-plus-samples/.
-        :param n_cols:
+
+        Args:
+            n_cols: Number of columns in the created HTML table
         """
         from matplotlib.font_manager import fontManager
 

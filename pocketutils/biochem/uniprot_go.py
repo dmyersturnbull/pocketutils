@@ -24,6 +24,7 @@ class FlatGoTerm:
     """
     A Gene Ontology term.
     Not to be confused with GOTerm in goatools: obo_parser.GOTerm
+
     Attributes:
         ID (str); ex: GO:0005737
         kind (str: 'P'==process, 'C'==component, 'F'==function)
@@ -66,7 +67,9 @@ class UniprotGoTerms:
     def fetch_uniprot_data(self, uniprot_ids: Union[str, List[str]]) -> List[Mapping[str, str]]:
         """
         Fetches a list of dicts of UniProt metadata, one per UniProt ID.
-        Raises a ValueError if a UniProt ID wasn't found.
+
+        Raises:
+            ValueError: If a UniProt ID wasn't found.
         """
         if isinstance(uniprot_ids, str):  # not a list type
             uniprot_ids = [uniprot_ids]
@@ -95,7 +98,9 @@ class UniprotGoTerms:
 
 class GoTermsAtLevel:
     """
-    Example: go_term_ancestors_for_uniprot_id_as_df('P42681', 2)
+    Gene ontology terms organized by level.
+    Example:
+        >>> go_term_ancestors_for_uniprot_id_as_df('P42681', 2)
     """
 
     def __init__(self) -> None:
@@ -127,8 +132,9 @@ class GoTermsAtLevel:
         From a GO term in the form 'GO:0007344', returns a set of ancestor GOTerm objects at the specified level.
         The traversal is restricted to is-a relationships.
         Note that the level is the minimum number of steps to the root.
-            Arguments:
-                level: starting at 0 (root)
+
+        Args:
+            level: starting at 0 (root)
         """
 
         def traverse_up(term, buildup_set, level):
@@ -149,9 +155,10 @@ class GoTermsAtLevel:
         Gets the GO terms associated with a UniProt ID and returns a set of their ancestors at the specified level.
         The traversal is restricted to is-a relationships.
         Note that the level is the minimum number of steps to the root.
-            Arguments:
-                level: starting at 0 (root)
-                kinds_allowed: a set containing any combination of 'P', 'F', or 'C'
+
+        Args:
+            level: starting at 0 (root)
+            kinds_allowed: a set containing any combination of 'P', 'F', or 'C'
         """
         if kinds_allowed is None:
             kinds_allowed = ["P", "F", "C"]

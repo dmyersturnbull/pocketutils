@@ -12,10 +12,11 @@ class PathTools(BaseTools):
     @classmethod
     def updir(cls, n: int, *parts) -> Path:
         """
-        Get an absolute path `n` parents from `os.getcwd()`.
-        Ex: In dir '/home/john/dir_a/dir_b':
-            `updir(2, 'dir1', 'dir2')  # returns Path('/home/john/dir1/dir2')`
+        Get an absolute path ``n`` parents from ``os.getcwd()``.
         Does not sanitize.
+
+        Ex: In dir '/home/john/dir_a/dir_b':
+            updir(2, 'dir1', 'dir2')  # returns Path('/home/john/dir1/dir2')
         """
         base = Path(os.getcwd())
         for _ in range(n):
@@ -86,10 +87,6 @@ class PathTools(BaseTools):
         Platform-dependent.
         A corner case is drive letters in Linux:
         "C:\\Users\\john" is converted to '/C:/users/john' if os.name=='posix'
-        :param path:
-        :param is_file:
-        :param show_warnings:
-        :return:
         """
         # the idea is to sanitize for both Windows and Posix, regardless of the platform in use
         # the sanitization should be as uniform as possible for both platforms
@@ -150,11 +147,15 @@ class PathTools(BaseTools):
         The behavior is platform-independent -- os, sys, and pathlib are not used.
         For ex, calling sanitize_path_node(r'C:\') returns r'C:\' on both Windows and Linux
         If you want to sanitize a whole path, see sanitize_path instead.
-        :param bit: The node
-        :param is_file: False for directories, True otherwise, None if unknown
-        :param is_root_or_drive: True if known to be the root ('/') or a drive ('C:\'), None if unknown
-        :param include_fat: Also make compatible with FAT filesystems
-        :return: A string
+
+        Args:
+            bit: The node
+            is_file: False for directories, True otherwise, None if unknown
+            is_root_or_drive: True if known to be the root ('/') or a drive ('C:\'), None if unknown
+            include_fat: Also make compatible with FAT filesystems
+
+        Returns:
+            A string
         """
         # since is_file and is_root_or_drive are both Optional[bool], let's be explicit and use 'is' for clarity
         if is_file is True and is_root_or_drive is True:

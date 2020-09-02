@@ -29,8 +29,10 @@ class ErrorUtils:
         """
         Decorator.
         Add a __init__ that calls the superclass and takes any argument in names.
-        The __init__ will set: (self.name =value if name is passed else None) for all name in names.
-        :param names: A map from str to Type
+        The __init__ will set: (self.name=value if name is passed else None) for all name in names.
+
+        Args:
+            names: A map from str to Type
         """
         assert not any([s == "info" or s.startswith("__") and s.endswith("__") for s in names])
 

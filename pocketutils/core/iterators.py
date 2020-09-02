@@ -68,9 +68,11 @@ class SeqIterator(SizedIterator, Generic[IX]):
 class TieredIterator(SeqIterator):
     """
     A SizedIterator that iterates over every tuples of combination from multiple sequences.
-    Ex:
-    it = TieredIterator([[1, 2, 3], [5, 6]])
-    list(it)  # [(1,5), (1,6), (2,5), (2,6), (3,5), (3,6)]
+
+    Example:
+        >>> it = TieredIterator([[1, 2, 3], [5, 6]])
+        >>> list(it)
+        [(1,5), (1,6), (2,5), (2,6), (3,5), (3,6)]
     """
 
     # noinspection PyMissingConstructor

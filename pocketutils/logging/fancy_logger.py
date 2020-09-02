@@ -112,13 +112,13 @@ class AdvancedLogger(logging.Logger):
         - MINOR:  Information that is less important than INFO but isn't just for debugging
         - TRACE:  Low-level debug info
 
-    To create:
-    ```
-    LogLevel.initalize()
-    logger = KaleLogger.create('myproject')
-    log_factory = KaleRecordFactory(7, 13, 5).modifying(logger)
-    logger.setLevel('INFO')   # good start; can be changed
-    ```
+    Example:
+        Using ``AdvancedLogger`` with fancy formatting::
+
+            LogLevel.initalize()
+            logger = AdvancedLogger.create('myproject')
+            log_factory = Log(7, 13, 5).modifying(logger)
+            logger.setLevel('INFO')   # good start; can be changed
     """
 
     @contextmanager
@@ -128,8 +128,10 @@ class AdvancedLogger(logging.Logger):
         """
         Temporarily suppresses logging from kale, and globally if `universe=True`.
         Yields as a context manager.
-        :param suppress: If False, ignores (useful to avoid if-else)
-        :param universe: Disable all logging strictly below critical. Calls `logging.disable`
+
+        Args:
+            suppress: If False, ignores (useful to avoid if-else)
+            universe: Disable all logging strictly below critical. Calls `logging.disable`
         """
         if suppress:
             self._suppressed = True
@@ -151,9 +153,11 @@ class AdvancedLogger(logging.Logger):
         """
         Temporarily suppress logging for another logger name.
         Yields as a context manager.
-        :param name: The name of the other logger, such as 'pandas'
-        :param suppress: If False, ignores (useful to avoid if-else)
-        :param below: Suppress only logging with levels strictly lower than this
+
+        Args:
+            name: The name of the other logger, such as 'pandas'
+            suppress: If False, ignores (useful to avoid if-else)
+            below: Suppress only logging with levels strictly lower than this
         """
         below = LogLevel.get_int(below)
         ell = logging.getLogger(name)

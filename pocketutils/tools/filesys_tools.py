@@ -108,8 +108,12 @@ class FilesysTools(BaseTools):
     def delete_surefire(cls, path: PathLike) -> Optional[Exception]:
         """
         Deletes files or directories cross-platform, but working around multiple issues in Windows.
-        :return Returns None, or an Exception for minor warnings
-        :raises IOError If it can't delete
+
+        Returns:
+            None, or an Exception for minor warnings
+
+        Raises:
+            IOError: If it can't delete
         """
         # we need this because of Windows
         path = str(path)
@@ -169,8 +173,12 @@ class FilesysTools(BaseTools):
         Reads a .properties file, which is a list of lines with key=value pairs (with an equals sign).
         Lines beginning with # are ignored.
         Each line must contain exactly 1 equals sign.
-        :param path: Read the file at this local path
-        :return: A dict mapping keys to values, both with surrounding whitespace stripped
+
+        Args:
+            path: Read the file at this local path
+
+        Returns:
+            A dict mapping keys to values, both with surrounding whitespace stripped
         """
         dct = {}
         with FilesysTools.open_file(path, "r") as f:
@@ -263,8 +271,6 @@ class FilesysTools(BaseTools):
         Reads a variety of simple formats based on filename extension, including '.txt', 'csv', .xml', '.properties', '.json'.
         Also reads '.data' (binary), '.lines' (text lines).
         And formatted lists: '.strings', '.floats', and '.ints' (ex: "[1, 2, 3]").
-        :param path:
-        :return:
         """
         path = Path(path)
         ext = path.suffix.lstrip(".")
@@ -341,8 +347,6 @@ class FilesysTools(BaseTools):
         Note that the default encoding on open() is not UTF on Windows.
         Raises specific informative errors.
         Cannot set overwrite in append mode.
-        :param path:
-        :param mode: See `OpenMode`
         """
         path = Path(path)
         mode = OpenMode(mode)
@@ -363,9 +367,13 @@ class FilesysTools(BaseTools):
         Just writes an iterable line-by-line to a file, using '\n'.
         Makes the parent directory if needed.
         Checks that the iterable is a "true iterable" (not a string or bytes).
-        :return The number of lines written (the same as len(iterable) if iterable has a length)
-        :raises FileExistsError If the path exists and append is False
-        :raises PathIsNotFileError If append is True, and the path exists but is not a file
+
+        Returns:
+            The number of lines written (the same as len(iterable) if iterable has a length)
+
+        Raises:
+            FileExistsError: If the path exists and append is False
+            PathIsNotFileError: If append is True, and the path exists but is not a file
         """
         path = Path(path)
         mode = OpenMode(mode)
@@ -392,7 +400,7 @@ class FilesysTools(BaseTools):
     @classmethod
     def hash_hex(cls, x: SupportsBytes, algorithm: str) -> str:
         """
-        Return the hex-encoded hash of the object (converted to bytes).
+        Returns the hex-encoded hash of the object (converted to bytes).
         """
         m = hashlib.new(algorithm)
         m.update(bytes(x))
@@ -428,10 +436,6 @@ class FilesysTools(BaseTools):
     ) -> Generator[Writeable, None, None]:
         """
         Simple wrapper around tempfile.TemporaryFile, tempfile.NamedTemporaryFile, and tempfile.SpooledTemporaryFile.
-        :param path:
-        :param spooled:
-        :param kwargs:
-        :return:
         """
         if spooled:
             with tempfile.SpooledTemporaryFile(**kwargs) as x:

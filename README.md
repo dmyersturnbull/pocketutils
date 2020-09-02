@@ -14,7 +14,7 @@
 Adorable little Python functions for you to copy or import.
 
 `pip install pocketutils`. To get the optional packages, use:
-`pip install pocketutils[biochem,db,misc,notebooks,plotting]`
+`pip install pocketutils[tools,biochem,misc,notebooks,plotting]`
 
 Among the more useful are `zip_strict`, `frozenlist`, `SmartEnum`, `is_lambda`, `strip_paired_brackets`,
 `sanitize_path_node`, `TomlData`, `PrettyRecordFactory`, `parallel_with_cursor`, `groupby_parallel`,

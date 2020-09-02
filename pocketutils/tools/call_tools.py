@@ -42,8 +42,8 @@ class CallTools(BaseTools):
     def call_cmd(cls, *cmd: str, **kwargs) -> subprocess.CompletedProcess:
         """
         Calls subprocess.run with capture_output=True, and logs a debug statement with the command beforehand.
-        :param cmd: A sequence to call
-        :param kwargs: Passed to subprocess.run
+            cmd: A sequence to call
+            kwargs: Passed to subprocess.run
         """
         logger.debug("Calling '{}'".format(" ".join(cmd)))
         return subprocess.run(*[str(c) for c in cmd], capture_output=True, check=True, **kwargs)
@@ -53,7 +53,7 @@ class CallTools(BaseTools):
         cls, *cmd: str, log_fn: Callable[[str], None] = logger.error, **kwargs
     ) -> subprocess.CompletedProcess:
         """
-        Like `call_cmd`, but sets `text=True` and `encoding=utf8`,
+        Like ``call_cmd``, but sets ``text=True`` and ``encoding=utf8``,
         and strips stdout and stderr of start/end whitespace before returning.
         Can also log formatted stdout and stderr on failure.
         Otherwise, logs the output, unformatted and unstripped, as TRACE
@@ -87,9 +87,11 @@ class CallTools(BaseTools):
     ) -> None:
         """
         Outputs some formatted text describing the error with its full stdout and stderr.
-        :param e: The error
-        :param log_fn: For example, `logger.warning`
-        :param wrap_length: The max number of characters of the header and footer around the stdout and stderr
+
+        Args:
+            e: The error
+            log_fn: For example, `logger.warning`
+            wrap_length: The max number of characters of the header and footer around the stdout and stderr
                 The output text is wrapped to this value - 4
                 The full line can be longer than this because the text of the command is not wrapped
         """
@@ -127,8 +129,12 @@ class CallTools(BaseTools):
         """
         Processes stdout and stderr on separate threads, streamed -- can avoid filling a stdout or stderr buffer.
         Calls an external command, waits, and throws a ExternalCommandFailed for nonzero exit codes.
-        Returns (stdout, stderr).
-        :raises ExternalCommandError
+
+        Returns:
+            (stdout, stderr)
+
+        Raises:
+            ExternalCommandError:
         """
         if log_callback is None:
             log_callback = cls._smart_log_callback

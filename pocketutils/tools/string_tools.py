@@ -57,14 +57,18 @@ class StringTools(BaseTools):
     @classmethod
     def truncate(cls, s: Optional[str], n: int, always_dots: bool = False) -> Optional[str]:
         """
-        Returns a string if it has `n` or fewer characters;
-        otherwise truncates to length `n-1` and appends `…` (UTF character).
-        If `s` is None and `always_dots` is True, returns `n` copies of `.` (as a string).
-        If `s` is None otherwise, returns None.
-        :param s: The string
-        :param n: The maximum length, inclusive
-        :param always_dots: Use dots instead of returning None; see above
-        :return: A string or None
+        Returns a string if it has ``n`` or fewer characters;
+        otherwise truncates to length ``n-1`` and appends ``…`` (UTF character).
+        If ``s`` is None and ``always_dots`` is True, returns ``n`` copies of ``.`` (as a string).
+        If ``s`` is None otherwise, returns None.
+
+        Args:
+            s: The string
+            n: The maximum length, inclusive
+            always_dots: Use dots instead of returning None; see above
+
+        Returns:
+            A string or None
         """
         if s is None and always_dots:
             return "…" * n
@@ -131,7 +135,7 @@ class StringTools(BaseTools):
     def strip_off_start(cls, s: str, pre: str):
         """
         Strips the full string `pre` from the start of `str`.
-        See `Tools.strip_off` for more info.
+        See ``Tools.strip_off`` for more info.
         """
         assert isinstance(pre, str), "{} is not a string".format(pre)
         if s.startswith(pre):
@@ -161,7 +165,7 @@ class StringTools(BaseTools):
     @classmethod
     def strip_ends(cls, s: str, prefix: str, suffix: str) -> str:
         """
-        Strip a substring from the start, and another substring from the end, of a string (at most 1 occurrence each).
+        Strips a substring from the start, and another substring from the end, of a string (at most 1 occurrence each).
         """
         return StringTools.strip_off_start(StringTools.strip_off_end(s, suffix), prefix)
 
@@ -196,8 +200,8 @@ class StringTools(BaseTools):
     @classmethod
     def strip_brackets(cls, text: str) -> str:
         """
-        Strip any and all pairs of brackets from start and end of a string, but only if they're paired.
-        See `strip_paired`
+        Strips any and all pairs of brackets from start and end of a string, but only if they're paired.
+        See ``strip_paired``
         """
         pieces = [
             ("(", ")"),
@@ -217,8 +221,8 @@ class StringTools(BaseTools):
     @classmethod
     def strip_quotes(cls, text: str) -> str:
         """
-        Strip any and all pairs of quotes from start and end of a string, but only if they're paired.
-        See `strip_paired`
+        Strips any and all pairs of quotes from start and end of a string, but only if they're paired.
+        See ``strip_paired``
         """
         pieces = [
             ("`", "`"),
@@ -232,8 +236,8 @@ class StringTools(BaseTools):
     @classmethod
     def strip_brackets_and_quotes(cls, text: str) -> str:
         """
-        Strip any and all pairs of brackets and quotes from start and end of a string, but only if they're paired.
-        See `strip_paired`
+        Strips any and all pairs of brackets and quotes from start and end of a string, but only if they're paired.
+        See ``strip_paired``
         """
         pieces = [
             ("(", ")"),
@@ -258,11 +262,12 @@ class StringTools(BaseTools):
     @classmethod
     def strip_paired(cls, text: str, pieces: Iterable[Tuple[str, str]]) -> str:
         """
-        Strip pairs of (start, end) from the ends of strings. For example:
-        ```
-        Tools.strip_paired('[(abc]', ['()', '[]'])  # returns '(abc'
-        Also see `strip_brackets`
-        ```
+        Strips pairs of (start, end) from the ends of strings.
+
+        Example:
+            >>> StringTools.strip_paired('[(abc]', ['()', '[]'])  # returns '(abc'
+
+        Also see ``strip_brackets``
         """
         if any([a for a in pieces if len(a) != 2]):
             raise ValueError(
@@ -399,10 +404,12 @@ class StringTools(BaseTools):
         NOTE 1: If function is None, returns '⌀'
         NOTE 2: If function does not have __name__, returns prefix + type(function) + <address> + suffix
         NOTE 3: If it's a primitive, returns str(function)
-        :param function: Can be anything, but especially useful for functions
-        :param with_address: Include `@ hex-mem-addr` in the name
-        :param prefix: Prefix to the whole string
-        :param suffix: Suffix to the whole string
+
+        Args:
+            function: Can be anything, but especially useful for functions
+            with_address: Include `@ hex-mem-addr` in the name
+            prefix: Prefix to the whole string
+            suffix: Suffix to the whole string
         """
         if function is None:
             return Chars.null
@@ -506,12 +513,14 @@ class StringTools(BaseTools):
             - StringTools.join([1,2,3])  # "1    2    3"
             - StringTools.join(cars, sep=',', attr='make', prefix="(", suffix=")")`  # "(Ford),(Ford),(BMW)"
 
-        :param seq: Sequence of elements
-        :param sep: Delimiter
-        :param attr: Get this attribute from each element (in `seq`), or use the element itself if None
-        :param prefix: Prefix before each item
-        :param suffix: Suffix after each item
-        :return: A string
+            seq: Sequence of elements
+            sep: Delimiter
+            attr: Get this attribute from each element (in `seq`), or use the element itself if None
+            prefix: Prefix before each item
+            suffix: Suffix after each item
+
+        Returns:
+            A string
         """
         if attr is None:
             return sep.join([prefix + str(s) + suffix for s in seq])
@@ -525,12 +534,15 @@ class StringTools(BaseTools):
         """
         Joins dict elements into a str like 'a=1, b=2, c=3`.
         Won't break with ValueError if the keys or values aren't strs.
-        :param seq: Dict-like, with `items()`
-        :param sep: Delimiter
-        :param eq: Separates a key with its value
-        :param prefix: Prepend before every key
-        :param suffix: Append after every value
-        :return: A string
+
+        Args:
+            seq: Dict-like, with ``items()``
+            eq: Separates a key with its value
+            prefix: Prepend before every key
+            suffix: Append after every value
+
+        Returns:
+            A string
         """
         return sep.join([prefix + str(k) + eq + str(v) + suffix for k, v in seq.items()])
 

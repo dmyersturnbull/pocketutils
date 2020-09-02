@@ -38,6 +38,7 @@ dist/
 eggs/
 sdist/
 docs/_build
+docs/autoapi/
 cython_debug/
 
 # Hidden files that are definitely unwanted (redundant)

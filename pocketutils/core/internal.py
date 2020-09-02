@@ -70,9 +70,11 @@ class Pretty:
 def nicesize(nbytes: int, space: str = "") -> str:
     """
     Uses IEC 1998 units, such as KiB (1024).
-    :param nbytes: Number of bytes
-    :param space: Separator between digits and units
-    :return: Formatted string
+        nbytes: Number of bytes
+        space: Separator between digits and units
+
+        Returns:
+            Formatted string
     """
     data = {
         "PiB": 1024 ** 5,

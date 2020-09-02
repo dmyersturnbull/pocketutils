@@ -54,10 +54,12 @@ class ConsoleTools(BaseTools):
     ) -> bool:
         """
         Asks for a confirmation from the user using the bulletin input().
-        :param msg: If None defaults to 'Confirm? [yes/no]'
-        :param input_fn: Function to get the user input (its argument is always '')
-        :param writer: Print using this function (should not print a newline by default)
-        :return: True if the user answered 'yes'; False otherwise
+            msg: If None defaults to 'Confirm? [yes/no]'
+            input_fn: Function to get the user input (its argument is always '')
+            writer: Print using this function (should not print a newline by default)
+
+        Returns:
+            True if the user answered 'yes'; False otherwise
         """
         if msg is None:
             msg = "Confirm? [yes/no]"
@@ -81,8 +83,8 @@ class ConsoleTools(BaseTools):
         """
         Writes control characters to stdout to delete the previous line and move the curser up.
         This only works in a shell.
-        :param n: The number of lines to erase
-        :param writer Write here
+            n: The number of lines to erase
+            writer Write here
         """
         for _ in range(n):
             writer(ConsoleTools.CURSOR_UP_ONE)

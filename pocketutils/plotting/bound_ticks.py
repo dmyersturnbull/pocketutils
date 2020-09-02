@@ -16,10 +16,13 @@ class AxisTicks:
         ceiling: Optional[float] = None,
         rounding_digits: Optional[float] = None,
     ) -> None:
-        """Calculates new bounds for an axis based on the ticks.
-        :param  floor: If None, sets the minimum bound based on the data
-        :param  ceiling: If None, sets the maximum bound based on the data
-        :param  rounding_digits: Minor argument that rounds the final bounds to some number of digits
+        """
+        Calculates new bounds for an axis based on the ticks.
+
+        Args:
+             floor: If None, sets the minimum bound based on the data
+             ceiling: If None, sets the maximum bound based on the data
+             rounding_digits: Minor argument that rounds the final bounds to some number of digits
         """
         self.rounding_digits = rounding_digits
         self.floor = floor
@@ -33,7 +36,7 @@ class AxisTicks:
 
     def adjusted(self, ticks: np.array, bottom: float, top: float) -> typing.Tuple[float, float]:
         if len(ticks) < 2:
-            return (bottom, top)
+            return bottom, top
         floor = ticks[0] if self.floor is None else self.floor
         ceiling = ticks[-1] if self.ceiling is None else self.ceiling
         return (
@@ -48,11 +51,17 @@ class TickBounder:
     Pass AxisTicks as the x_ticks and y_ticks constructor arguments to perform this.
 
     This example will bound maximum width and height of the Axes to the smallest tick that fits the data,
-    and will set the minimum width and height to 0:
+    and will set the minimum width and height to 0.
+
+    Example:
+        For example::
+
             ticker = TickBounder(x_ticks = AxisTicks(floor=0), y_ticks = AxisTicks(floor=0))
             ticker.adjust(ax)
-    You can see the proposed new bound without changing the Axes using:
-        ticker.adjusted(ax)  # returns a ((x0, x1), (y0, y1)) tuple
+
+        You can see the proposed new bound without changing the Axes using::
+
+            ticker.adjusted(ax)  # returns a ((x0, x1), (y0, y1)) tuple
     """
 
     def __init__(

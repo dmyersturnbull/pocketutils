@@ -38,10 +38,16 @@ class ProgramTools(BaseTools):
     @classmethod
     def git_description(cls, git_repo_dir: PathLike = ".") -> GitDescription:
         """
-        Runs `git describe` and parses the output.
-        :param git_repo_dir: Path to the repository
-        :return: A `GitDescription` instance, with fields text, tag, commits, hash, is_dirty, and is_broken
-        :raises: CalledProcessError
+        Runs ``git describe`` and parses the output.
+
+        Args:
+            git_repo_dir: Path to the repository
+
+        Returns:
+            A ``GitDescription`` instance, with fields text, tag, commits, hash, is_dirty, and is_broken
+
+        Raises:
+            CalledProcessError:
         """
         x = subprocess.run(
             "git describe --long --dirty --broken --abbrev=40 --tags".split(" "),

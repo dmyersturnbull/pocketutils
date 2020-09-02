@@ -33,9 +33,9 @@ class ColorMessages:
     ):
         """
         Constructs a new environment for colored console messages.
-        :param color_map: A map from level to colors in colorama to override ColorMessages.DEFAULT_COLOR_MAP
-        :param log_fn: If set, additionally logs every message with this function
-        :param kwargs: Arguments 'top', 'bottom', 'sides', and 'line_length'
+            color_map: A map from level to colors in colorama to override ColorMessages.DEFAULT_COLOR_MAP
+            log_fn: If set, additionally logs every message with this function
+            kwargs: Arguments 'top', 'bottom', 'sides', and 'line_length'
         """
         colorama.init(autoreset=True)
         _cmap = ColorMessages.default_color_map()

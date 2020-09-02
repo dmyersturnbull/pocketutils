@@ -9,12 +9,11 @@ class GlobalWarningUtils:
     """
     Convenient API to add warning filters.
     Also provides ``init``, which sets a less-verbose warning formatter.
-    Ex:
-    ```
-        GlobalWarningUtils.init()\
+
+    Example:
+        >>> GlobalWarningUtils.init()\
             .filter_common_numeric()\
             .substring_once('Number of features differ')
-    ```
     """
 
     def __init__(self):
@@ -56,7 +55,9 @@ class GlobalWarningUtils:
     def filter_common_numeric(cls):
         """
         Adds filters for common unavoidable warnings from numpy, pandas, scikit-learn, etc.
-        :return: self
+
+        Returns:
+            self
         """
         return (
             cls.substring_never("libuv only supports millisecond timer resolution")

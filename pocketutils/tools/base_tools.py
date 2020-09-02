@@ -49,12 +49,18 @@ class BaseTools:
         """
         Returns either the SINGLE (ONLY) UNIQUE ITEM in the sequence or raises an exception.
         Each item must have __hash__ defined on it.
-        :param sequence: A list of any items (untyped)
-        :param condition: If nonnull, consider only those matching this condition
-        :param name: Just a name for the collection to use in an error message
-        :return: The first item the sequence.
-        :raises: LookupError If the sequence is empty
-        :raises: MultipleMatchesError If there is more than one unique item.
+
+        Args:
+            sequence: A list of any items (untyped)
+            condition: If nonnull, consider only those matching this condition
+            name: Just a name for the collection to use in an error message
+
+        Returns:
+            The first item the sequence.
+
+        Raises:
+            LookupError If the sequence is empty
+            MultipleMatchesError If there is more than one unique item.
         """
 
         def _only(sq):
@@ -86,7 +92,15 @@ class BaseTools:
     def zip_strict(cls, *args: Iterable[Any]) -> Generator[Tuple[Any], None, None]:
         """
         Same as zip(), but raises an IndexError if the lengths don't match.
-        :raises: LengthMismatchError
+
+        Args:
+            args: Same as with ``zip``
+
+        Yields:
+            Tuples corresponding to the input items
+
+        Raises:
+            LengthMismatchError: If the lengths of the input iterators don't match
         """
         # we need to catch these cases before or they'll fail
         # in particular, 1 element would fail with a LengthMismatchError
@@ -120,9 +134,17 @@ class BaseTools:
     @classmethod
     def zip_list(cls, *args) -> List[Tuple[Any]]:
         """
-        Same as `zip_strict`, but converts to a list and can provide a more detailed error message.
+        Same as ``zip_strict``, but converts to a list and can provide a more detailed error message.
         Zips two sequences into a list of tuples and raises an IndexError if the lengths don't match.
-        :raises: LengthMismatchError
+
+        Args:
+            args: Same as with ``zip``
+
+        Yields:
+            Tuples corresponding to the input items
+
+        Raises:
+            LengthMismatchError: If the lengths of the input iterators don't match
         """
         try:
             return list(cls.zip_strict(*args))
@@ -145,7 +167,8 @@ class BaseTools:
     @classmethod
     def to_true_iterable(cls, s: Any) -> Iterable[Any]:
         """
-        See BaseTools.is_true_iterable.
+        See ``BaseTools.is_true_iterable``.
+
         Ex:
             - to_true_iterable('abc')         # ['abc']
             - to_true_iterable(['ab', 'cd')]  # ['ab', 'cd']
@@ -188,18 +211,27 @@ class BaseTools:
     @classmethod
     def look(cls, obj: Y, attrs: Union[str, Iterable[str], Callable[[Y], Z]]) -> Optional[Z]:
         """
-        Returns the value of a chain of attributes on object `obj`,
+        Returns the value of a chain of attributes on object ``obj``,
         or None any object in that chain is None or lacks the next attribute.
-        For example::
-            CommonTools.look(kitten), 'breed.name')  # either None or a string
-        :param obj: Any object
-        :param attrs: One of:
-                - A string in the form attr1.attr2, translating to `obj.attr1`
+
+        Example:
+            Get a kitten's breed::
+
+            BaseTools.look(kitten), 'breed.name')  # either None or a string
+
+        Args:
+            obj: Any object
+            attrs: One of:
+                - A string in the form attr1.attr2, translating to ``obj.attr1``
                 - An iterable of strings of the attributes
-                - A function that maps `obj` to its output;
-                equivalent to calling `attrs(obj)` but returning None on `AttributeError`.
-        :return: Either None or the type of the attribute
-        :raises: TypeError
+                - A function that maps ``obj`` to its output;
+                   equivalent to calling `attrs(obj)` but returning None on ``AttributeError``.
+
+        Returns:
+            Either None or the type of the attribute
+
+        Raises:
+            TypeError:
         """
         return _look(obj, attrs)
 
@@ -216,7 +248,9 @@ class BaseTools:
             - If another str or int, try using that logger level (raises an error if invalid)
             - If callable, returns it
             - If it has a callable method called 'write', uses that
-        :return: A function of the log message that returns None
+
+        Returns:
+            A function of the log message that returns None
         """
         if log is None:
             return logger.info
@@ -243,6 +277,3 @@ class BaseTools:
 
 
 __all__ = ["BaseTools"]
-
-if __name__ == "__main__":
-    print(list(BaseTools.zip_strict([1], [3, 4])))

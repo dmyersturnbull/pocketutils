@@ -2,8 +2,8 @@ from __future__ import annotations
 
 import logging
 from datetime import datetime
-from pathlib import Path, PurePath
-from typing import Any, Callable, Generic, Mapping, Optional, Type, TypeVar, Union
+from pathlib import Path
+from typing import Any, Callable, Optional, Union
 
 from pocketutils.core import LazyWrap, PathLike
 

@@ -14,7 +14,7 @@ class NestedDotDict:
     A thin wrapper around a nested dict to make getting values easier.
     Keys must not contain dots (.), which are reserved for splitting of values.
     This class is especially useful for TOML but also works well for JSON and Python dicts.
-    Also see ``toml_data``. This has some advantages.
+    Also see ``toml_data``. ``NestedDotDict`` has some advantages over it.
     """
 
     @classmethod

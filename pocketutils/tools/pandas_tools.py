@@ -15,7 +15,9 @@ class PandasTools(BaseTools):
     def cfirst(cls, df: pd.DataFrame, cols: Union[str, int, Sequence[str]]) -> pd.DataFrame:
         """
         Moves some columns of a Pandas dataframe to the front, returning a copy.
-        Returns: a copy of the dataframe with col_seq as the first columns
+
+        Returns:
+             A copy of the dataframe with col_seq as the first columns
         """
         if isinstance(cols, str) or isinstance(cols, int):
             cols = [cols]

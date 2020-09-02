@@ -28,7 +28,7 @@ class TissueTable(pd.DataFrame):
         filter_fn: Callable[[pd.DataFrame], pd.DataFrame] = pd.DataFrame.dropna,
     ) -> TissueTable:
         """
-        Get a DataFrame of Human Protein Atlas tissue expression data,
+        Gets a DataFrame of Human Protein Atlas tissue expression data,
         indexed by Gene name and with the 'Gene' and 'Reliability' columns dropped.
         The expression level ('Level') is replaced using this map: {'Not detected': 0, 'Low': 1, 'Medium': 2, 'High': 3}.
         Downloads the file from http://www.proteinatlas.org/download/normal_tissue.tsv.zip

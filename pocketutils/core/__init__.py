@@ -112,15 +112,18 @@ class LazyWrap:
     ) -> Type[LazyWrapped]:
         """
         Creates a new mutable wrapped type.
-        For ex:
-        ```
-        LazyRemoteTime = LazyWrap.new_type('RemoteTime', lambda: urllib...)
-        dt = LazyRemoteTime()  # nothing happens
-        print(dt.get())  # has a value
-        ```
-        :param dtype: The name of the data type, such as 'datetime' if generator=datetime.now
-        :param generator: This is called to (lazily) initialize an instance of the LazyWrapped
-        :return: A new class subclassing LazyWrapped
+
+        Example:
+            >>> LazyRemoteTime = LazyWrap.new_type('RemoteTime', lambda: ...)
+            >>> dt = LazyRemoteTime()  # nothing happens
+            >>> dt.get()  # has a value
+
+        Args:
+            dtype: The name of the data type, such as 'datetime' if generator=datetime.now
+            generator: This is called to (lazily) initialize an instance of the LazyWrapped
+
+        Returns:
+            A new class subclassing LazyWrapped
         """
 
         class X(superclass):
@@ -144,7 +147,7 @@ class SmartEnum(enum.Enum):
     def of(cls, v):
         """
         Returns the member of this enum class from a string with the member's name,
-        case-insentive and stripping whitespace.
+        case-insensitive and stripping whitespace.
         Will return ``v`` if ``v`` is already an instance of this class.
         """
         if isinstance(v, cls):
