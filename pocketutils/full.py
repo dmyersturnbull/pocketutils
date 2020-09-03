@@ -4,7 +4,7 @@ import pandas as pd
 from pocketutils.core import OptRow, SmartEnum, frozenlist
 from pocketutils.core.chars import *
 from pocketutils.core.exceptions import *
-from pocketutils.core.io import *
+from pocketutils.core.input_output import *
 from pocketutils.core.iterators import *
 from pocketutils.tools.call_tools import *
 from pocketutils.tools.common_tools import *

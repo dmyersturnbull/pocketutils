@@ -3,6 +3,15 @@
 Adheres to [Semantic Versioning 2.0](https://semver.org/spec/v2.0.0.html) and
 [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [0.4.0] - unreleased
+
+
+## [0.3.0] - 2020-09-02
+
+### Changed:
+- Moved `core.io` to `core.input_output` to fix namespace conflicts.
+- Made `NestedDotDict` implement `Mapping` and changed its methods
+
 
 ## [0.2.0] - 2020-09-01
 

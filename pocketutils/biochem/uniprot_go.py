@@ -14,7 +14,7 @@ from goatools.obo_parser import (
 from pocketutils.core.exceptions import MultipleMatchesError, StringPatternError
 
 # noinspection PyProtectedMember
-from pocketutils.core.io import silenced
+from pocketutils.core.input_output import silenced
 
 go_pattern = re.compile(r"GO:(\d+); ([CFP]):([\dA-Za-z- ,()]+); ([A-Z]+):([A-Za-z-_]+)\.")
 logger = logging.getLogger("pocketutils")

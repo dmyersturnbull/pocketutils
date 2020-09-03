@@ -9,7 +9,7 @@ from queue import Queue
 from threading import Thread
 from typing import Callable, Generator, Optional, Sequence
 
-from pocketutils.core.io import DevNull
+from pocketutils.core.input_output import DevNull
 from pocketutils.tools.base_tools import BaseTools
 
 logger = logging.getLogger("pocketutils")

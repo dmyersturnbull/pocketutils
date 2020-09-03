@@ -1050,7 +1050,7 @@ python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*"
 
 [[package]]
 name = "traitlets"
-version = "5.0.0"
+version = "5.0.2"
 description = "Traitlets Python configuration system"
 category = "main"
 optional = true
@@ -1798,8 +1798,8 @@ tomlkit = [
     {file = "tomlkit-0.7.0.tar.gz", hash = "sha256:ac57f29693fab3e309ea789252fcce3061e19110085aa31af5446ca749325618"},
 ]
 traitlets = [
-    {file = "traitlets-5.0.0-py3-none-any.whl", hash = "sha256:62a037f12ccb823fb05823afbe35fe0273bc18fa3202d0cf0ea8f24e97e464be"},
-    {file = "traitlets-5.0.0.tar.gz", hash = "sha256:0d9c4005506b306b0a99551e96174b8bedc675c2dd048f92b3bbbb7d86ac93a9"},
+    {file = "traitlets-5.0.2-py3-none-any.whl", hash = "sha256:613da6efe96bdb4288c72dc65bc82c53320994b1702c6803150e0d2b21f83216"},
+    {file = "traitlets-5.0.2.tar.gz", hash = "sha256:4c9a7212db9642056ea4fcd4ba9e18d302eb617daf679f45fd8cb5d19687b640"},
 ]
 typed-ast = [
     {file = "typed_ast-1.4.1-cp35-cp35m-manylinux1_i686.whl", hash = "sha256:73d785a950fc82dd2a25897d525d003f6378d1cb23ab305578394694202a58c3"},

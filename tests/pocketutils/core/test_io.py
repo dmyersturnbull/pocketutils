@@ -2,7 +2,7 @@ from io import StringIO
 
 import pytest
 
-from pocketutils.core.io import *
+from pocketutils.core.input_output import *
 from pocketutils.core.mocks import *
 
 

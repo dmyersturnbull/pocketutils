@@ -2,98 +2,253 @@ from __future__ import annotations
 
 import json
 import pickle
+from copy import copy
 from datetime import date, datetime
-from pathlib import Path
-from typing import Any, Mapping, Optional, Sequence, Union
+from pathlib import Path, PurePath
+from typing import Any, ByteString, Callable, Mapping, Optional, Sequence, Type, TypeVar, Union
+from typing import Tuple as Tup
 
 import tomlkit
 
+PICKLE_PROTOCOL = 5
+T = TypeVar("T")
 
-class NestedDotDict:
+
+class NestedDotDict(Mapping):
     """
     A thin wrapper around a nested dict to make getting values easier.
-    Keys must not contain dots (.), which are reserved for splitting of values.
-    This class is especially useful for TOML but also works well for JSON and Python dicts.
-    Also see ``toml_data``. ``NestedDotDict`` has some advantages over it.
+    This was designed as a wrapper for TOML, but it works more generally too.
+
+    Keys must be strings that do not contain a dot (.).
+    A dot is reserved for splitting values to traverse the tree.
+    For example, ``dotdict["pet.species.name"]``.
+
     """
 
     @classmethod
-    def read_toml(cls, path: Union[Path, str]) -> NestedDotDict:
+    def read_toml(cls, path: Union[PurePath, str]) -> NestedDotDict:
         return NestedDotDict(tomlkit.loads(Path(path).read_text(encoding="utf8")))
 
     @classmethod
-    def read_json(cls, path: Union[Path, str]) -> NestedDotDict:
+    def read_json(cls, path: Union[PurePath, str]) -> NestedDotDict:
         return NestedDotDict(json.loads(Path(path).read_text(encoding="utf8")))
 
     @classmethod
-    def read_pickle(cls, path: Union[Path, str]) -> NestedDotDict:
-        return NestedDotDict(pickle.loads(Path(path).read_bytes(), encoding="utf8"))
+    def read_pickle(cls, path: Union[PurePath, str]) -> NestedDotDict:
+        return NestedDotDict(pickle.loads(Path(path).read_bytes()))
+
+    @classmethod
+    def parse_toml(cls, data: str) -> NestedDotDict:
+        return NestedDotDict(tomlkit.loads(data))
+
+    @classmethod
+    def parse_json(cls, data: str) -> NestedDotDict:
+        return NestedDotDict(json.loads(data))
+
+    @classmethod
+    def parse_pickle(cls, data: ByteString) -> NestedDotDict:
+        if not isinstance(data, bytes):
+            data = bytes(data)
+        return NestedDotDict(pickle.loads(data))
 
     def __init__(self, x: Mapping[str, Any]) -> None:
-        self._x = x
+        """
+        Constructor.
 
-    def write_json(self, path: Union[Path, str]) -> None:
+        Raises:
+            ValueError: If a key (in this dict or a sub-dict) is not a str or contains a dot
+        """
+        bad = [k for k in x if not isinstance(k, str)]
+        if len(bad) > 0:
+            raise ValueError(f"Keys were not strings for these values: {bad}")
+        bad = [k for k in x if "." in k]
+        if len(bad) > 0:
+            raise ValueError(f"Keys contained dots (.) for these values: {bad}")
+        self._x = x
+        # Let's make sure this constructor gets called on subdicts:
+        self.leaves()
+
+    def write_json(self, path: Union[PurePath, str]) -> None:
         Path(path).write_text(json.dumps(self._x), encoding="utf8")
 
-    def write_pickle(self, path: Union[Path, str]) -> None:
-        Path(path).write_bytes(pickle.dumps(self._x, protocol=5))
+    def write_pickle(self, path: Union[PurePath, str]) -> None:
+        Path(path).write_bytes(pickle.dumps(self._x, protocol=PICKLE_PROTOCOL))
+
+    def leaves(self) -> Mapping[str, Any]:
+        """
+        Gets the leaves in this tree.
+
+        Returns:
+            A dict mapping dot-joined keys to their values
+        """
+        mp = {}
+        for key, value in self._x.items():
+            assert len(key) > 0
+            if isinstance(value, dict):
+                mp.update({key + "." + k: v for k, v in NestedDotDict(value).leaves().items()})
+            else:
+                mp[key] = value
+        return mp
 
     def sub(self, items: str) -> NestedDotDict:
-        return NestedDotDict(self.get(items, {}))
+        return NestedDotDict(self[items])
 
-    def date(self, items: str, default: Optional[bool] = None) -> Optional[date]:
-        return self._get_date(self.get(items, default))
+    def exactly(self, items: str, astype: Type[T]) -> T:
+        """
+        Gets the key ``items`` from the dict if it has type ``astype``.
+        Calling ``dotdict.exactly(k, t) is equivalent to calling ``t(dotdict[k])``,
+        but a raised ``TypeError`` will note the key, making this a useful shorthand for the above within a try-except.
 
-    def datetime(self, items: str, default: Optional[bool] = None) -> Optional[datetime]:
-        return self._get_datetime(self.get(items, default))
+        Args:
+            items: The key hierarchy, with a dot (.) as a separator
+            astype: The type, which will be checked using ``isinstance``
 
-    def bool(self, items: str, default: Optional[bool] = None) -> Optional[bool]:
-        return bool(self.get(items, default))
+        Returns:
+            The value in the required type
 
-    def int(self, items: str, default: Optional[int] = None) -> Optional[int]:
-        return int(self.get(items, default))
+        Raises:
+            TypeError: If not ``isinstance(value, astype)``
+        """
+        z = self[items]
+        if not isinstance(z, astype):
+            raise TypeError(f"Value {z} from {items} is a {type(z)}, not {astype}")
+        return z
 
-    def float(self, items: str, default: Optional[float] = None) -> Optional[float]:
-        return float(self.get(items, default))
+    def get_as(
+        self, items: str, astype: Callable[[Any], T], default: Optional[T] = None
+    ) -> Optional[T]:
+        """
+        Gets the value of an *optional* key, or ``default`` if it doesn't exist.
+        Also see ``req_as``.
 
-    def str(self, items: str, default: Optional[str] = None) -> Optional[str]:
-        return self.get(items, default)
+        Args:
+            items: The key hierarchy, with a dot (.) as a separator.
+                   Ex: ``animal.species.name``.
+            astype: Any function that converts the found value to type ``T``.
+                    Can be a ``Type``, such as ``int``.
+                    Despite the annotated type, this function only needs to accept the actual value of the key
+                    as input, not ``Any``.
+            default: Return this value if the key is not found (at any level)
 
-    def path(self, items: str, default: Optional[Path] = None) -> Optional[Path]:
-        return Path(self.get(items, default))
+        Returns:
+            The value of found key in this dot-dict, or ``default``.
 
-    def list(self, items: str) -> list:
-        return self.get(items, [])
+        Raises:
+            ValueError: Likely exception raised if calling ``astype`` fails
 
-    def date_list(self, items: str) -> Sequence[str]:
-        return [self._get_date(s) for s in self.get(items, [])]
+        """
+        x = self.get(items)
+        if x is None:
+            return default
+        if astype is date:
+            return self._to_date(x)
+        if astype is datetime:
+            return self._to_datetime(x)
+        return astype(x)
 
-    def datetime_list(self, items: str) -> Sequence[str]:
-        return [self._get_datetime(s) for s in self.get(items, [])]
+    def req_as(self, items: str, astype: Optional[Callable[[Any], T]]) -> T:
+        """
+        Gets the value of a *required* key.
+        Also see ``get_as`` and ``exactly``.
 
-    def str_list(self, items: str) -> Sequence[str]:
-        return [str(s) for s in self.get(items, [])]
+        Args:
+            items: The key hierarchy, with a dot (.) as a separator.
+                   Ex: ``animal.species.name``.
+            astype: Any function that converts the found value to type ``T``.
+                    Can be a ``Type``, such as ``int``.
+                    Despite the annotated type, this function only needs to accept the actual value of the key
+                    as input, not ``Any``.
 
-    def int_list(self, items: str) -> Sequence[int]:
-        return [int(s) for s in self.get(items, [])]
+        Returns:
+            The value of found key in this dot-dict.
 
-    def float_list(self, items: str) -> Sequence[int]:
-        return [float(s) for s in self.get(items, [])]
+        Raises:
+            KeyError: If the key is not found (at any level).
+            ValueError: Likely exception raised if calling ``astype`` fails
+        """
+        x = self[items]
+        return astype(x)
 
-    def get(self, items: str, default=None):
+    def get_list_as(
+        self, items: str, astype: Callable[[Any], T], default: Optional[Sequence[T]] = None
+    ) -> Optional[Sequence[T]]:
+        """
+        Gets list values from an *optional* key.
+        Note that ``astype`` here converts elements *within* the list, not the whole list.
+        Also see ``req_list_as``.
+
+        Args:
+            items: The key hierarchy, with a dot (.) as a separator. Ex: ``animal.species.name``.
+            astype: Any function that converts the found value to type ``T``. Ex: ``int``.
+            default: Return this value if the key wasn't found
+
+        Returns:
+            ``[astype(v) for v in self[items]]``, or ``default`` if ``items`` was not found.
+
+        Raises:
+            ValueError: Likely exception raised if calling ``astype`` fails
+            TypeError: If the found value is not a (non-``str``) ``Sequence``
+        """
+        x = self.get(items)
+        if x is None:
+            return default
+        if not isinstance(x, Sequence) or isinstance(x, str):
+            raise TypeError(f"Value {x} is not a list for lookup {items}")
+        return [astype(y) for y in x]
+
+    def req_list_as(self, items: str, astype: Optional[Callable[[Any], T]]) -> Sequence[T]:
+        """
+        Gets list values from a *required* key.
+        Note that ``astype`` here converts elements *within* the list, not the whole list.
+        Also see ``get_list_as``.
+
+        Args:
+            items: The key hierarchy, with a dot (.) as a separator. Ex: ``animal.species.name``.
+            astype: Any function that converts the found value to type ``T``. Ex: ``int``.
+
+        Returns:
+            ``[astype(v) for v in self[items]]``
+
+        Raises:
+            ValueError: Likely exception raised if calling ``astype`` fails
+            TypeError: If the found value is not a (non-``str``) ``Sequence``
+            KeyError: If the key was not found (at any level)
+        """
+        x = self[items]
+        if not isinstance(x, Sequence) or isinstance(x, str):
+            raise TypeError(f"Value {x} is not a list for lookup {items}")
+        return [astype(y) for y in x]
+
+    def get(self, items: str, default: Any = None) -> Any:
+        """
+        Gets a value from an optional key.
+        Also see ``__getitem__``.
+        """
+        try:
+            return self[items]
+        except KeyError:
+            return default
+
+    def __getitem__(self, items: str) -> Any:
+        """
+        Gets a value from a required key.
+        Analogous to ``dict.__getitem__``, but this can operate on dot-joined strings.
+
+        **NOTE:** The number of keys for which this returns a value can be different from ``len(self)``.
+
+        Example:
+            >>> d = NestedDotDict(dict(a=dict(b=1)))
+            >>> assert d["a.b"] == 1
+        """
         at = self._x
         for item in items.split("."):
+            if item not in at:
+                raise KeyError(f"{items} not found: {item} does not exist")
             at = at[item]
-        return self._x.get(items, default)
+        return NestedDotDict(at) if isinstance(at, dict) else copy(at)
 
-    def __getitem__(self, items: str):
-        at = self._x
-        for item in items.split("."):
-            at = at[item]
-        return at
-
-    def items(self) -> Mapping[str, Any]:
-        return dict(self._x)
+    def items(self) -> Sequence[Tup[str, Any]]:
+        return list(self._x.items())
 
     def keys(self) -> Sequence[str]:
         return list(self._x.keys())
@@ -101,8 +256,31 @@ class NestedDotDict:
     def values(self) -> Sequence[Any]:
         return list(self._x.values())
 
+    def pretty_str(self) -> str:
+        """
+        Pretty-prints the leaves of this dict using ``json.dumps``.
+
+        Returns:
+            A multi-lined string
+        """
+        return json.dumps(self.leaves(), sort_keys=True, indent=4, ensure_ascii=False,)
+
+    def __len__(self) -> int:
+        """
+        Returns the number of values in this dict.
+        Does **NOT** include nested values.
+        """
+        return len(self._x)
+
+    def __iter__(self):
+        """
+        Iterates over values in this dict.
+        Does **NOT** include nested items.
+        """
+        return iter(self._x)
+
     def __repr__(self):
-        return str(self._x)
+        return repr(self._x)
 
     def __str__(self):
         return str(self._x)
@@ -110,19 +288,23 @@ class NestedDotDict:
     def __eq__(self, other):
         return str(self) == str(other)
 
-    def _get_date(self, s):
+    def _to_date(self, s):
         if isinstance(s, date):
             return s
         elif isinstance(s, str):
-            return tomlkit.date(s)
+            # This is MUCH faster than tomlkit's
+            return date.fromisoformat(s)
         else:
             raise TypeError(f"Invalid type ${type(s)} for {s}")
 
-    def _get_datetime(self, s):
+    def _to_datetime(self, s):
         if isinstance(s, datetime):
             return s
         elif isinstance(s, str):
-            return tomlkit.datetime(s)
+            # This is MUCH faster than tomlkit's
+            if s.count(":") < 2:
+                raise ValueError(f"Datetime {s} does not contain hours, minutes, and seconds")
+            return datetime.fromisoformat(s.upper().replace("Z", "+00:00"))
         else:
             raise TypeError(f"Invalid type ${type(s)} for {s}")
 

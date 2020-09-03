@@ -12,7 +12,7 @@ build-backend = "poetry.masonry.api"
 
 [tool.poetry]
 name = "pocketutils"
-version = "0.2.0"
+version = "0.3.0"
 description = "Adorable little Python code for you to copy or import."
 keywords = ["python", "snippets", "utils", "gists", "bioinformatics"]
 authors = ["Douglas Myers-Turnbull"]
@@ -23,7 +23,7 @@ homepage = "https://github.com/dmyersturnbull/pocketutils"
 repository = "https://github.com/dmyersturnbull/pocketutils"
 documentation = "https://pocketutils.readthedocs.io"
 classifiers = [
-    "Development Status :: 4 - Beta",
+    "Development Status :: 3 - Alpha",
     "Natural Language :: English",
     "Programming Language :: Python :: 3 :: Only",
     "Programming Language :: Python :: 3.7",

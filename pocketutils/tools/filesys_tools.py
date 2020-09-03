@@ -28,7 +28,7 @@ from pocketutils.core.exceptions import (
     ParsingError,
 )
 from pocketutils.core.hasher import *
-from pocketutils.core.io import OpenMode, PathLike, Writeable
+from pocketutils.core.input_output import OpenMode, PathLike, Writeable
 from pocketutils.core.web_resource import *
 from pocketutils.tools.base_tools import BaseTools
 from pocketutils.tools.path_tools import PathTools
