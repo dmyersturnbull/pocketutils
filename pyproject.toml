@@ -12,7 +12,7 @@ build-backend = "poetry.masonry.api"
 
 [tool.poetry]
 name = "pocketutils"
-version = "0.3.0"
+version = "0.3.1"
 description = "Adorable little Python code for you to copy or import."
 keywords = ["python", "snippets", "utils", "gists", "bioinformatics"]
 authors = ["Douglas Myers-Turnbull"]
@@ -88,7 +88,7 @@ hypothesis               = "^5"
 
 [tool.poetry.extras]
 tools      = ["dill", "jsonpickle", "joblib", "numpy", "pandas"]
-plotting   = ["matplotlib"]
+plotting   = ["matplotlib", "numpy", "pandas"]
 notebooks  = ["ipython", "pandas"]
 misc       = ["colorama", "psutil"]
 biochem    = ["goatools", "requests", "uniprot", "numpy", "pandas"]
