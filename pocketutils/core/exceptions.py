@@ -266,6 +266,9 @@ class HashValidationFailedError(ResourceError):
     """The hash of a resource did not validate"""
 
 
+HashValidationError = HashValidationFailedError
+
+
 class IncompatibleDataError(ResourceError):
     """An operation cannot be applied to data with this property value."""
 

@@ -1,9 +1,8 @@
 import enum
 import logging
 from pathlib import Path
-from typing import Callable, Iterable, Mapping, Optional
+from typing import Callable, Iterable, Mapping, Optional, Union
 
-import colorama
 from colorama import Fore, Style
 
 from pocketutils.core import PathLike
@@ -15,6 +14,19 @@ logger = logging.getLogger("pocketutils")
 
 
 class ColorMessages:
+    """
+
+    Example:
+        Like this::
+
+            from pocketutils.misc.messages import MessageLevels
+            from pocketutils.misc.fancy_console import ColorMessages
+            import colorama
+            colorama.init(autoreset=True)
+            messages = ColorMessages()
+            messages.thin(
+    """
+
     @classmethod
     def default_color_map(cls):
         return {
@@ -37,22 +49,28 @@ class ColorMessages:
             log_fn: If set, additionally logs every message with this function
             kwargs: Arguments 'top', 'bottom', 'sides', and 'line_length'
         """
-        colorama.init(autoreset=True)
         _cmap = ColorMessages.default_color_map()
-        _cmap.update(color_map)
-        assert set(_cmap.keys()) == set(
-            MsgLevel.__members__.keys()
-        ), "Color map {} must match levels {}".format(_cmap, MsgLevel.__members__)
+        if color_map is not None:
+            _cmap.update(color_map)
+        # TODO
+        # assert set(_cmap.keys()) == set(
+        #    MsgLevel.__members__.keys()
+        # ), "Color map {} must match levels {}".format(_cmap, MsgLevel.__members__)
         self._color_map, self._log_fn, self._kwargs = _cmap, log_fn, kwargs
 
-    def line(self, level: MsgLevel, *lines: str):
-        print(self._color_map[level] + "\n".join(lines))
+    def line(self, level: Union[MsgLevel, str], *lines: str):
+        print(self._get(level) + "\n".join(lines))
 
-    def thin(self, level: MsgLevel, *lines: str):
-        self._print(lines, self._color_map[level], **self._kwargs)
+    def thin(self, level: Union[MsgLevel, str], *lines: str):
+        self._print(lines, self._get(level), **self._kwargs)
 
-    def thick(self, level: MsgLevel, *lines: str):
-        self._print(["\n", lines, "\n"], self._color_map[level], **self._kwargs)
+    def thick(self, level: Union[MsgLevel, str], *lines: str):
+        self._print(["\n", lines, "\n"], self._get(level), **self._kwargs)
+
+    def _get(self, level: Union[MsgLevel, str]):
+        if isinstance(level, str):
+            level = MsgLevel[level]
+        return self._color_map[level]
 
     def _print(
         self,

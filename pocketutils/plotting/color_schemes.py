@@ -1,7 +1,7 @@
 from __future__ import annotations
-from typing import Sequence
 
 import colorsys
+from typing import Sequence
 
 from matplotlib import colors as mcolors
 from matplotlib.colors import Colormap, LinearSegmentedColormap

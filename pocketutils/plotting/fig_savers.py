@@ -1,14 +1,16 @@
 from __future__ import annotations
+
 import logging
-from typing import Optional, Mapping, Union, Callable, Any, Iterator, Sequence, Generator
-from typing import Tuple as Tup
 from copy import copy
 from pathlib import Path
+from typing import Any, Callable, Generator, Iterator, Mapping, Optional, Sequence
+from typing import Tuple as Tup
+from typing import Union
 from warnings import warn
 
 import matplotlib.pyplot as plt
-from matplotlib.figure import Figure
 from matplotlib.backends.backend_pdf import PdfPages
+from matplotlib.figure import Figure
 
 from pocketutils.core import PathLike
 

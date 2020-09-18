@@ -1,20 +1,22 @@
 from __future__ import annotations
-import logging
-from typing import Optional, Mapping, Union, Iterator, Sequence, Generator, Callable
-from typing import Tuple as Tup
-from copy import copy
-from contextlib import contextmanager
 
-import pandas as pd
-import numpy as np
+import logging
+from contextlib import contextmanager
+from copy import copy
+from typing import Callable, Generator, Iterator, Mapping, Optional, Sequence
+from typing import Tuple as Tup
+from typing import Union
+
 import matplotlib
-from matplotlib import colors as mcolors
 import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
+from matplotlib import colors as mcolors
 from matplotlib.axes import Axes
 from matplotlib.figure import Figure
 
-from pocketutils.tools.common_tools import CommonTools
 from pocketutils.plotting.corners import Corner
+from pocketutils.tools.common_tools import CommonTools
 
 FigureSeqLike = Union[Figure, Iterator[Figure], Iterator[Tup[str, Figure]], Mapping[str, Figure]]
 KNOWN_EXTENSIONS = ["jpg", "png", "pdf", "svg", "eps", "ps"]
