@@ -3,6 +3,9 @@ from __future__ import annotations
 import abc
 import contextlib
 import logging
+import requests
+import shutil
+from pathlib import Path
 from typing import Any, TypeVar, Union
 
 # noinspection PyUnresolvedReferences
@@ -218,6 +221,12 @@ def silenced(no_stdout: bool = True, no_stderr: bool = True):
     with contextlib.redirect_stdout(DevNull()) if no_stdout else null_context():
         with contextlib.redirect_stderr(DevNull()) if no_stderr else null_context():
             yield
+
+
+def stream_download(url: str, path: PathLike):
+    with requests.get(url, stream=True) as r:
+        with Path(path).open("wb") as f:
+            shutil.copyfileobj(r.raw, f)
 
 
 __all__ = [

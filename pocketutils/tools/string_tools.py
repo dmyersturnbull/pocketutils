@@ -23,13 +23,80 @@ class StringTools(BaseTools):
         # return Pretty.condensed(dct)
         return cls.retab(
             json.dumps(
-                dct, default=JsonEncoder().default, sort_keys=True, indent=1, ensure_ascii=False,
+                dct,
+                default=JsonEncoder().default,
+                sort_keys=True,
+                indent=1,
+                ensure_ascii=False,
             ),
             1,
         )
 
     @classmethod
+    def extract_group_1(
+        cls, pattern: Union[str, re.Pattern], value: Optional[str], ignore_null: bool = False
+    ) -> Optional[str]:
+        """
+        Performs a ``fullmatch`` on a target string and returns capture group 1, or None if there was no match.
+
+        Args:
+            pattern: Regex pattern
+            value: The target string
+            ignore_null: If True, returns None if ``value`` is None; otherwise raises a ValueError if ``value`` is None
+                         (Useful for *map*-like operations.)
+
+        Returns The first capture group, or None
+        """
+        pattern = pattern if isinstance(pattern, re.Pattern) else re.compile(pattern)
+        if pattern.groups != 1:
+            raise ValueError(f"Pattern {pattern} has {pattern.groups} groups, not 1")
+        if value is None and ignore_null:
+            return None
+        match = pattern.fullmatch(value)
+        if match is None:
+            return None
+        return match.group(1)
+
+    @classmethod
+    def roman_to_arabic(
+        cls, roman: str, min_val: Optional[int] = None, max_val: Optional[int] = None
+    ) -> int:
+        """
+        Converts roman numerals to an integer.
+
+        Args:
+            roman: A string like "MCIV"
+            min_val: Raise a ValueError if the parsed value is less than this
+            max_val: Raise a ValueError if the parsed value is more than this
+
+        Returns:
+            The arabic numeral as a Python int
+        """
+        # this order is IMPORTANT!
+        mp = dict(
+            IV=4, IX=9, XL=40, XC=90, CD=400, CM=900, I=1, V=5, X=10, L=50, C=100, D=500, M=1000
+        )
+        for k, v in mp.items():
+            roman = roman.replace(k, str(v))
+        # it'll just error if it's empty
+        try:
+            value = sum((int(num) for num in roman))
+        except (ValueError, StopIteration):
+            raise ValueError(f"Cannot parse roman numerals '{roman}'")
+        if min_val is not None and value < min_val or min_val is not None and roman > max_val:
+            raise ValueError(f"Value {roman} (int={value}) is out of range ({min_val}, {max_val})")
+        return value
+
+    @classmethod
     def retab(cls, s: str, nspaces: int) -> str:
+        """
+        Converts indentation with spaces to tab indentation.
+
+        Args:
+            s: The string to convert
+            nspaces: A tab is this number of spaces
+        """
+
         def fix(m):
             n = len(m.group(1)) // nspaces
             return "\t" * n + " " * (len(m.group(1)) % nspaces)
@@ -171,7 +238,10 @@ class StringTools(BaseTools):
 
     @classmethod
     def strip_any_ends(
-        cls, s: str, prefixes: Union[str, Sequence[str]], suffixes: Union[str, Sequence[str]],
+        cls,
+        s: str,
+        prefixes: Union[str, Sequence[str]],
+        suffixes: Union[str, Sequence[str]],
     ) -> str:
         """
         Flexible variant that strips any number of prefixes and any number of suffixes.
@@ -360,7 +430,9 @@ class StringTools(BaseTools):
         # TODO this seems absurdly long for what it does
         if n_sigfigs is None or n_sigfigs < 1:
             raise OutOfRangeError(
-                "Sigfigs of {} is nonpositive".format(n_sigfigs), value=n_sigfigs, minimum=1,
+                "Sigfigs of {} is nonpositive".format(n_sigfigs),
+                value=n_sigfigs,
+                minimum=1,
             )
         # first, handle NaN and infinities
         if np.isneginf(v):
@@ -486,7 +558,8 @@ class StringTools(BaseTools):
         # If we just sort from longest to shortest, we can't replace substrings by accident
         # For example we'll replace 'beta' before 'eta', so '1-beta' won't become '1-bη'
         greek = sorted(
-            [(v, k) for k, v in StringTools._greek_alphabet.items()], key=lambda t: -len(t[1]),
+            [(v, k) for k, v in StringTools._greek_alphabet.items()],
+            key=lambda t: -len(t[1]),
         )
         for k, v in greek:
             if k[0].isupper() and lowercase:
@@ -529,7 +602,12 @@ class StringTools(BaseTools):
 
     @classmethod
     def join_kv(
-        cls, seq: Mapping[T, V], sep: str = "\t", eq: str = "=", prefix: str = "", suffix: str = "",
+        cls,
+        seq: Mapping[T, V],
+        sep: str = "\t",
+        eq: str = "=",
+        prefix: str = "",
+        suffix: str = "",
     ) -> str:
         """
         Joins dict elements into a str like 'a=1, b=2, c=3`.
@@ -537,6 +615,7 @@ class StringTools(BaseTools):
 
         Args:
             seq: Dict-like, with ``items()``
+            sep: Delimiter
             eq: Separates a key with its value
             prefix: Prepend before every key
             suffix: Append after every value

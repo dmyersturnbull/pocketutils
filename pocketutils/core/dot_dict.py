@@ -9,6 +9,7 @@ from typing import Any, ByteString, Callable, Mapping, Optional, Sequence
 from typing import Tuple as Tup
 from typing import Type, TypeVar, Union
 
+import orjson
 import tomlkit
 
 PICKLE_PROTOCOL = 5
@@ -26,13 +27,31 @@ class NestedDotDict(Mapping):
 
     """
 
+    def to_json(self, indent: bool = False) -> str:
+        def default(obj: Any) -> Any:
+            if isinstance(obj, NestedDotDict):
+                # noinspection PyProtectedMember
+                return dict(obj._x)
+
+        kwargs = dict(option=orjson.OPT_INDENT_2) if indent else {}
+        encoded = orjson.dumps(dict(self), default=default, **kwargs)
+        return encoded.decode(encoding="utf8")
+
     @classmethod
     def read_toml(cls, path: Union[PurePath, str]) -> NestedDotDict:
         return NestedDotDict(tomlkit.loads(Path(path).read_text(encoding="utf8")))
 
     @classmethod
     def read_json(cls, path: Union[PurePath, str]) -> NestedDotDict:
-        return NestedDotDict(json.loads(Path(path).read_text(encoding="utf8")))
+        z = orjson.loads(Path(path).read_text(encoding="utf8"))
+        if (
+            not isinstance(z, cls)
+            and hasattr(z, "items")
+            and hasattr(z, "keys")
+            and hasattr(z, "values")
+        ):
+            z.__class__ = cls
+        return z
 
     @classmethod
     def read_pickle(cls, path: Union[PurePath, str]) -> NestedDotDict:
@@ -264,7 +283,12 @@ class NestedDotDict(Mapping):
         Returns:
             A multi-lined string
         """
-        return json.dumps(self.leaves(), sort_keys=True, indent=4, ensure_ascii=False,)
+        return json.dumps(
+            self.leaves(),
+            sort_keys=True,
+            indent=4,
+            ensure_ascii=False,
+        )
 
     def __len__(self) -> int:
         """
