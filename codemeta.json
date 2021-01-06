@@ -1,0 +1,38 @@
+{
+    "@context":"https://doi.org/10.5063/schema/codemeta-2.0",
+    "@type":"SoftwareSourceCode",
+    "identifier":"pocketutils",
+    "name":"pocketutils",
+    "description":"Adorable little Python code for you to copy or import.",
+    "codeRepository":"https://github.com/dmyersturnbull/pocketutils",
+    "issueTracker":"https://github.com/dmyersturnbull/pocketutils/issues",
+    "license":"https://www.apache.org/licenses/LICENSE-2.0",
+    "version":"0.4.1",
+    "author":[
+        {
+            "@type":"Person",
+            "givenName":"Douglas",
+            "familyName":"Myers-Turnbull",
+            "@id":"https://orcid.org/0000-0003-3610-4808"
+        }
+    ],
+    "maintainer":{
+        "@type":"Person",
+        "givenName":"Douglas",
+        "familyName":"Myers-Turnbull",
+        "@id":"https://orcid.org/0000-0003-3610-4808"
+    },
+    "contIntegration":"https://github.com/dmyersturnbull/pocketutils/actions",
+    "developmentStatus":"active",
+    "downloadUrl":"https://pypi.org/project/pocketutils/",
+    "keywords":[
+        "python",
+        "snippets",
+        "utils",
+        "gists",
+        "bioinformatics"
+    ],
+    "dateCreated":"2016-10-01",
+    "datePublished":"2021-01-05",
+    "programmingLanguage":"Python"
+}
