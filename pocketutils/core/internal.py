@@ -3,6 +3,7 @@ from __future__ import annotations
 import logging
 import operator
 import os
+import sys
 from pathlib import PurePath
 from typing import Any, Callable, Iterable, Optional, TypeVar, Union
 
@@ -20,6 +21,15 @@ class PathLikeUtils:
         return (
             isinstance(value, str) or isinstance(value, os.PathLike) or isinstance(value, PurePath)
         )
+
+
+if sys.version_info < (3, 9):
+    # TODO remove both of these on 0.5 release, breaking backwards-compat
+    # This breaks on Python 3.9
+    # https://github.com/dmyersturnbull/pocketutils/issues/2
+    PathLike.isinstance = PathLikeUtils.isinstance
+    # and this just provides backwards-compat until 0.5 release
+    pathlike_isinstance = PathLikeUtils.isinstance
 
 
 class Pretty:
