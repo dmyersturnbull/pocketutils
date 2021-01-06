@@ -1,4 +1,7 @@
+from pathlib import Path
+
 import pytest
+import pandas as pd
 
 from pocketutils.core.web_resource import *
 
@@ -6,20 +9,28 @@ from pocketutils.core.web_resource import *
 class TestWebResource:
     def test(self):
         # TODO incomplete coverage
+        path = Path("tt.txt.gz")
         t = WebResource(
             "https://www.proteinatlas.org/download/normal_tissue.tsv.zip",
             "normal_tissue.tsv",
-            "tt.txt.gz",
+            path,
         )
-        t.download(redownload=True)
-        import pandas as pd
+        try:
+            t.download(redownload=True)
 
-        df = pd.read_csv("tt.txt.gz", sep="\t")
-        assert len(df) == 1056061
-        assert t.datetime_downloaded()
-        assert t.exists()
-        t.delete()
-        assert not t.exists()
+            df = pd.read_csv(path, sep="\t")
+            # note: this isn't a great test; the # of rows can change
+            assert len(df) == 1118517
+            assert t.datetime_downloaded()
+            assert t.exists()
+            t.delete()
+            assert not t.exists()
+        finally:
+            if path.exists():
+                try:
+                    path.unlink()
+                except OSError:
+                    print(f"Warning: could not delete {path.absolute()}")
 
 
 if __name__ == "__main__":
