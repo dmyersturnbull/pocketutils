@@ -4,7 +4,7 @@ Adheres to [Semantic Versioning 2.0](https://semver.org/spec/v2.0.0.html) and
 [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 
-## [0.4.1] - 2021-01-05
+## [0.4.0 - 2021-01-05
 
 ### Changed:
 - Bumped numpy from `>=1.18, <2.0` to `>=1.19, <2.0`.
@@ -21,17 +21,14 @@ Adheres to [Semantic Versioning 2.0](https://semver.org/spec/v2.0.0.html) and
   They were causing [an error in Python 3.9](https://github.com/dmyersturnbull/pocketutils/issues/2)
   Callers should now use `PathLikeUtils.isinstance`.
 
+### Removed:
+- Dropped support for Python 3.7
+
 ### Added:
 - A few small functions in `StringTools`
 
 ### Fixed
 - Python 3.9 compatibility
-
-
-## [0.4.0] - 2020-12-29
-
-### Removed:
-- Dropped support for Python 3.7
 
 
 ## [0.3.0] - 2020-09-02
