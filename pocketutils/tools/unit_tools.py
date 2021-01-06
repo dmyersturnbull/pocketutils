@@ -62,7 +62,11 @@ class UnitTools(BaseTools):
             s = "{}{}ms".format(space, ms)
         elif days > 1:
             s = "{}{}d:{}:{}:{}".format(
-                days, space, str(hours).zfill(2), str(minutes).zfill(2), str(seconds).zfill(2),
+                days,
+                space,
+                str(hours).zfill(2),
+                str(minutes).zfill(2),
+                str(seconds).zfill(2),
             )
         elif hours > 1:
             s = "{}:{}:{}".format(str(hours).zfill(2), str(minutes).zfill(2), str(seconds).zfill(2))
@@ -214,10 +218,15 @@ class UnitTools(BaseTools):
         """
         Ex: dose_to_micromolar(53, 'nM')  # returns 0.053
         """
-        return (
-            float(digits)
-            * {"M": 1e6, "mM": 1e3, "µM": 1, "uM": 1, "nM": 1e-3, "pM": 1e-6, "fM": 1e-9,}[units]
-        )
+        return float(digits) * {
+            "M": 1e6,
+            "mM": 1e3,
+            "µM": 1,
+            "uM": 1,
+            "nM": 1e-3,
+            "pM": 1e-6,
+            "fM": 1e-9,
+        }[units]
 
 
 __all__ = ["UnitTools"]

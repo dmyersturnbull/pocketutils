@@ -171,7 +171,9 @@ class Hasher:
     """
 
     def __init__(
-        self, algorithm: str = "sha1", buffer_size: int = 16 * 1024,
+        self,
+        algorithm: str = "sha1",
+        buffer_size: int = 16 * 1024,
     ):
         self._algorithm = algorithm
         if isinstance(algorithm, str):

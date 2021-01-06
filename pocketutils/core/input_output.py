@@ -9,7 +9,7 @@ from pathlib import Path
 from typing import Any, TypeVar, Union
 
 # noinspection PyUnresolvedReferences
-from pocketutils.core import PathLike
+from pocketutils.core import PathLike, PathLikeUtils
 
 T = TypeVar("T", covariant=True)
 Y = TypeVar("Y")

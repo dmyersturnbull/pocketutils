@@ -83,7 +83,10 @@ class CallTools(BaseTools):
 
     @classmethod
     def log_called_process_error(
-        cls, e: subprocess.CalledProcessError, log_fn: Callable[[str], None], wrap_length: int = 80,
+        cls,
+        e: subprocess.CalledProcessError,
+        log_fn: Callable[[str], None],
+        wrap_length: int = 80,
     ) -> None:
         """
         Outputs some formatted text describing the error with its full stdout and stderr.

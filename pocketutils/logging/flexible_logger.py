@@ -8,7 +8,6 @@ from pathlib import Path
 from typing import Optional
 
 from pocketutils.core import PathLike
-from pocketutils.core.exceptions import DirDoesNotExistError
 
 
 class BasicFlexLogger:

@@ -34,8 +34,8 @@ class TestCore:
             f[0] = 10
 
     def test_pathlike(self):
-        assert PathLike.isinstance("")
-        assert not PathLike.isinstance(5)
+        assert PathLikeUtils.isinstance("")
+        assert not PathLikeUtils.isinstance(5)
 
     def test_opt_row(self):
         pass  # TODO

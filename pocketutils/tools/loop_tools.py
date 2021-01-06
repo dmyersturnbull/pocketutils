@@ -47,7 +47,9 @@ class LoopTools(BaseTools):
             got = result.get()
         print(
             "\n[{}] Processed {} items in {:.1f}s".format(
-                datetime.now().strftime("%Y-%m-%d %H:%M:%S"), len(got), time.monotonic() - t0,
+                datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                len(got),
+                time.monotonic() - t0,
             )
         )
 
@@ -72,7 +74,10 @@ class LoopTools(BaseTools):
         now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         log(
             "Processed {}/{} in {}. Done at {}.\n".format(
-                i, i, UnitTools.delta_time_to_str(time.monotonic() - initial_start_time), now,
+                i,
+                i,
+                UnitTools.delta_time_to_str(time.monotonic() - initial_start_time),
+                now,
             )
         )
 

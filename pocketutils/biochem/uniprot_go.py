@@ -34,7 +34,12 @@ class FlatGoTerm:
     """
 
     def __init_(
-        self, identifier: str, kind: str, description: str, source_id: str, source_name: str,
+        self,
+        identifier: str,
+        kind: str,
+        description: str,
+        source_id: str,
+        source_name: str,
     ):
         self.ID = identifier
         self.kind = kind

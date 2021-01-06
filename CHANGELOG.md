@@ -17,10 +17,14 @@ Adheres to [Semantic Versioning 2.0](https://semver.org/spec/v2.0.0.html) and
   This is a backwards-incompatible change only in the sense of reading or writing
   in exactly the same (invalid) format that was used in 0.4.0.
 - Upgraded build to tyrannosaurus 0.8.4, revamping Github workflows, etc.
-
-
+- Moved `PathLike.isinstance` and `pathlike_isinstance` to `PathLikeUtils.isinstance`.
+  They were causing [an error in Python 3.9](https://github.com/dmyersturnbull/pocketutils/issues/2)
+  
 ### Added:
 - A few small functions in `StringTools`
+
+### Fixed
+- Python 3.9 compatibility
 
 
 ## [0.4.0] - 2020-12-29

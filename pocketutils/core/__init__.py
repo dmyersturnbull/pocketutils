@@ -12,7 +12,7 @@ import numpy as np
 from pocketutils.core.exceptions import ImmutableError
 
 # noinspection PyProtectedMember
-from pocketutils.core.internal import PathLike
+from pocketutils.core.internal import PathLike, PathLikeUtils
 from pocketutils.core.internal import look as _look
 
 T = TypeVar("T", covariant=True)
@@ -262,6 +262,7 @@ __all__ = [
     "SmartEnum",
     "frozenlist",
     "PathLike",
+    "PathLikeUtils",
     "OptRow",
     "LazyWrap",
 ]

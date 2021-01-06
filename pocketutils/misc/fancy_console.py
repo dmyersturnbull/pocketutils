@@ -136,7 +136,8 @@ class DeletePrompter:
             )
         while True:
             print(
-                Fore.BLUE + "Delete? [{}]".format("/".join(DeletePrompter.CHOICES)), end="",
+                Fore.BLUE + "Delete? [{}]".format("/".join(DeletePrompter.CHOICES)),
+                end="",
             )
             cmdd = input("").strip()
             logger.debug("Received user input {}".format(cmdd))

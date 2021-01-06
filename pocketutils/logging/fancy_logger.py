@@ -79,7 +79,12 @@ class LogLevel:
     def nonstandard(cls) -> Mapping[str, int]:
         return {
             e.name: e.value
-            for e in [_LogLevel.TRACE, _LogLevel.MINOR, _LogLevel.CAUTION, _LogLevel.NOTICE,]
+            for e in [
+                _LogLevel.TRACE,
+                _LogLevel.MINOR,
+                _LogLevel.CAUTION,
+                _LogLevel.NOTICE,
+            ]
         }
 
     @classmethod

@@ -1,10 +1,10 @@
 from pathlib import Path
-from typing import Any, Dict, Mapping, Optional, Sequence, TypeVar, Union
+from typing import Any, Dict, Mapping, Sequence, TypeVar, Union
 
 import pandas as pd
 
 from pocketutils.core import PathLike
-from pocketutils.core.exceptions import LengthError, XTypeError
+from pocketutils.core.exceptions import LengthError
 from pocketutils.tools.base_tools import BaseTools
 
 V = TypeVar("V")
@@ -55,7 +55,11 @@ class PandasTools(BaseTools):
 
     @classmethod
     def dict_to_csv(
-        cls, dct: Mapping[Any, Any], path: PathLike, keys: str = "name", values: str = "value",
+        cls,
+        dct: Mapping[Any, Any],
+        path: PathLike,
+        keys: str = "name",
+        values: str = "value",
     ) -> None:
         cls.dict_to_df(dct, keys, values).to_csv(Path(path))
 

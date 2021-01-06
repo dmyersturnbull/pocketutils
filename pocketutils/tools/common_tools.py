@@ -36,7 +36,10 @@ class CommonTools(BaseTools):
 
     @classmethod
     def try_none(
-        cls, function: Callable[[], T], fail_val: Optional[T] = None, exception=Exception,
+        cls,
+        function: Callable[[], T],
+        fail_val: Optional[T] = None,
+        exception=Exception,
     ) -> Optional[T]:
         """
         Returns the value of a function or None if it raised an exception.

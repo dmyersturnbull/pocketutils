@@ -195,7 +195,9 @@ class ParsingWB(_WB, metaclass=ABCMeta):
         match = ParsingWB._pattern.fullmatch(expression)
         if match is None:
             raise StringPatternError(
-                "{} is wrong".format(expression), value=expression, pattern=ParsingWB._pattern,
+                "{} is wrong".format(expression),
+                value=expression,
+                pattern=ParsingWB._pattern,
             )
         a, x, b = match.group(1), match.group(2), match.group(3)
         if x is None:

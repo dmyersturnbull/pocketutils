@@ -4,7 +4,7 @@ import logging
 import operator
 import os
 from pathlib import PurePath
-from typing import Callable, Iterable, Optional, TypeVar, Union
+from typing import Any, Callable, Iterable, Optional, TypeVar, Union
 
 T = TypeVar("T", covariant=True)
 Y = TypeVar("Y")
@@ -14,11 +14,12 @@ logger = logging.getLogger("pocketutils")
 PathLike = Union[str, PurePath, os.PathLike]
 
 
-def pathlike_isinstance(value):
-    return isinstance(value, str) or isinstance(value, os.PathLike) or isinstance(value, PurePath)
-
-
-PathLike.isinstance = pathlike_isinstance
+class PathLikeUtils:
+    @classmethod
+    def isinstance(cls, value: Any):
+        return (
+            isinstance(value, str) or isinstance(value, os.PathLike) or isinstance(value, PurePath)
+        )
 
 
 class Pretty:
@@ -119,4 +120,4 @@ def null_context():
     yield
 
 
-__all__ = ["nicesize", "look", "logger", "Pretty"]
+__all__ = ["nicesize", "look", "logger", "Pretty", "PathLike", "PathLikeUtils"]
