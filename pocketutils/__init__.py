@@ -15,7 +15,7 @@ metadata = None
 try:
     metadata = __load(Path(__file__).absolute().parent.name)
     __status__ = "Development"
-    __copyright__ = "Copyright 2020"
+    __copyright__ = "Copyright 2016–2021"
     __date__ = "2020-09-01"
     __uri__ = metadata["home-page"]
     __title__ = metadata["name"]
