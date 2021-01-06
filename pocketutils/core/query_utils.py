@@ -23,7 +23,7 @@ class QueryExecutor:
     ):
         self._min = sec_delay_min
         self._max = sec_delay_max
-        self._rand = random.Random()
+        self._rand = random.Random()  # nosec
         self._encoding = encoding
         self._next_at = 0
         self._querier = download_urllib if querier is None else querier

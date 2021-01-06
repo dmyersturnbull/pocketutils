@@ -55,7 +55,14 @@ class NestedDotDict(Mapping):
 
     @classmethod
     def read_pickle(cls, path: Union[PurePath, str]) -> NestedDotDict:
-        return NestedDotDict(pickle.loads(Path(path).read_bytes()))
+        """
+
+        Note that this function has potential security concerns.
+        This is because it relies on the pickle module.
+        """
+        data = Path(path).read_bytes()
+        data = pickle.loads(data)  # nosec
+        return NestedDotDict(data)
 
     @classmethod
     def parse_toml(cls, data: str) -> NestedDotDict:
@@ -103,7 +110,8 @@ class NestedDotDict(Mapping):
         """
         mp = {}
         for key, value in self._x.items():
-            assert len(key) > 0
+            if len(key) == 0:
+                raise AssertionError(f"Key is empty (value=${value})")
             if isinstance(value, dict):
                 mp.update({key + "." + k: v for k, v in NestedDotDict(value).leaves().items()})
             else:

@@ -52,16 +52,27 @@ except ImportError:
 
 
 class FilesysTools(BaseTools):
+    """
+
+    Security concerns
+    -----------------
+
+    Please note that several of these functions expose security concerns.
+    In particular, ``pkl``, ``unpkl``, and any others that involve pickle or its derivatives.
+    """
+
     @classmethod
     def pkl(cls, stuff: Any, path: PathLike) -> None:
         """Save to a file with dill."""
-        Path(path).write_bytes(dill.dumps(stuff, protocol=5))
+        data = dill.dumps(stuff, protocol=5)  # nosec
+        Path(path).write_bytes(data)
 
     @classmethod
     def unpkl(cls, path: PathLike):
         """Load a file with dill."""
         # ignore encoding param, which is only useful for unpickling Python 2-generated
-        return dill.loads(Path(path).read_bytes())
+        data = Path(path).read_bytes()
+        return dill.loads(data)  # nosec
 
     @classmethod
     def new_hasher(cls, algorithm: str = "sha1"):

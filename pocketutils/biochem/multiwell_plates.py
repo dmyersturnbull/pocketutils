@@ -209,7 +209,7 @@ class ParsingWB(_WB, metaclass=ABCMeta):
         elif x in {"...", "…"}:
             return self.traversal_range(a, b)
         else:
-            assert False, "WHAT?"
+            raise ValueError(f"Failed on to parse {x}")
 
 
 class WB1(_WB):

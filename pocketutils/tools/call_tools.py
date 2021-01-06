@@ -1,6 +1,6 @@
 import contextlib
 import logging
-import subprocess
+import subprocess  # nosec
 import textwrap
 from copy import copy
 from enum import Enum

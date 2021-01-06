@@ -1,5 +1,5 @@
 import re
-import subprocess
+import subprocess  # nosec
 from dataclasses import dataclass
 
 from pocketutils.core import PathLike
@@ -28,6 +28,18 @@ class GitDescription:
 
 
 class ProgramTools(BaseTools):
+    """
+
+    Security concerns
+    -----------------
+
+    Please note that these tools execute external code
+    through the ``subprocess`` module.
+    These calls are additionally made on partial executable paths,
+    such as ``git`` rather than ``/usr/bin/git``.
+    This is an additional security consideration.
+    """
+
     @classmethod
     def commit_hash(cls, git_repo_dir: str = ".") -> str:
         """
@@ -49,14 +61,17 @@ class ProgramTools(BaseTools):
         Raises:
             CalledProcessError:
         """
-        x = subprocess.run(
-            "git describe --long --dirty --broken --abbrev=40 --tags".split(" "),
+        cmd_args = dict(
             cwd=str(git_repo_dir),
             capture_output=True,
             check=True,
             text=True,
             encoding="utf8",
         )
+        cmd = "git describe --long --dirty --broken --abbrev=40 --tags".split(" ")
+        # ignoring bandit security warning because we explain the security concerns
+        # in the class docstring
+        x = subprocess.run(cmd, **cmd_args)  # nosec
         return cls._parse(x.stdout.strip())
 
     @classmethod

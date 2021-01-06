@@ -204,7 +204,8 @@ class StringTools(BaseTools):
         Strips the full string `pre` from the start of `str`.
         See ``Tools.strip_off`` for more info.
         """
-        assert isinstance(pre, str), "{} is not a string".format(pre)
+        if not isinstance(pre, str):
+            raise TypeError("{} is not a string".format(pre))
         if s.startswith(pre):
             s = s[len(pre) :]
         return s
@@ -215,7 +216,8 @@ class StringTools(BaseTools):
         Strips the full string `suf` from the end of `str`.
         See `Tools.strip_off` for more info.
         """
-        assert isinstance(suf, str), "{} is not a string".format(suf)
+        if not isinstance(suf, str):
+            raise TypeError("{} is not a string".format(suf))
         if s.endswith(suf):
             s = s[: -len(suf)]
         return s

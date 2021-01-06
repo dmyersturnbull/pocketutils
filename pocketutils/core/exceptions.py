@@ -34,7 +34,8 @@ class ErrorUtils:
         Args:
             names: A map from str to Type
         """
-        assert not any([s == "info" or s.startswith("__") and s.endswith("__") for s in names])
+        if any([s == "info" or s.startswith("__") and s.endswith("__") for s in names]):
+            raise AssertionError(f"Failed on {names}")
 
         @wraps(names)
         def dec(cls):

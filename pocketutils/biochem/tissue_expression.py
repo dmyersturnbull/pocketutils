@@ -53,7 +53,8 @@ class TissueTable(pd.DataFrame):
         if gene_name not in self.index.get_level_values("Gene name"):
             raise LookupFailedError("Gene with HGNC symbol {} not found.".format(gene_name))
         gene = self[self.index.get_level_values("Gene name") == gene_name]
-        assert gene is not None
+        if gene is None:
+            raise AssertionError(f"Gene is None for gene_name {gene_name}, groupby {group_by}")
         return TissueTable(gene.groupby(group_by).mean().sort_values("Level", ascending=False))
 
     def tissue(self, name: str) -> TissueTable:
