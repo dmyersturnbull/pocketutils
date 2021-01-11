@@ -82,7 +82,7 @@ bandit                   = ">=1.7, <2.0"
 pytest                   = ">=6.2, <7.0"
 black                    = {git = "https://github.com/psf/black.git", rev="f07832eac44e"}
 coverage                 = {extras = ["toml"], version = ">=5.3, <6.0"}
-hypothesis               = ">=5.47, <6.0"
+hypothesis               = ">=5.47,<7.0"
 mypy                     = ">=0.790, <1.0"
 pytest-cov               = ">=2.10, <3.0"
 sphinx                   = ">=3.4, <4.0"
