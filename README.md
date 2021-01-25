@@ -1,15 +1,16 @@
 # pocketutils
 
-[![Version status](https://img.shields.io/pypi/status/pocketutils)](https://pypi.org/project/pocketutils/)
+[![Version status](https://img.shields.io/pypi/status/pocketutils?label=status)](https://pypi.org/project/pocketutils)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
-[![PyPI - Python Version](https://img.shields.io/pypi/pyversions/pocketutils)](https://pypi.org/project/pocketutils/)
-[![Docker](https://img.shields.io/docker/v/dmyersturnbull/pocketutils?color=green&label=DockerHub)](https://hub.docker.com/repository/docker/dmyersturnbull/pocketutils)
-[![GitHub release (latest SemVer including pre-releases)](https://img.shields.io/github/v/release/dmyersturnbull/pocketutils?include_prereleases&label=GitHub)](https://github.com/dmyersturnbull/pocketutils/releases)
-[![Latest version on PyPi](https://badge.fury.io/py/pocketutils.svg)](https://pypi.org/project/pocketutils/)
-[![Documentation status](https://readthedocs.org/projects/pocketutils/badge/?version=latest&style=flat-square)](https://pocketutils.readthedocs.io/en/stable/)
-[![Build & test](https://github.com/dmyersturnbull/pocketutils/workflows/Build%20&%20test/badge.svg)](https://github.com/dmyersturnbull/pocketutils/actions)
-[![Maintainability](https://api.codeclimate.com/v1/badges/eea2b741dbbbb74ad18a/maintainability)](https://codeclimate.com/github/dmyersturnbull/pocketutils/maintainability)
-[![Coverage](https://coveralls.io/repos/github/dmyersturnbull/pocketutils/badge.svg?branch=master)](https://coveralls.io/github/dmyersturnbull/pocketutils?branch=master)
+[![Python version compatibility](https://img.shields.io/pypi/pyversions/pocketutils?label=Python)](https://pypi.org/project/pocketutils)
+[![Version on Docker Hub](https://img.shields.io/docker/v/dmyersturnbull/pocketutils?color=green&label=Docker%20Hub)](https://hub.docker.com/repository/docker/dmyersturnbull/pocketutils)
+[![Version on Github](https://img.shields.io/github/v/release/dmyersturnbull/pocketutils?include_prereleases&label=GitHub)](https://github.com/dmyersturnbull/pocketutils/releases)
+[![Version on PyPi](https://img.shields.io/pypi/v/pocketutils?label=PyPi)](https://pypi.org/project/pocketutils)  
+[![Build (Actions)](https://img.shields.io/github/workflow/status/dmyersturnbull/pocketutils/Build%20&%20test?label=Tests)](https://github.com/dmyersturnbull/pocketutils/actions)
+[![Documentation status](https://readthedocs.org/projects/pocketutils/badge)](https://pocketutils.readthedocs.io/en/stable/)
+[![Coverage (coveralls)](https://coveralls.io/repos/github/dmyersturnbull/pocketutils/badge.svg?branch=master&service=github)](https://coveralls.io/github/dmyersturnbull/pocketutils?branch=master)
+[![Maintainability (Code Climate)](https://api.codeclimate.com/v1/badges/eea2b741dbbbb74ad18a/maintainability)](https://codeclimate.com/github/dmyersturnbull/pocketutils/maintainability)
+[![Scrutinizer Code Quality](https://scrutinizer-ci.com/g/dmyersturnbull/pocketutils/badges/quality-score.png?b=master)](https://scrutinizer-ci.com/g/dmyersturnbull/pocketutils/?branch=master)
 
 Adorable little Python functions for you to copy or import.
 
@@ -25,9 +26,11 @@ Some of the more useful are `ConfusionMatrix`, `DecisionFrame`,
 [`PeakFinder`](https://en.wikipedia.org/wiki/Topographic_prominence), `AtcParser` (for PubChem ATC codes),
 `WellBase1` (for multiwell plates), and [`TissueTable`]("https://www.proteinatlas.org/).
 
-[See the docs](https://pocketutils.readthedocs.io/en/stable/), or just
+[See the docs 📚](https://pocketutils.readthedocs.io/en/stable/), or just
 [browse the code](https://github.com/dmyersturnbull/pocketutils/tree/master/pocketutils).
 
+Licensed under the terms of the [Apache License 2.0](https://spdx.org/licenses/Apache-2.0.html).
 [New issues](https://github.com/dmyersturnbull/pocketutils/issues) and pull requests are welcome.
-Please refer to the [contributing guide](https://github.com/dmyersturnbull/pocketutils/blob/master/CONTRIBUTING.md).
-Generated with [Tyrannosaurus](https://github.com/dmyersturnbull/tyrannosaurus).
+Please refer to the [contributing guide](https://github.com/dmyersturnbull/pocketutils/blob/master/CONTRIBUTING.md)
+and [security policy](https://github.com/dmyersturnbull/pocketutils/blob/main/SECURITY.md).  
+Generated with tyrannosaurus: `tyrannosaurus new tyrannosaurus`

@@ -16,7 +16,7 @@ build-backend = "poetry.masonry.api"
 
 [tool.poetry]
 name = "pocketutils"
-version = "0.4.0"
+version = "0.4.1"
 description = "Adorable little Python code for you to copy or import."
 keywords = ["python", "snippets", "utils", "gists", "bioinformatics"]
 authors = ["Douglas Myers-Turnbull"]
@@ -80,10 +80,9 @@ pre-commit               = ">=2.9, <3.0"
 pre-commit-hooks         = ">=3.4, <4.0"
 bandit                   = ">=1.7, <2.0"
 pytest                   = ">=6.2, <7.0"
-black                    = {git = "https://github.com/psf/black.git", rev="f07832eac44e"}
+black                    = {git = "https://github.com/psf/black.git", rev="692c0f50d91e"}
 coverage                 = {extras = ["toml"], version = ">=5.3, <6.0"}
-hypothesis               = ">=5.47, <6.0"
-mypy                     = ">=0.790, <1.0"
+hypothesis               = ">=6.0, <7.0"
 pytest-cov               = ">=2.10, <3.0"
 sphinx                   = ">=3.4, <4.0"
 sphinx-autoapi           = ">=1.5, <2.0"
@@ -110,7 +109,7 @@ dev = [
         "pre-commit", "pre-commit-hooks",
         "pytest", "coverage", "pytest-cov", "hypothesis",
         "sphinx", "sphinx-autoapi",
-        "flake8", "flake8-docstrings", "mypy",
+        "flake8", "flake8-docstrings",
         "bandit", "black", "flake8-bugbear"
 ]
 
