@@ -8,9 +8,9 @@
 [![Version on PyPi](https://img.shields.io/pypi/v/pocketutils?label=PyPi)](https://pypi.org/project/pocketutils)  
 [![Build (Actions)](https://img.shields.io/github/workflow/status/dmyersturnbull/pocketutils/Build%20&%20test?label=Tests)](https://github.com/dmyersturnbull/pocketutils/actions)
 [![Documentation status](https://readthedocs.org/projects/pocketutils/badge)](https://pocketutils.readthedocs.io/en/stable/)
-[![Coverage (coveralls)](https://coveralls.io/repos/github/dmyersturnbull/pocketutils/badge.svg?branch=master&service=github)](https://coveralls.io/github/dmyersturnbull/pocketutils?branch=master)
+[![Coverage (coveralls)](https://coveralls.io/repos/github/dmyersturnbull/pocketutils/badge.svg?branch=main&service=github)](https://coveralls.io/github/dmyersturnbull/pocketutils?branch=main)
 [![Maintainability (Code Climate)](https://api.codeclimate.com/v1/badges/eea2b741dbbbb74ad18a/maintainability)](https://codeclimate.com/github/dmyersturnbull/pocketutils/maintainability)
-[![Scrutinizer Code Quality](https://scrutinizer-ci.com/g/dmyersturnbull/pocketutils/badges/quality-score.png?b=master)](https://scrutinizer-ci.com/g/dmyersturnbull/pocketutils/?branch=master)
+[![Scrutinizer Code Quality](https://scrutinizer-ci.com/g/dmyersturnbull/pocketutils/badges/quality-score.png?b=main)](https://scrutinizer-ci.com/g/dmyersturnbull/pocketutils/?branch=main)
 
 Adorable little Python functions for you to copy or import.
 
@@ -27,10 +27,10 @@ Some of the more useful are `ConfusionMatrix`, `DecisionFrame`,
 `WellBase1` (for multiwell plates), and [`TissueTable`]("https://www.proteinatlas.org/).
 
 [See the docs 📚](https://pocketutils.readthedocs.io/en/stable/), or just
-[browse the code](https://github.com/dmyersturnbull/pocketutils/tree/master/pocketutils).
+[browse the code](https://github.com/dmyersturnbull/pocketutils/tree/main/pocketutils).
 
 Licensed under the terms of the [Apache License 2.0](https://spdx.org/licenses/Apache-2.0.html).
 [New issues](https://github.com/dmyersturnbull/pocketutils/issues) and pull requests are welcome.
-Please refer to the [contributing guide](https://github.com/dmyersturnbull/pocketutils/blob/master/CONTRIBUTING.md)
+Please refer to the [contributing guide](https://github.com/dmyersturnbull/pocketutils/blob/main/CONTRIBUTING.md)
 and [security policy](https://github.com/dmyersturnbull/pocketutils/blob/main/SECURITY.md).  
 Generated with tyrannosaurus: `tyrannosaurus new tyrannosaurus`
