@@ -34,8 +34,8 @@ class ConsoleTools(BaseTools):
         delete_fn: Callable[[str], None] = FilesysTools.delete_surefire,
         writer: Callable[[str], None] = sys.stdout.write,
     ):
-        logger.debug("Deleting directory tree {} ...".format(path))
-        writer("Waiting for {}s before deleting {}: ".format(wait, path))
+        logger.debug(f"Deleting directory tree {path} ...")
+        writer(f"Waiting for {wait}s before deleting {path}: ")
         for i in range(0, wait):
             time.sleep(1)
             writer(str(wait - i) + " ")
@@ -43,7 +43,7 @@ class ConsoleTools(BaseTools):
         writer("...")
         delete_fn(path)
         writer(" deleted.\n")
-        logger.debug("Deleted directory tree {}".format(path))
+        logger.debug(f"Deleted directory tree {path}")
 
     @classmethod
     def confirm(

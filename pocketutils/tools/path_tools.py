@@ -51,9 +51,9 @@ class PathTools(BaseTools):
         # On some platforms we get generic exceptions like permissions errors,
         # so these are better
         if exists and not path.is_dir():
-            raise DirDoesNotExistError("Path {} exists but is not a file".format(path))
+            raise DirDoesNotExistError(f"Path {path} exists but is not a file")
         if exists and not exist_ok:
-            logger.warning("Directory {} already exists".format(path))
+            logger.warning(f"Directory {path} already exists")
         if not exists:
             # NOTE! exist_ok in mkdir throws an error on Windows
             path.mkdir(parents=True)
@@ -69,9 +69,9 @@ class PathTools(BaseTools):
         exists = path.exists()
         # check for errors first; don't make the dirs and then fail
         if exists and not exist_ok:
-            raise FileExistsError("Path {} already exists".format(path))
+            raise FileExistsError(f"Path {path} already exists")
         elif exists and not path.is_file() and not path.is_symlink():  # TODO check link?
-            raise FileDoesNotExistError("Path {} exists but is not a file".format(path))
+            raise FileDoesNotExistError(f"Path {path} exists but is not a file")
         # NOTE! exist_ok in mkdir throws an error on Windows
         if not path.parent.exists():
             Path(path.parent).mkdir(parents=True, exist_ok=True)
@@ -94,14 +94,12 @@ class PathTools(BaseTools):
         # tilde substitution for long filenames in Windows -- is unsupported
         if path.startswith("\\\\?"):
             logger.warning(
-                "Long UNC Windows paths (\\\\? prefix) are not supported (in path '{}')".format(
-                    path
-                )
+                f"Long UNC Windows paths (\\\\? prefix) are not supported (path '{path}')"
             )
         bits = str(path).strip().replace("\\", "/").split("/")
         new_path = cls.sanitize_path_nodes(bits, is_file=is_file)
         if new_path != path and show_warnings:
-            logger.warning("Sanitized filename {} → {}".format(path, new_path))
+            logger.warning(f"Sanitized filename {path} → {new_path}")
         return Path(new_path)
 
     @classmethod
@@ -187,7 +185,7 @@ class PathTools(BaseTools):
                 # I can't handle that here, but sanitize_path() will account for it
                 return m.group(1) + "\\"
             if is_root_or_drive is True:
-                raise IllegalPathError("Node '{}' is not the root or a drive letter".format(bit))
+                raise IllegalPathError(f"Node '{bit}' is not the root or a drive letter")
         # note that we can't call WindowsPath.is_reserved because it can't be instantiated on non-Linux
         # also, these appear to be different from the ones defined there
         bad_chars = {
@@ -237,7 +235,7 @@ class PathTools(BaseTools):
             bad_strs += {"$IDLE$", "CONFIG$", "KEYBD$", "SCREEN$", "CLOCK$", "LST"}
         # just dots is invalid
         if set(bit.replace(" ", "")) == "." and bit not in ["..", "."]:
-            raise IllegalPathError("Node '{}' is invalid".format(source_bit))
+            raise IllegalPathError(f"Node '{source_bit}' is invalid")
         for q in bad_chars:
             bit = bit.replace(q, "_")
         if bit.upper() in bad_strs:
@@ -248,12 +246,10 @@ class PathTools(BaseTools):
             if stub.upper() in bad_strs:
                 bit = "_" + stub + "_" + ext
         if bit.strip() == "":
-            raise IllegalPathError(
-                "Node '{}' is empty or contains only whitespace".format(source_bit)
-            )
+            raise IllegalPathError(f"Node '{source_bit}' is empty or contains only whitespace")
         # do this after
         if len(bit) > 254:
-            raise IllegalPathError("Node '{}'has more than 254 characters".format(source_bit))
+            raise IllegalPathError(f"Node '{source_bit}' has more than 254 characters")
         bit = bit.strip()
         if is_file is not True and (bit == "." or bit == ".."):
             return bit

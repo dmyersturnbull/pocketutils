@@ -127,12 +127,10 @@ class DeletePrompter:
     def prompt(self, path: PathLike):
         path = Path(path)
         if not self.allow_dirs and path.is_dir():
-            raise RefusingRequestError(
-                "Cannot delete directory {}; only files are allowed.".format(path)
-            )
+            raise RefusingRequestError(f"Cannot delete directory {path}; only files are allowed.")
         elif not path.is_dir() and not path.is_file():
             raise RefusingRequestError(
-                "Cannot delete {}; only files and directories are allowed.".format(path)
+                f"Cannot delete {path}; only files and directories are allowed."
             )
         while True:
             print(
@@ -140,7 +138,7 @@ class DeletePrompter:
                 end="",
             )
             cmdd = input("").strip()
-            logger.debug("Received user input {}".format(cmdd))
+            logger.debug(f"Received user input {cmdd}")
             polled = self._poll(path, cmdd)
             if polled is not None:
                 return polled
@@ -151,21 +149,21 @@ class DeletePrompter:
             if not self.dry:
                 self.delete_fn(path)
             if self.notify:
-                print(Style.BRIGHT + "Permanently deleted {}".format(path))
+                print(Style.BRIGHT + f"Permanently deleted {path}")
             return Deletion.HARD
         # MOVE TO TRASH
         elif command.lower() == Deletion.TRASH.name.lower():
             if not self.dry:
                 self.trash_fn(path)
             if self.notify:
-                print(Style.BRIGHT + "Trashed {}.".format(path))
+                print(Style.BRIGHT + f"Trashed {path}.")
             return Deletion.TRASH
         # IGNORE
         elif command.lower() == Deletion.NO.name.lower() or len(command) == 0 and self.allow_ignore:
             return Deletion.NO
         # INVALID
         else:
-            print(Fore.RED + "Enter {}".format(" or ".join(DeletePrompter.CHOICES)))
+            print(Fore.RED + "Enter " + " or ".join(DeletePrompter.CHOICES))
             return None
 
 

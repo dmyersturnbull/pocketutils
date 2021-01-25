@@ -43,7 +43,7 @@ class J:
 
     @classmethod
     def hyperlink(cls, text: str, url: str) -> None:
-        display(HTML('<a href="{}">{}</a>'.format(url, text)))
+        display(HTML(f'<a href="{url}">{text}</a>'))
 
     @classmethod
     def red(cls, text: str) -> None:
@@ -103,7 +103,7 @@ class J:
     @classmethod
     def _color(cls, color: str) -> str:
         if _color_pattern.fullmatch(color) is None:
-            raise ValueError("Invalid hex color {}".format(color))
+            raise ValueError(f"Invalid hex color {color}")
         return color if color.startswith("#") else "#" + color
 
 
@@ -117,7 +117,7 @@ class JFonts:
         """
         Shows a single typeface as itself. Ex; will show Helvetica in Helvetica.
         """
-        J.html("<p style='font-family:{font};'>{font}</p>".format(font=name))
+        J.html(f'<p style="font-family:{name};">{name}</p>')
 
     @classmethod
     def mine(cls) -> None:
@@ -131,7 +131,7 @@ class JFonts:
         for family in plt.rcParams["font.family"]:
             items = "\n".join(
                 [
-                    "<li style='font-family:{font};'>{font}</li>".format(font=font)
+                    f'<li style="font-family:{name};">{name}</li>'
                     for font in plt.rcParams.get("font." + family, [])
                 ]
             )
@@ -156,11 +156,11 @@ class JFonts:
         from matplotlib.font_manager import fontManager
 
         def _show_font(name: str):
-            return "<p style='font-family:{font};'>{font}</p>".format(font=name)
+            return f"<p style='font-family:{name};'>{font}</p>"
 
         fonts = set([f.name for f in fontManager.ttflist])
         code = "\n".join([_show_font(font) for font in sorted(fonts)])
-        J.html("<div style='column-count: {};'>{}</div>".format(n_cols, code))
+        J.html(f'<div style="column-count: {n_cols};">{code}</div>')
 
 
 __all__ = ["J", "JFonts"]

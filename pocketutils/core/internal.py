@@ -116,9 +116,7 @@ def look(obj: Y, attrs: Union[str, Iterable[str], Callable[[Y], Z]]) -> Optional
         attrs = operator.attrgetter(".".join(attrs))
     elif not callable(attrs):
         raise TypeError(
-            "Type {} unrecognized for key/attribute. Must be a function, a string, or a sequence of strings".format(
-                type(attrs)
-            )
+            f"Type {type(attrs)} unrecognized for key/attrib. Must be a function, string, or sequence of strings"
         )
     try:
         return attrs(obj)

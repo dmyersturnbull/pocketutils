@@ -99,7 +99,7 @@ class MagicTemplate:
                     else:
                         r = r.replace(k, str(v))
                 except Exception:
-                    logger.error("Failed replacing {}".format(k))
+                    logger.error(f"Failed replacing {k}")
                     raise
         return r
 

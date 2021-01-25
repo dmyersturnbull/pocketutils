@@ -128,7 +128,7 @@ class FilesysTools(BaseTools):
         """
         # we need this because of Windows
         path = str(path)
-        logger.debug("Permanently deleting {} ...".format(path))
+        logger.debug(f"Permanently deleting {path} ...")
         chmod_err = None
         try:
             os.chmod(path, stat.S_IRWXU)
@@ -144,14 +144,14 @@ class FilesysTools(BaseTools):
                 pass  # almost definitely because it doesn't exist
         else:
             os.remove(path)
-        logger.debug("Permanently deleted {}".format(path))
+        logger.debug(f"Permanently deleted {path}")
         return chmod_err
 
     @classmethod
     def trash(cls, path: PathLike, trash_dir: PathLike = Path):
-        logger.debug("Trashing {} to {} ...".format(path, trash_dir))
+        logger.debug(f"Trashing {path} to {trash_dir} ...")
         shutil.move(str(path), str(trash_dir))
-        logger.debug("Trashed {} to {}".format(path, trash_dir))
+        logger.debug(f"Trashed {path} to {trash_dir}")
 
     @classmethod
     def try_cleanup(cls, path: Path) -> None:
@@ -163,7 +163,7 @@ class FilesysTools(BaseTools):
             try:
                 path.unlink()
             except PermissionError:
-                logger.error("Permission error preventing deleting {}".format(path))
+                logger.error(f"Permission error preventing deleting {path}")
 
     @classmethod
     def read_lines_file(cls, path: PathLike, ignore_comments: bool = False) -> Sequence[str]:
@@ -198,11 +198,11 @@ class FilesysTools(BaseTools):
                 if len(line) == 0 or line.startswith("#"):
                     continue
                 if line.count("=") != 1:
-                    raise ParsingError("Bad line {} in {}".format(i, path))
+                    raise ParsingError(f"Bad line {i} in {path}")
                 k, v = line.split("=")
                 k, v = k.strip(), v.strip()
                 if k in dct:
-                    raise AlreadyUsedError("Duplicate property {} (line {})".format(k, i), key=k)
+                    raise AlreadyUsedError(f"Duplicate property {k} (line {i})", key=k)
                 dct[k] = v
         return dct
 
@@ -211,7 +211,7 @@ class FilesysTools(BaseTools):
         cls, properties: Mapping[Any, Any], path: Union[str, PurePath], mode: str = "o"
     ):
         if not OpenMode(mode).write:
-            raise ContradictoryRequestError("Cannot write text to {} in mode {}".format(path, mode))
+            raise ContradictoryRequestError(f"Cannot write text to {path} in mode {mode}")
         with FilesysTools.open_file(path, mode) as f:
             bads = []
             for k, v in properties.items():
@@ -226,7 +226,7 @@ class FilesysTools(BaseTools):
             if 0 < len(bads) <= 10:
                 logger.warning(
                     "At least one properties entry contains an equals sign or newline (\\n)."
-                    "These were escaped: {}".format(", ".join(bads))
+                    f"These were escaped: {', '.join(bads)}"
                 )
             elif len(bads) > 0:
                 logger.warning(
@@ -323,7 +323,7 @@ class FilesysTools(BaseTools):
 
             ElementTree.parse(path).getroot()
         else:
-            raise TypeError("Did not recognize resource file type for file {}".format(path))
+            raise TypeError(f"Did not recognize resource file type for file {path}")
 
     @classmethod
     def read_bytes(cls, path: PathLike) -> bytes:
@@ -336,16 +336,14 @@ class FilesysTools(BaseTools):
     @classmethod
     def write_bytes(cls, data: Any, path: PathLike, mode: str = "wb") -> None:
         if not OpenMode(mode).write or not OpenMode(mode).binary:
-            raise ContradictoryRequestError(
-                "Cannot write bytes to {} in mode {}".format(path, mode)
-            )
+            raise ContradictoryRequestError(f"Cannot write bytes to {path} in mode {mode}")
         with cls.open_file(path, mode) as f:
             f.write(data)
 
     @classmethod
     def write_text(cls, data: Any, path: PathLike, mode: str = "w"):
         if not OpenMode(mode).write or OpenMode(mode).binary:
-            raise ContradictoryRequestError("Cannot write text to {} in mode {}".format(path, mode))
+            raise ContradictoryRequestError(f"Cannot write text to {path} in mode {mode}")
         with cls.open_file(path, mode) as f:
             f.write(str(data))
 
@@ -362,7 +360,7 @@ class FilesysTools(BaseTools):
         path = Path(path)
         mode = OpenMode(mode)
         if mode.write and mode.safe and path.exists():
-            raise FileDoesNotExistError("Path {} already exists".format(path))
+            raise FileDoesNotExistError(f"Path {path} already exists")
         if not mode.read:
             PathTools.prep_file(path, exist_ok=mode.overwrite or mode.append)
         if mode.gzipped:
@@ -389,7 +387,7 @@ class FilesysTools(BaseTools):
         path = Path(path)
         mode = OpenMode(mode)
         if not mode.overwrite or mode.binary:
-            raise ContradictoryRequestError("Wrong mode for writing a text file: {}".format(mode))
+            raise ContradictoryRequestError(f"Wrong mode for writing a text file: {mode}")
         if not cls.is_true_iterable(iterable):
             raise TypeError("Not a true iterable")  # TODO include iterable if small
         PathTools.prep_file(path, exist_ok=mode.overwrite or mode.append)

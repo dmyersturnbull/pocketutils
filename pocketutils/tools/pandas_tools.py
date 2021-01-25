@@ -30,7 +30,7 @@ class PandasTools(BaseTools):
     def df_to_dict(cls, d: pd.DataFrame) -> Dict[Any, Any]:
         if len(d.columns) != 2:
             raise LengthError(
-                "Need exactly 2 columns (key, value); got {}".format(len(d.columns)),
+                f"Need exactly 2 columns (key, value); got {len(d.columns)}",
                 minimum=2,
                 maximum=2,
             )

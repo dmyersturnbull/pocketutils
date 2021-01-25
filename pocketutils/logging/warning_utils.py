@@ -18,7 +18,7 @@ class GlobalWarningUtils:
     """
 
     def __init__(self):
-        raise NotConstructableError("Do not instantiate {}".format(self.__class__.__name__))
+        raise NotConstructableError(f"Do not instantiate {self.__class__.__name__}")
 
     @classmethod
     def init(cls) -> __qualname__:

@@ -80,7 +80,7 @@ class ProgramTools(BaseTools):
         # ex: 1.8.6-43-g0ceb89d3a954da84070858319f177abe3869752b-dirty
         m = pat.fullmatch(text)
         if m is None:
-            raise ParsingError("Bad git describe string {}".format(text))
+            raise ParsingError(f"Bad git describe string {text}")
         # noinspection PyArgumentList
         return GitDescription(
             text,

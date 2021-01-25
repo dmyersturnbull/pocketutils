@@ -60,7 +60,7 @@ class SeqIterator(SizedIterator, Generic[IX]):
         try:
             self.current = self.seq[self.__i]
         except IndexError:
-            raise StopIteration("Size is {}".format(len(self)))
+            raise StopIteration(f"Size is {len(self)}")
         self.__i += 1
         return self.current
 
@@ -89,7 +89,7 @@ class TieredIterator(SeqIterator):
 
     def __next__(self):
         if not self.has_next():
-            raise StopIteration("Length is {}".format(self.total()))
+            raise StopIteration(f"Length is {self.total()}")
         t = tuple((seq.peek() for seq in reversed(self.seqs)))
         self.__set(0)
         self.__i += 1

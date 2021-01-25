@@ -28,7 +28,7 @@ class FileHasher:
         elif callable(algorithm):
             self.algorithm, self.extension = algorithm, extension
         else:
-            raise TypeError("Algorithm {} is not callable".format(algorithm))
+            raise TypeError(f"Algorithm {algorithm} is not callable")
         self.buffer_size = buffer_size
 
     def hashsum(self, file_name: str) -> str:
@@ -60,12 +60,12 @@ class FileHasher:
 
     def _o(self, file_name: str, opener, *args):
         if not os.path.isfile(file_name + self.extension):
-            raise FileDoesNotExistError("Hash for file {} does not exist".format(file_name))
+            raise FileDoesNotExistError(f"Hash for file {file_name} does not exist")
         with open(file_name + self.extension, "r", encoding="utf8") as f:
             exp, act = f.read(), self.hashsum(file_name)
             if exp != act:
                 raise HashValidationFailedError(
-                    "Hash for file {} does not match".format(file_name),
+                    f"Hash for file {file_name} does not match",
                     key=file_name,
                     expected=exp,
                     actual=act,

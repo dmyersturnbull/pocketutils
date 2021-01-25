@@ -43,24 +43,24 @@ class FlippedRoiBoundsError(RoiError):
 class Roi:
     def __init__(self, x0: int, y0: int, x1: int, y1: int) -> None:
         if x0 < 0:
-            raise RoiOutOfBoundsError("x0 is negative ({})".format(x0)).on_edge(Edge.LEFT)
+            raise RoiOutOfBoundsError(f"x0 is negative ({x0})").on_edge(Edge.LEFT)
         if y0 < 0:
-            raise RoiOutOfBoundsError("y0 is negative ({})".format(y0)).on_edge(Edge.TOP)
+            raise RoiOutOfBoundsError(f"y0 is negative ({y0})").on_edge(Edge.TOP)
         if x0 >= x1:
-            raise FlippedRoiBoundsError(
-                "x0 ({}) is past (or equal to) x1 ({})".format(x0, x1)
-            ).on_axis(Axis.HORIZONTAL)
+            raise FlippedRoiBoundsError(f"x0 ({x0}) is past (or equal to) x1 ({x1})").on_axis(
+                Axis.HORIZONTAL
+            )
         if y0 >= y1:
-            raise FlippedRoiBoundsError(
-                "y0 ({}) is past (or equal to) y1 ({})".format(y0, y1)
-            ).on_axis(Axis.VERTICAL)
+            raise FlippedRoiBoundsError("y0 ({y0}) is past (or equal to) y1 ({y1})").on_axis(
+                Axis.VERTICAL
+            )
         self.x0 = x0
         self.y0 = y0
         self.x1 = x1
         self.y1 = y1
 
     def __repr__(self) -> str:
-        return "({},{})→({},{})".format(self.x0, self.y0, self.x1, self.y1)
+        return f"({self.x0},{self.y0})→({self.x1},{self.y1})"
 
     def __str__(self):
         return repr(self)
@@ -69,9 +69,9 @@ class Roi:
 class WellRoi(Roi):
     def __init__(self, row: int, column: int, x0: int, y0: int, x1: int, y1: int) -> None:
         if row < 0:
-            raise OutOfRangeError("Row is negative ({})".format(row), value=row)
+            raise OutOfRangeError(f"Row is negative ({row})", value=row)
         if column < 0:
-            raise OutOfRangeError("Column is negative ({})".format(row))
+            raise OutOfRangeError(f"Column is negative ({row})", value=column)
         super().__init__(x0, y0, x1, y1)
         self.row_index = row
         self.column_index = column
@@ -101,7 +101,7 @@ class PlateRois:
         self.well_rois = self._get_roi_coordinates(top_left_roi, padx, pady)
 
     def __repr__(self) -> str:
-        return "PlateRois(img={}; wells={}".format(self.image_roi, self.well_rois.values())
+        return f"PlateRois(img={self.image_roi}; wells={self.well_rois.values()}"
 
     def __str__(self) -> str:
         return repr(self)

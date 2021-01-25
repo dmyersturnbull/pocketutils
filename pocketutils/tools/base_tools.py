@@ -122,13 +122,9 @@ class BaseTools:
             if len(failures) == 0:
                 yield tuple(values)
             elif len(failures) == 1:
-                raise LengthError(
-                    "Too few elements ({}) along axis {}".format(n_elements, failures[0])
-                )
+                raise LengthError(f"Too few elements ({n_elements}) along axis {failures[0]}")
             elif len(failures) < len(iters):
-                raise LengthError(
-                    "Too few elements ({}) along axes {}".format(n_elements, failures)
-                )
+                raise LengthError(f"Too few elements ({n_elements}) along axes {failures}")
             n_elements += 1
 
     @classmethod
@@ -267,7 +263,7 @@ class BaseTools:
         elif hasattr(log, "write") and getattr(log, "write"):
             return getattr(log, "write")
         else:
-            raise TypeError("Log type {} not known".format(type(log)))
+            raise TypeError(f"Log type {type(log)} not known")
 
     def __repr__(self):
         return self.__class__.__name__

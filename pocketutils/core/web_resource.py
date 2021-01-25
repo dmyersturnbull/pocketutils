@@ -39,7 +39,7 @@ class WebResource:
         if not to_path.exists() or redownload:
             extracted, dled = None, None
             try:
-                logger.info("Downloading {}...".format(self._url))
+                logger.info(f"Downloading {self._url}...")
                 tmp = str(to_path) + now.strftime("%Y%m%d-%H%M%S-%f") + ".tmp"
                 dled, response = request.urlretrieve(self._url, tmp)
                 dled = Path(dled)

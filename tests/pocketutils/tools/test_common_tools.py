@@ -113,7 +113,7 @@ class TestCommon:
 
     def test_mem_size(self):
         r = CommonTools.mem_size(5)
-        assert re.compile("[0-9]{2}B").fullmatch(r) is not None, "byte size of 5 is {}".format(r)
+        assert re.compile("[0-9]{2}B").fullmatch(r) is not None, f"byte size of 5 is {r}"
 
 
 if __name__ == "__main__":

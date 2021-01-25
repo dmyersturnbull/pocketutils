@@ -8,8 +8,8 @@ These classes range from common to very obscure.
 .. code:: python
 
    import logging
-   from dscience.support.log_format import *
-   logger = logging.getLogger('myproject')
+   from pocketutils.support.log_format import *
+   logger = logging.getLogger("myproject")
    log_factory = PrettyRecordFactory(7, 13, 5).modifying(logger)
 
 Output from an analysis might then be…

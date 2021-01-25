@@ -51,7 +51,7 @@ class TissueTable(pd.DataFrame):
     def level(self, gene_name: str, group_by: str) -> TissueTable:
         """Returns a DataFrame of the mean expression levels by tissue or cell type."""
         if gene_name not in self.index.get_level_values("Gene name"):
-            raise LookupFailedError("Gene with HGNC symbol {} not found.".format(gene_name))
+            raise LookupFailedError(f"Gene with HGNC symbol {gene_name} not found.")
         gene = self[self.index.get_level_values("Gene name") == gene_name]
         if gene is None:
             raise AssertionError(f"Gene is None for gene_name {gene_name}, groupby {group_by}")

@@ -59,7 +59,7 @@ class UnitTools(BaseTools):
         hours = int((ms / (1000 * 60 * 60)) % 24)
         days = int(ms / (1000 * 60 * 60 * 24))
         if ms < 1000:
-            s = "{}{}ms".format(space, ms)
+            s = f"{space}{ms}ms"
         elif days > 1:
             s = "{}{}d:{}:{}:{}".format(
                 days,
@@ -95,7 +95,7 @@ class UnitTools(BaseTools):
             A Python integer
         """
         if sig_figs < 0:
-            raise OutOfRangeError("sig_figs {} is negative".format(sig_figs), minimum=0)
+            raise OutOfRangeError(f"sig_figs {sig_figs} is negative", minimum=0)
         num = float(num)
         if num != 0:
             return round(num, -int(math.floor(math.log10(abs(num))) - (sig_figs - 1)))
@@ -176,9 +176,7 @@ class UnitTools(BaseTools):
         )
         match = pat.fullmatch(text)
         if match is None:
-            raise StringPatternError(
-                "The text {} couldn't be parsed".format(text), value=text, pattern=pat
-            )
+            raise StringPatternError(f"Text {text} couldn't be parsed", value=text, pattern=pat)
         if match.group(2) is None:
             return text.strip(), None
         else:
@@ -208,9 +206,7 @@ class UnitTools(BaseTools):
         if len(matches) == 1:
             return next(iter(matches))
         elif len(matches) > 1:
-            logger.warning(
-                "Found {} potential doses: {} . Returning None.".format(len(matches), matches)
-            )
+            logger.warning(f"Found {len(matches)} potential doses: {matches} . Returning None.")
         return None
 
     @classmethod

@@ -46,7 +46,7 @@ class Atc:
             return True
         elif len(self.children) != 0 and self.level != 7:
             return False
-        raise IllegalStateError("Inconsistent leaf definition for {}".format(self))
+        raise IllegalStateError(f"Inconsistent leaf definition for {self}")
 
     def ancestry(self) -> Sequence[Any]:
         parents = []
@@ -108,7 +108,7 @@ class AtcTree:
         return len(self.nodes())
 
     def __repr__(self):
-        return "AtcTree({} nodes @ {})".format(len(self._lookup), hex(id(self)))
+        return f"AtcTree({len(self._lookup)} nodes @ {hex(id(self))})"
 
     def __str__(self):
         return repr(self)
@@ -130,7 +130,7 @@ class AtcParser:
         else:
             logger.info("Downloading ATC tree from pubchem.ncbi.nlm.nih.gov ...")
             self._download(atcs)
-        logger.debug("Loaded {} ATC codes".format(len(atcs)))
+        logger.debug(f"Loaded {len(atcs)} ATC codes")
         for atc in atcs.values():
             atc.children = sorted(list(atc.children))
         return AtcTree(atcs["/"], atcs)
@@ -138,7 +138,7 @@ class AtcParser:
     def _load_from_cache(self, atcs: dict):
         i = 1
         while True:
-            p = self.cache_dir / "page-{}.txt".format(i)
+            p = self.cache_dir / f"page-{i}.txt"
             if p.exists():
                 with open(p) as f:
                     data = json.loads(f.read())["Annotations"]["Annotation"]
@@ -152,8 +152,8 @@ class AtcParser:
         n_pages = data["TotalPages"]
         for i in range(1, n_pages + 1):  # downloading page 1 twice, but whatever
             response = requests.get(AtcParser.URL.format(page=i))
-            logger.debug("Downloading page {} of {}.".format(i, n_pages))
-            (self.cache_dir / "page-{}.txt".format(i)).write_text(response.text, encoding="utf-8")
+            logger.debug(f"Downloading page {i} of {n_pages}.")
+            (self.cache_dir / f"page-{i}.txt").write_text(response.text, encoding="utf-8")
             data = response.json()["Annotations"]
             for atc in self._parse(data["Annotation"], atcs):
                 pass

@@ -77,9 +77,9 @@ class CommonTools(BaseTools):
         Returns ``dtype(x)`` if ``x`` is not None, or raises ``or_else``.
         """
         if or_else is None:
-            or_else = LookupError("Value is {}".format(x))
+            or_else = LookupError(f"Value is {x}")
         elif isinstance(or_else, type):
-            or_else = or_else("Value is {}".format(x))
+            or_else = or_else(f"Value is {x}")
         if cls.is_null(x):
             raise or_else
         return dtype(x)
@@ -221,7 +221,7 @@ class CommonTools(BaseTools):
         for item in sequence:
             v = CommonTools.look(item, key_attr)
             if not skip_none and v is None:
-                raise KeyError("No {} in {}".format(key_attr, item))
+                raise KeyError(f"No {key_attr} in {item}")
             if v is not None:
                 dct[v].append(item)
         return dct
@@ -264,7 +264,7 @@ class CommonTools(BaseTools):
             return False
         if s.lower() == "true":
             return True
-        raise ValueError("{} is not true/false".format(s))
+        raise ValueError(f"{s} is not true/false")
 
 
 __all__ = ["CommonTools"]

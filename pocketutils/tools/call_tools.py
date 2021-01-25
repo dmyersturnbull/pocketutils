@@ -71,8 +71,8 @@ class CallTools(BaseTools):
                 encoding="utf8",
                 **kwargs,
             )
-            logger.debug("stdout: '{}'".format(x.stdout))
-            logger.debug("stderr: '{}'".format(x.stdout))
+            logger.debug(f"stdout: '{x.stdout}'")
+            logger.debug(f"stderr: '{x.stderr}'")
             x.stdout = x.stdout.strip()
             x.stderr = x.stderr.strip()
             return x
@@ -104,7 +104,7 @@ class CallTools(BaseTools):
                 textwrap.indent("\n".join(['"' + x + '"' for x in e.cmd]), "\t")
             )
         )
-        log_fn("Received exit code {}".format(e.returncode))
+        log_fn(f"Received exit code {e.returncode}")
         if e.stdout is not None and len(e.stdout.strip()) > 0:
             log_fn(" STDOUT ".center(wrap_length, "."))
             log_fn(textwrap.indent(textwrap.wrap(e.stdout.strip(), wrap_length - 4), "\t"))

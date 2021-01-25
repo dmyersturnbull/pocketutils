@@ -205,7 +205,7 @@ class StringTools(BaseTools):
         See ``Tools.strip_off`` for more info.
         """
         if not isinstance(pre, str):
-            raise TypeError("{} is not a string".format(pre))
+            raise TypeError(f"{pre} is not a string")
         if s.startswith(pre):
             s = s[len(pre) :]
         return s
@@ -217,7 +217,7 @@ class StringTools(BaseTools):
         See `Tools.strip_off` for more info.
         """
         if not isinstance(suf, str):
-            raise TypeError("{} is not a string".format(suf))
+            raise TypeError(f"{suf} is not a string")
         if s.endswith(suf):
             s = s[: -len(suf)]
         return s
@@ -342,10 +342,7 @@ class StringTools(BaseTools):
         Also see ``strip_brackets``
         """
         if any([a for a in pieces if len(a) != 2]):
-            raise ValueError(
-                "strip_paired requires each item in `pieces` be a string of length 2: (stard, end);"
-                "got {}".format(pieces)
-            )
+            raise ValueError(f"Each item must be a string of length 2: (stard, end); got {pieces}")
         text = str(text)
         while len(text) > 0:
             yes = False
@@ -432,7 +429,7 @@ class StringTools(BaseTools):
         # TODO this seems absurdly long for what it does
         if n_sigfigs is None or n_sigfigs < 1:
             raise OutOfRangeError(
-                "Sigfigs of {} is nonpositive".format(n_sigfigs),
+                f"Sigfigs of {n_sigfigs} is nonpositive",
                 value=n_sigfigs,
                 minimum=1,
             )

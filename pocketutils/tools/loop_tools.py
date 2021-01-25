@@ -63,7 +63,7 @@ class LoopTools(BaseTools):
         log = cls.get_log_function(log)
         initial_start_time = time.monotonic()
         now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        log("Started processing at {}.\n".format(now))
+        log(f"Started processing at {now}.\n")
         i = 0
         for i, thing in enumerate(things):
             t0 = time.monotonic()
@@ -92,7 +92,7 @@ class LoopTools(BaseTools):
         log = cls.get_log_function(log)
         n_total = len(things) if n_total is None else n_total
         now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        log("Started processing {} items at {}.\n".format(n_total, now))
+        log(f"Started processing {n_total} items at {now}.\n")
         t0 = time.monotonic()
         initial_start_time = time.monotonic()
         for i, thing in enumerate(things):
@@ -110,7 +110,7 @@ class LoopTools(BaseTools):
                 )
         now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         delta = UnitTools.delta_time_to_str(time.monotonic() - initial_start_time)
-        log("Processed {}/{} in {}. Done at {}.\n".format(n_total, n_total, delta, now))
+        log(f"Processed {n_total}/{n_total} in {delta}. Done at {now}.\n")
 
 
 __all__ = ["LoopTools"]

@@ -36,7 +36,7 @@ class _WB(metaclass=ABCMeta):
 
     def __eq__(self, other):
         if not isinstance(other, _WB):
-            raise TypeError("Cannot compare type {}".format(type(other)))
+            raise TypeError(f"Cannot compare type {type(other)}")
         return (self.base, self.n_rows, self.n_columns) == (
             other.base,
             other.n_rows,
@@ -87,7 +87,7 @@ class _WB(metaclass=ABCMeta):
             for r in range(ar, br + 1):
                 yield self.rc_to_label(r, ac)
         else:
-            raise OutOfRangeError("{}-{} is not a simple range".format(a, b))
+            raise OutOfRangeError(f"{a}-{b} is not a simple range")
 
     def block_range(self, a: str, b: str) -> Iterator[str]:
         ar, ac = self.label_to_rc(a)
@@ -109,17 +109,15 @@ class _WB(metaclass=ABCMeta):
             or column < self.base
             or column > self.n_rows * self.n_columns + self.base - 1
         ):
-            raise OutOfRangeError(
-                "{}-based coordinates {} out of range".format(self.base, (row, column))
-            )
+            raise OutOfRangeError(f"{self.base}-based coordinates {(row, column)} out of range")
 
     def __check_index_range(self, i: int):
         if i < self.base or i > self.n_wells + self.base - self.base:
-            raise OutOfRangeError("{}-based index {} out of range".format(self.base, i))
+            raise OutOfRangeError(f"{self.base}-based index {i} out of range")
 
     def __lt__(self, other):
         if self.__class__ != other.__class__:
-            raise TypeError("Wrong type {}".format(type(other)))
+            raise TypeError(f"Wrong type {type(other)}")
         if self.n_wells < other.n_wells:
             return True
         if self.n_wells > other.n_wells:
@@ -160,7 +158,7 @@ class _WB(metaclass=ABCMeta):
 class WbFactory:
     @classmethod
     def new(cls, base: int) -> Type[_WB]:
-        new_class = type("WB{}".format(base), (_WB,), {})
+        new_class = type(f"WB{base}", (_WB,), {})
         new_class.get_base = lambda c: base
         # noinspection PyTypeChecker
         return new_class
@@ -195,7 +193,7 @@ class ParsingWB(_WB, metaclass=ABCMeta):
         match = ParsingWB._pattern.fullmatch(expression)
         if match is None:
             raise StringPatternError(
-                "{} is wrong".format(expression),
+                f"{expression} is wrong",
                 value=expression,
                 pattern=ParsingWB._pattern,
             )

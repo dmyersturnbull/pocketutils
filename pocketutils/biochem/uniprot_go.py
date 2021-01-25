@@ -54,7 +54,7 @@ class FlatGoTerm:
         match = go_pattern.search(stwing)
         if match is None:
             raise StringPatternError(
-                "String didn't match GO term pattern: {}".format(stwing),
+                f"String didn't match GO term pattern: {stwing}",
                 value=stwing,
                 pattern=go_pattern,
             )
@@ -85,7 +85,7 @@ class UniprotGoTerms:
         with silenced(no_stderr=False):
             uniprot_data = uniprot.fetch_uniprot_metadata(uniprot_ids)
         if uniprot_data is None or uniprot_data == {} or len(uniprot_data) != len(uniprot_ids):
-            raise LookupError("At least one UniProt ID not found in {}".format(str(uniprot_ids)))
+            raise LookupError(f"At least one UniProt ID not found in {uniprot_ids}")
         return list(uniprot_data.values())
 
     def go_terms_for_uniprot_id(self, uniprot_id: str) -> List[FlatGoTerm]:
@@ -129,7 +129,7 @@ class GoTermsAtLevel:
         """
         x = self.obo.query_term(term_id)
         if x is None:
-            raise LookupError("Term ID {} not found".format(x))
+            raise LookupError(f"Term ID {x} not found")
         return x
 
     def get_ancestors_of_go_term(self, term_id: str, level: int) -> Iterable[GOTerm]:

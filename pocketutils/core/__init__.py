@@ -161,7 +161,7 @@ class SmartEnum(enum.Enum):
                 for e in cls:
                     if e.name.lower().strip() == v:
                         return e
-                raise LookupError("{} not found in {}".format(v, str(cls)))
+                raise LookupError(f"{v} not found in {str(cls)}")
         else:
             raise TypeError(str(type(v)))
 

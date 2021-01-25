@@ -75,7 +75,7 @@ class TickBounder:
         self.major = use_major_ticks
 
     def __str__(self) -> str:
-        return "TickBounder({}, {})".format(self.x_ticks, self.y_ticks)
+        return f"TickBounder({self.x_ticks}, {self.y_ticks})"
 
     def adjust(self, ax: Axes) -> Axes:
         x_adj, y_adj = self.adjusted(ax)

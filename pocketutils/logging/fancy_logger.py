@@ -36,11 +36,11 @@ class _LogLevel(enum.Enum):
             for v in _LogLevel:
                 if v.value == value:
                     return v
-        raise KeyError("No log level {}".format(value))
+        raise KeyError(f"No log level {value}")
 
     def __lt__(self, other):
         if not isinstance(other, _LogLevel):
-            raise TypeError("{} is not a log level".format(other))
+            raise TypeError(f"{other} is not a log level")
         return self.value < other.value
 
 

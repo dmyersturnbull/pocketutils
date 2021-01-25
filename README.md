@@ -17,9 +17,15 @@ Adorable little Python functions for you to copy or import.
 `pip install pocketutils`. To get the optional packages, use:
 `pip install pocketutils[tools,biochem,misc,notebooks,plotting]`
 
+
+[Apache](https://spdx.org/licenses/Apache-2.0.html)-licensed. To
+
+
 Among the more useful are `zip_strict`, `frozenlist`, `SmartEnum`, `is_lambda`, `strip_paired_brackets`,
-`sanitize_path_node`, `TomlData`, `PrettyRecordFactory`, `parallel_with_cursor`, `groupby_parallel`,
-`loop_timing`, and `stream_cmd_call`.
+`sanitize_path_node`, `TomlData`, `NestedDocDict`, `PrettyRecordFactory`, `parallel_with_cursor`,
+`loop_timing`, `HashableFile`, `QueryExecutor`, `WebResource`, `get_env_info`, `git_description`, `git_hash`,
+`delete_surefire`, `roman_to_arabic`, `pretty_float`, `pretty_function`, `round_to_sigfigs`,
+`prompt_yes_no`, and `stream_cmd_call`.
 
 Also has functions for plotting, machine learning, and bioinformatics.
 Some of the more useful are `ConfusionMatrix`, `DecisionFrame`,
@@ -29,7 +35,6 @@ Some of the more useful are `ConfusionMatrix`, `DecisionFrame`,
 [See the docs 📚](https://pocketutils.readthedocs.io/en/stable/), or just
 [browse the code](https://github.com/dmyersturnbull/pocketutils/tree/main/pocketutils).
 
-Licensed under the terms of the [Apache License 2.0](https://spdx.org/licenses/Apache-2.0.html).
 [New issues](https://github.com/dmyersturnbull/pocketutils/issues) and pull requests are welcome.
 Please refer to the [contributing guide](https://github.com/dmyersturnbull/pocketutils/blob/main/CONTRIBUTING.md)
 and [security policy](https://github.com/dmyersturnbull/pocketutils/blob/main/SECURITY.md).  

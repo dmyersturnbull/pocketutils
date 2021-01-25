@@ -161,7 +161,7 @@ class DfMemCache(Generic[K]):
             return self._items[key]
         else:
             value = self._loader(key)
-            logging.debug("Loaded {}".format(key))
+            logging.debug(f"Loaded {key}")
             self._items[key] = value
             self._policy.added(key, value)
             self.archive()
@@ -180,7 +180,7 @@ class DfMemCache(Generic[K]):
             self._policy.removed(key)
             del self._items[key]
             archived.append(key)
-            logging.debug("Archived {} items: {}".format(len(archived), archived))
+            logging.debug(f"Archived {len(archived)} items: {archived}")
         return archived
 
     def clear(self) -> None:
