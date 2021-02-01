@@ -30,7 +30,7 @@ Among the more useful are `zip_strict`, `frozenlist`, `SmartEnum`, `is_lambda`, 
 Also has functions for plotting, machine learning, and bioinformatics.
 Some of the more useful are `ConfusionMatrix`, `DecisionFrame`,
 [`PeakFinder`](https://en.wikipedia.org/wiki/Topographic_prominence), `AtcParser` (for PubChem ATC codes),
-`WellBase1` (for multiwell plates), and [`TissueTable`]("https://www.proteinatlas.org/).
+`WellBase1` (for multiwell plates), and [`TissueTable`](https://www.proteinatlas.org/).
 
 [See the docs 📚](https://pocketutils.readthedocs.io/en/stable/), or just
 [browse the code](https://github.com/dmyersturnbull/pocketutils/tree/main/pocketutils).
