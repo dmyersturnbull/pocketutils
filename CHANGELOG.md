@@ -3,6 +3,10 @@
 Adheres to [Semantic Versioning 2.0](https://semver.org/spec/v2.0.0.html) and
 [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [0.4.1] - unreleased
+
+### Changed:
+- `PrettyRecordFactory` now puts the status first and can use emojis
 
 ## [0.4.0 - 2021-01-05
 
