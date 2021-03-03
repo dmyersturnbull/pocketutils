@@ -58,7 +58,7 @@ orjson                   = ">=3.4, <4.0"
 tomlkit                  = ">=0.7, <1.0"
 
 dill                     = {version=">=0.3, <1.0", optional=true}
-jsonpickle               = {version=">=1.4, <2.0", optional=true}
+jsonpickle               = {version=">=1.4,<3.0", optional=true}
 joblib                   = {version=">=1.0, <2.0", optional=true}
 numpy                    = {version=">=1.19, <2.0", optional=true}
 pandas                   = {version=">=1.2, <2.0", optional=true}
