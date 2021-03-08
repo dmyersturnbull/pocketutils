@@ -318,7 +318,7 @@ xlsxwriter = "*"
 
 [[package]]
 name = "hypothesis"
-version = "6.4.0"
+version = "6.6.0"
 description = "A library for property-based testing"
 category = "dev"
 optional = false
@@ -1399,8 +1399,8 @@ goatools = [
     {file = "goatools-1.0.15.tar.gz", hash = "sha256:e4d3a1b9e98f8d7ec272e8868576bedd79df80f3de67f75dac6ad13e8519375d"},
 ]
 hypothesis = [
-    {file = "hypothesis-6.4.0-py3-none-any.whl", hash = "sha256:89e3b3c4252f07d1135f67679ee94ace507155242868d56e24640b445046d182"},
-    {file = "hypothesis-6.4.0.tar.gz", hash = "sha256:c41aed6cd183f5fe3f54613b3fc86c8eccd0d1dd158474dd424133fc038b94a3"},
+    {file = "hypothesis-6.6.0-py3-none-any.whl", hash = "sha256:6a23d0c342d01a88f3b30b54ad459246beb01b0ce28d865cf06623a9209aac03"},
+    {file = "hypothesis-6.6.0.tar.gz", hash = "sha256:0f6b970178b7676267029eb5d352ea7ff4fda4533d2d2eaa3adbda660db54b65"},
 ]
 identify = [
     {file = "identify-2.0.0-py2.py3-none-any.whl", hash = "sha256:9cdd81e5d2b6e76c3006d5226316dd947bd6324fbeebb881bec489202fa09d3a"},
