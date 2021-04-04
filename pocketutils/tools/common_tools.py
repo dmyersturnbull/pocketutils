@@ -251,19 +251,24 @@ class CommonTools(BaseTools):
         yield DevNull()
 
     @classmethod
-    def parse_bool(cls, s: str) -> bool:
+    def parse_bool(cls, s: str, flex: bool = False) -> bool:
         """
         Parses a 'true'/'false' string to a bool, ignoring case.
+
+        Args:
+            s: The string
+            flex: If true, also allows 'yes', 'no', 'y', and 'n'
 
         Raises:
             ValueError: If neither true nor false
         """
         if isinstance(s, bool):
             return s
-        if s.lower() == "false":
-            return False
-        if s.lower() == "true":
+        s = s.lower()
+        if s == "true" or flex and s in {"yes", "y"}:
             return True
+        if s == "false" or flex and s in {"no", "n"}:
+            return False
         raise ValueError(f"{s} is not true/false")
 
 
