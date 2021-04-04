@@ -5,8 +5,14 @@ Adheres to [Semantic Versioning 2.0](https://semver.org/spec/v2.0.0.html) and
 
 ## [0.4.1] - unreleased
 
+### Added:
+- `flex` arg on `parse_bool`
+
 ### Changed:
 - `PrettyRecordFactory` now puts the status first and can use emojis
+
+### Fixed
+- Updated Numpy to 1.20+ and jsonpickle to 2.0.
 
 ## [0.4.0 - 2021-01-05
 
