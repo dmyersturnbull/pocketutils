@@ -16,7 +16,7 @@ build-backend = "poetry.masonry.api"
 
 [tool.poetry]
 name = "pocketutils"
-version = "0.4.1"
+version = "0.4.2"
 description = "Adorable little Python code for you to copy or import."
 keywords = ["python", "snippets", "utils", "gists", "bioinformatics"]
 authors = ["Douglas Myers-Turnbull"]
@@ -58,9 +58,9 @@ orjson                   = ">=3.4, <4.0"
 tomlkit                  = ">=0.7, <1.0"
 
 dill                     = {version=">=0.3, <1.0", optional=true}
-jsonpickle               = {version=">=1.4, <2.0", optional=true}
+jsonpickle               = {version=">=2.0, <3.0", optional=true}
 joblib                   = {version=">=1.0, <2.0", optional=true}
-numpy                    = {version=">=1.19, <2.0", optional=true}
+numpy                    = {version=">=1.20, <2.0", optional=true}
 pandas                   = {version=">=1.2, <2.0", optional=true}
 
 matplotlib               = {version=">=3.3, <4.0", optional=true}
@@ -76,7 +76,7 @@ ipython                  = {version=">=7.19, <8.0", optional=true}
 
 
 [tool.poetry.dev-dependencies]
-pre-commit               = ">=2.9, <3.0"
+pre-commit               = ">=2.11, <3.0"
 pre-commit-hooks         = ">=3.4, <4.0"
 bandit                   = ">=1.7, <2.0"
 pytest                   = ">=6.2, <7.0"
@@ -84,12 +84,12 @@ black                    = {git = "https://github.com/psf/black.git", rev="692c0
 coverage                 = {extras = ["toml"], version = ">=5.3, <6.0"}
 hypothesis               = ">=6.0, <7.0"
 pytest-cov               = ">=2.10, <3.0"
-sphinx                   = ">=3.4, <4.0"
+sphinx                   = ">=3.5, <4.0"
 sphinx-autoapi           = ">=1.5, <2.0"
 sphinx-rtd-theme         = ">=0.5, <1.0"
-flake8                   = ">=3.8, <4.0"
-flake8-docstrings        = ">=1.5, <2.0"
-flake8-bugbear           = ">=20"
+flake8                   = ">=3.9, <4.0"
+flake8-docstrings        = ">=1.6, <2.0"
+flake8-bugbear           = ">=21"
 
 
 [tool.poetry.extras]
