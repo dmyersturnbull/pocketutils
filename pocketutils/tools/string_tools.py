@@ -111,15 +111,13 @@ class StringTools(BaseTools):
         try:
             float(num)
         except TypeError:
-            if not isinstance(num, str):
-                raise TypeError("Must be either str or float-like") from None
+            raise TypeError(f"Type {type(num)} not str or float-like") from None
         t = str(num)
         if t.startswith("."):
             t = "0" + t
-        if "." in t:
-            return t.rstrip("0").rstrip(".")
-        else:
-            return t
+        if t.endswith(".0"):
+            t = t[:-2]
+        return t
 
     @classmethod
     def truncate(cls, s: Optional[str], n: int, always_dots: bool = False) -> Optional[str]:
