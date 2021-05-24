@@ -84,7 +84,7 @@ black                    = {git = "https://github.com/psf/black.git", rev="692c0
 coverage                 = {extras = ["toml"], version = ">=5.3, <6.0"}
 hypothesis               = ">=6.0, <7.0"
 pytest-cov               = ">=2.10, <3.0"
-sphinx                   = ">=3.5, <4.0"
+sphinx                   = ">=3.5,<5.0"
 sphinx-autoapi           = ">=1.5, <2.0"
 sphinx-rtd-theme         = ">=0.5, <1.0"
 flake8                   = ">=3.9, <4.0"
