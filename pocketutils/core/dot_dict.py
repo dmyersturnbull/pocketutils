@@ -16,6 +16,12 @@ PICKLE_PROTOCOL = 5
 T = TypeVar("T")
 
 
+def _json_encode_default(obj: Any) -> Any:
+    if isinstance(obj, NestedDotDict):
+        # noinspection PyProtectedMember
+        return dict(obj._x)
+
+
 class NestedDotDict(Mapping):
     """
     A thin wrapper around a nested dict to make getting values easier.
@@ -28,13 +34,8 @@ class NestedDotDict(Mapping):
     """
 
     def to_json(self, indent: bool = False) -> str:
-        def default(obj: Any) -> Any:
-            if isinstance(obj, NestedDotDict):
-                # noinspection PyProtectedMember
-                return dict(obj._x)
-
         kwargs = dict(option=orjson.OPT_INDENT_2) if indent else {}
-        encoded = orjson.dumps(dict(self), default=default, **kwargs)
+        encoded = orjson.dumps(dict(self), default=_json_encode_default, **kwargs)
         return encoded.decode(encoding="utf8")
 
     @classmethod
@@ -43,15 +44,15 @@ class NestedDotDict(Mapping):
 
     @classmethod
     def read_json(cls, path: Union[PurePath, str]) -> NestedDotDict:
-        z = orjson.loads(Path(path).read_text(encoding="utf8"))
-        if (
-            not isinstance(z, cls)
-            and hasattr(z, "items")
-            and hasattr(z, "keys")
-            and hasattr(z, "values")
-        ):
-            z.__class__ = cls
-        return z
+        """
+        Reads JSON from a file, into a NestedDotDict.
+        If the JSON data is a list type, converts into a dict with the key ``data``.
+        """
+        data = orjson.loads(Path(path).read_text(encoding="utf8"))
+        if isinstance(data, list):
+            data = {"data": data}
+        data.__class__ = cls
+        return data
 
     @classmethod
     def read_pickle(cls, path: Union[PurePath, str]) -> NestedDotDict:
@@ -70,7 +71,15 @@ class NestedDotDict(Mapping):
 
     @classmethod
     def parse_json(cls, data: str) -> NestedDotDict:
-        return NestedDotDict(json.loads(data))
+        """
+        Parses JSON from a string, into a NestedDotDict.
+        If the JSON data is a list type, converts into a dict with the key ``data``.
+        """
+        data = json.loads(data)
+        if isinstance(data, list):
+            data = {"data": data}
+        data.__class__ = cls
+        return NestedDotDict(data)
 
     @classmethod
     def parse_pickle(cls, data: ByteString) -> NestedDotDict:
@@ -85,6 +94,8 @@ class NestedDotDict(Mapping):
         Raises:
             ValueError: If a key (in this dict or a sub-dict) is not a str or contains a dot
         """
+        if not (hasattr(x, "items") and hasattr(x, "keys") and hasattr(x, "values")):
+            raise TypeError(f"Type {type(x)} for value {x} appears not to be dict-like")
         bad = [k for k in x if not isinstance(k, str)]
         if len(bad) > 0:
             raise ValueError(f"Keys were not strings for these values: {bad}")
@@ -95,8 +106,9 @@ class NestedDotDict(Mapping):
         # Let's make sure this constructor gets called on subdicts:
         self.leaves()
 
-    def write_json(self, path: Union[PurePath, str]) -> None:
-        Path(path).write_text(json.dumps(self._x), encoding="utf8")
+    def write_json(self, path: Union[PurePath, str], indent: bool = False) -> None:
+        kwargs = dict(option=orjson.OPT_INDENT_2) if indent else {}
+        Path(path).write_bytes(orjson.dumps(dict(self), default=_json_encode_default, **kwargs))
 
     def write_pickle(self, path: Union[PurePath, str]) -> None:
         Path(path).write_bytes(pickle.dumps(self._x, protocol=PICKLE_PROTOCOL))

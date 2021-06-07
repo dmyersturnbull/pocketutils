@@ -3,10 +3,28 @@
 Adheres to [Semantic Versioning 2.0](https://semver.org/spec/v2.0.0.html) and
 [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [0.5.0] - 2021-06-07
+
+### Changed:
+
+- Major version bumps; mainly jsonpickle to v2
+- `NestedDotDict.read_json` and `NestedDotDict.parse_json` now convert top-level list to a dict
+
+### Removed:
+
+- `hasher.py` (the new `hashers.py` remains)
+- Dockerfile
+
+### Fixed:
+
+- Check workflow issue
+- Bumped dev dep versions
+- Readthedocs with py3.9
 
 ## [0.4.0 - 2021-01-05
 
 ### Changed:
+
 - Bumped numpy from `>=1.18, <2.0` to `>=1.19, <2.0`.
   Historically Numpy minor updates have introduced problems in downstream code.
   Because 1.19 is more likely to be used now anyway, this new version restriction
@@ -22,33 +40,37 @@ Adheres to [Semantic Versioning 2.0](https://semver.org/spec/v2.0.0.html) and
   Callers should now use `PathLikeUtils.isinstance`.
 
 ### Removed:
+
 - Dropped support for Python 3.7
 
 ### Added:
+
 - A few small functions in `StringTools`
 
 ### Fixed
-- Python 3.9 compatibility
 
+- Python 3.9 compatibility
 
 ## [0.3.0] - 2020-09-02
 
 ### Changed:
+
 - Moved `core.io` to `core.input_output` to fix namespace conflicts.
 - Made `NestedDotDict` implement `Mapping` and changed its methods
-
 
 ## [0.2.0] - 2020-09-01
 
 ### Removed:
+
 - `db` subpackage
 - `toml_data` module. Use `NestedDotDict` instead.
 
 ### Changed:
-- Made `tools` require the `tools` optional package
 
+- Made `tools` require the `tools` optional package
 
 ## [0.1.0] - 2020-08-06
 
 ### Added:
+
 - Current codebase

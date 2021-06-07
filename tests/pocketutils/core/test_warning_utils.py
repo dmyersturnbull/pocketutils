@@ -5,7 +5,7 @@ from pocketutils.logging.warning_utils import *
 raises = pytest.raises
 
 
-class TestHasher:
+class TestWarningUtils:
     def test(self):
         pass
 

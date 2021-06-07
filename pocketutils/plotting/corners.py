@@ -2,7 +2,10 @@ from typing import Any, Mapping
 
 
 class Corner:
-    """Just used for text alignment. I hate it, but at least I won't keep getting the wrong params."""
+    """
+    Just used for text alignment.
+    I hate it, but at least I won't keep getting the wrong params.
+    """
 
     def __init__(self, bottom: bool, left: bool):
         """

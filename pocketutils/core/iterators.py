@@ -9,7 +9,7 @@ IX = TypeVar("IX")
 
 
 # noinspection PyAbstractClass
-class SizedIterator(collections.abc.Iterator, metaclass=abc.ABCMeta):
+class SizedIterator(collections.Iterator, metaclass=abc.ABCMeta):
     """
     An iterator with size and progress.
     """
