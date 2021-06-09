@@ -3,12 +3,17 @@
 Adheres to [Semantic Versioning 2.0](https://semver.org/spec/v2.0.0.html) and
 [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
-## [0.5.0] - 2021-06-07
+## [0.5.0] - 2021-06-08
+
+### Added:
+- `flex` arg on `parse_bool`
 
 ### Changed:
 
 - Major version bumps; mainly jsonpickle to v2
+- `PrettyRecordFactory` now puts the status first and can use emojis
 - `NestedDotDict.read_json` and `NestedDotDict.parse_json` now convert top-level list to a dict
+- Updated Numpy to 1.20+ and jsonpickle to 2.0.
 
 ### Removed:
 
