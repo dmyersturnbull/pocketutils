@@ -32,7 +32,7 @@ class TestUnitTools:
         assert str(f(0.0012 / 1000 / 1000, 1)) == "1e-09"
 
     def test_nice_dose(self):
-        f = UnitTools.nice_dose
+        f = UnitTools.format_micromolar
         assert f(1.2) == "1.2µM"
         assert f(1.2, space=Chars.narrownbsp) == "1.2" + Chars.narrownbsp + "µM"
         assert f(0.0012) == "1.2nM"
@@ -43,7 +43,7 @@ class TestUnitTools:
         assert f(9999999) == "10M"
 
     def test_dose_to_micromolar(self):
-        f = UnitTools.dose_to_micromolar
+        f = UnitTools.concentration_to_micromolar
         assert f(55, "M") == 55 * 1e6
         assert f(55, "mM") == 55 * 1e3
         assert f(55, "uM") == 55
@@ -56,14 +56,14 @@ class TestUnitTools:
         assert pytest.approx(f(55, "fM") * 1e9, 55)
 
     def test_extract_dose(self):
-        f = UnitTools.extract_dose
+        f = UnitTools.extract_micromolar
         assert f("abc 55 nM") == 55 / 1000
         assert f("abc 55{}uM".format(Chars.narrownbsp)) == 55
         assert f("abc 55 uM") == 55
         assert f("a.55bc 55uM") == 55
 
     def test_split_drug_dose(self):
-        f = UnitTools.split_drug_dose
+        f = UnitTools.split_species_micromolar
         assert f("abc 55 nM") == ("abc", 55 / 1000)
         assert f("abc 55{}uM".format(Chars.narrownbsp)) == ("abc", 55)
         assert f("abc 55 uM") == ("abc", 55)

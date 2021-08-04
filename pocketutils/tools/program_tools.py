@@ -72,7 +72,7 @@ class ProgramTools(BaseTools):
         # ignoring bandit security warning because we explain the security concerns
         # in the class docstring
         x = subprocess.run(cmd, **cmd_args)  # nosec
-        return cls._parse(x.stdout.strip())
+        return cls._parse(x.stdout.decode(encoding="utf8").strip())
 
     @classmethod
     def _parse(cls, text: str):
@@ -85,7 +85,7 @@ class ProgramTools(BaseTools):
         return GitDescription(
             text,
             m.group(1),
-            int(m.group(2)),
+            m.group(2),
             m.group(3),
             m.group(4) == "dirty",
             m.group(4) == "broken",

@@ -11,19 +11,18 @@ class FancyColorSchemes:
     """
     Color schemes that can be used.
     Each is a list of hex color codes.
-    The "tol" palettes (ex `qualitative_tol_vibrant_7`) are safe for red-green color blindness.
+    The "tol" palettes (ex ``qualitative_tol_vibrant_7``) are safe for red-green color blindness.
     For all palettes other than grayscale, colors of black or gray were removed.
     """
 
     @classmethod
     def darken_color(cls, color: str, shading: float) -> str:
         """
-
+        Darkens a color by a certain fraction.
 
         Args:
-            color:
-            shading:
-
+            color: A matplotlib-recognized colors
+            shading: A float from 0 to 1, with 1 being complete shading
         """
         color = mcolors.colorConverter.to_rgb(color)
         h, l, s = colorsys.rgb_to_hls(*mcolors.to_rgb(color))
@@ -33,20 +32,20 @@ class FancyColorSchemes:
     @classmethod
     def darken_palette(cls, palette: Sequence[str], shading: float) -> Sequence[str]:
         """
-
+        Darkens a list of colors by a certain fraction.
 
         Args:
-            palette: Iterable[str]:
-            shading: float:
-
-        Returns:
-
+            palette: A sequence of matplotlib-recognized colors
+            shading: A float from 0 to 1, with 1 being complete shading
         """
         return [FancyColorSchemes.darken_color(c, shading) for c in palette]
 
     @classmethod
     def grayscales(cls) -> Sequence[str]:
-        """ """
+        """
+        A range of grayscale-ISH colors from black to white.
+        Some have slightly more of red, green, or blue.
+        """
         return [
             "#000000",
             "#555555",
@@ -101,9 +100,6 @@ class FancyColorSchemes:
         """
         "Dark" color scheme from https://personal.sron.nl/~pault/#sec:qualitative
         No black and reordered red and yellow.
-
-        Returns:
-
         """
         return ["#222255", "#225555", "#225522", "#663333", "#666633", "#551144"]
 
@@ -112,9 +108,6 @@ class FancyColorSchemes:
         """
         "High-contrast" color scheme from https://personal.sron.nl/~pault/#sec:qualitative
         Reordered. No gray.
-
-        Returns:
-
         """
         return ["#0077bb", "#ee3377", "#33bbee", "#cc3311", "#009988", "#ee7733"]
 
@@ -123,9 +116,6 @@ class FancyColorSchemes:
         """
         "Vibrant" color scheme from https://personal.sron.nl/~pault/#sec:qualitative
         Gray was removed.
-
-        Returns:
-
         """
         return ["#0077BB", "#CC3311", "#009988", "#EE7733", "#33BBEE", "#EE3377"]
 
@@ -163,7 +153,6 @@ class FancyCmaps:
     For ex, 'Greys' doesn't go from pure white to pure black!
     So colormaps to consider avoiding include Greys, Blues, Greens, (etc), bwr, and seismic.
     Matplotlib still has good built-in colormaps, including viridis and plasma.
-
     """
 
     @classmethod

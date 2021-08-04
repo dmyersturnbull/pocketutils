@@ -100,7 +100,7 @@ class RefDims(dict):
         """
         try:
             super().__setitem__(key, float(value))
-        except:
+        except Exception:
             raise TypeError(f"{value} is not a float")
 
 

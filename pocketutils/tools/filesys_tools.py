@@ -27,7 +27,7 @@ from pocketutils.core.exceptions import (
     FileDoesNotExistError,
     ParsingError,
 )
-from pocketutils.core.hasher import *
+from pocketutils.core.hashers import *
 from pocketutils.core.input_output import OpenMode, PathLike, Writeable
 from pocketutils.core.web_resource import *
 from pocketutils.tools.base_tools import BaseTools
@@ -48,7 +48,14 @@ try:
 except ImportError:
     # zero them all out
     jsonpickle, jsonpickle_numpy, jsonpickle_pandas = None, None, None
-    logger.error("Could not import jsonpickle")
+    logger.debug("Could not import jsonpickle", exc_info=True)
+
+
+try:
+    from defusedxml import ElementTree
+except ImportError:
+    logger.warning("Could not import defusedxml; falling back to xml")
+    from xml.etree import ElementTree
 
 
 class FilesysTools(BaseTools):
@@ -75,8 +82,8 @@ class FilesysTools(BaseTools):
         return dill.loads(data)  # nosec
 
     @classmethod
-    def new_hasher(cls, algorithm: str = "sha1"):
-        return FileHasher(algorithm)
+    def new_hasher(cls, algorithm: str = "sha1") -> Hasher:
+        return Hasher(algorithm)
 
     @classmethod
     def new_webresource(
@@ -127,23 +134,23 @@ class FilesysTools(BaseTools):
             IOError: If it can't delete
         """
         # we need this because of Windows
-        path = str(path)
+        path = Path(path)
         logger.debug(f"Permanently deleting {path} ...")
         chmod_err = None
         try:
-            os.chmod(path, stat.S_IRWXU)
+            os.chmod(str(path), stat.S_IRWXU)
         except Exception as e:
             chmod_err = e
         # another reason for returning exception:
         # We don't want to interrupt the current line being printed like in slow_delete
-        if os.path.isdir(path):
-            shutil.rmtree(path, ignore_errors=True)  # ignore_errors because of Windows
+        if path.is_dir():
+            shutil.rmtree(str(path), ignore_errors=True)  # ignore_errors because of Windows
             try:
-                os.remove(path)  # again, because of Windows
+                path.unlink(missing_ok=True)  # again, because of Windows
             except IOError:
                 pass  # almost definitely because it doesn't exist
         else:
-            os.remove(path)
+            path.unlink(missing_ok=True)
         logger.debug(f"Permanently deleted {path}")
         return chmod_err
 
@@ -159,11 +166,10 @@ class FilesysTools(BaseTools):
         Try to delete a file (probably temp file), if it exists, and log any PermissionError.
         """
         path = Path(path)
-        if path.exists():
-            try:
-                path.unlink()
-            except PermissionError:
-                logger.error(f"Permission error preventing deleting {path}")
+        try:
+            path.unlink(missing_ok=True)
+        except PermissionError:
+            logger.error(f"Permission error preventing deleting {path}")
 
     @classmethod
     def read_lines_file(cls, path: PathLike, ignore_comments: bool = False) -> Sequence[str]:
@@ -319,8 +325,6 @@ class FilesysTools(BaseTools):
         elif ext == "strings":
             return load_list(str)
         elif ext == "xml":
-            from xml.etree import ElementTree
-
             ElementTree.parse(path).getroot()
         else:
             raise TypeError(f"Did not recognize resource file type for file {path}")

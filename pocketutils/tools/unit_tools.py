@@ -98,7 +98,7 @@ class UnitTools(BaseTools):
             raise OutOfRangeError(f"sig_figs {sig_figs} is negative", minimum=0)
         num = float(num)
         if num != 0:
-            return round(num, -int(math.floor(math.log10(abs(num))) - (sig_figs - 1)))
+            return int(round(num, -int(math.floor(math.log10(abs(num))) - (sig_figs - 1))))
         else:
             return 0  # can't take the log of 0
 
@@ -112,21 +112,35 @@ class UnitTools(BaseTools):
         space: str = "",
     ) -> str:
         """
-        Returns a dose with units, with the units scaled as needed.
+        Deprecated; see ``format_micromolar``.
+        """
+        return cls.format_micromolar(micromolar_dose, n_sigfigs, adjust_units, use_sigfigs, space)
+
+    @classmethod
+    def format_micromolar(
+        cls,
+        micromolar: float,
+        n_sigfigs: Optional[int] = 5,
+        adjust_units: bool = True,
+        use_sigfigs: bool = True,
+        space: str = "",
+    ) -> str:
+        """
+        Returns a concentration with units, with the units scaled as needed.
         Can handle millimolar, micromolar, nanomolar, and picomolar.
 
         Args:
             use_sigfigs: If True, rounds to a number of significant figures; otherwise round to decimal places
-            micromolar_dose: The dose in micromolar
+            n_sigfigs: The micromolar concentration
             n_sigfigs: For rounding; no rounding if None
             adjust_units: If False, will always use micromolar
             space: Space char between digits and units;
         good choices are empty, ASCII space, Chars.narrownbsp, Chars.thinspace, and Chars.nbsp.
 
         Returns:
-            The dose with a suffix of µM, mM, nM, or mM
+            The concentration with a suffix of µM, mM, nM, or mM
         """
-        d = micromolar_dose
+        d = micromolar
         m = abs(d)
         unit = "µM"
         if adjust_units:
@@ -159,7 +173,14 @@ class UnitTools(BaseTools):
     @classmethod
     def split_drug_dose(cls, text: str) -> Tuple[str, Optional[float]]:
         """
-        Splits a name into a drug/dose pair, falling back with the full name.
+        Deprecated; see ``split_micromolar``.
+        """
+        return cls.split_species_micromolar(text)
+
+    @classmethod
+    def split_species_micromolar(cls, text: str) -> Tuple[str, Optional[float]]:
+        """
+        Splits a name into a chemical/concentration pair, falling back with the full name.
         Ex: "abc 3.5uM" → (abc, 3.5)
         Ex: "abc 3.5 µM" → (abc, 3.5)
         Ex: "abc (3.5mM)" → (abc, 3500.0)
@@ -187,6 +208,13 @@ class UnitTools(BaseTools):
     @classmethod
     def extract_dose(cls, text: str) -> Optional[float]:
         """
+        Deprecated; see ``extract_micromolar``.
+        """
+        return cls.extract_micromolar(text)
+
+    @classmethod
+    def extract_micromolar(cls, text: str) -> Optional[float]:
+        """
         Returns what looks like a concentration with units. Accepts one of: mM, µM, uM, nM, pM.
         Searches pretty flexibly.
         If no matches are found, returns None.
@@ -212,7 +240,14 @@ class UnitTools(BaseTools):
     @classmethod
     def dose_to_micromolar(cls, digits: Union[str, float], units: str) -> float:
         """
-        Ex: dose_to_micromolar(53, 'nM')  # returns 0.053
+        Deprecated; see ``concentration_to_micromolar``.
+        """
+        return cls.concentration_to_micromolar(digits, units)
+
+    @classmethod
+    def concentration_to_micromolar(cls, digits: Union[str, float], units: str) -> float:
+        """
+        Ex: concentration_to_micromolar(53, 'nM')  # returns 0.053
         """
         return float(digits) * {
             "M": 1e6,

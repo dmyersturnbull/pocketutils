@@ -251,8 +251,10 @@ class BaseTools:
         if log is None:
             return logger.info
         elif isinstance(log, str) and log.lower() in ["print", "stdout"]:
+            # noinspection PyTypeChecker
             return sys.stdout.write
         elif log == "stderr":
+            # noinspection PyTypeChecker
             return sys.stderr.write
         elif isinstance(log, int):
             return getattr(logger, logging.getLevelName(log).lower())

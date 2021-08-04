@@ -57,23 +57,29 @@ class GlobalWarningUtils:
         """
         Adds filters for common unavoidable warnings from numpy, pandas, scikit-learn, etc.
 
-        Returns:
-            self
+        See ``common_never_substrings`` and ``common_once_substrings``.
         """
-        return (
-            cls.substring_never("libuv only supports millisecond timer resolution")
-            .substring_never("or '1type' as a synonym of type is deprecated")
-            .substring_never(
-                "Series.nonzero() is deprecated and will be removed in a future version"
-            )
-            .substring_never(
-                "Monkey-patching ssl after ssl has already been imported may lead to errors"
-            )
-            .substring_never(
-                "your performance may suffer as PyTables will pickle object types that it cannot map directly to c-types"
-            )
-            .substring_once("Trying to unpickle estimator")
-        )
+        for v in cls.common_never_substrings():
+            cls.substring_never(v)
+        for v in cls.common_once_substrings():
+            cls.substring_once(v)
+        return cls
+
+    @classmethod
+    def common_never_substrings(cls):
+        return [
+            "libuv only supports millisecond timer resolution",
+            "or '1type' as a synonym of type is deprecated",
+            "Series.nonzero() is deprecated and will be removed in a future version",
+            "Monkey-patching ssl after ssl has already been imported may lead to errors",
+            "your performance may suffer as PyTables will pickle object types that it cannot map directly to c-types",
+        ]
+
+    @classmethod
+    def common_once_substrings(cls):
+        return [
+            "Trying to unpickle estimator",
+        ]
 
 
 __all__ = ["GlobalWarningUtils"]

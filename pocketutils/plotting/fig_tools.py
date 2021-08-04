@@ -3,7 +3,8 @@ from __future__ import annotations
 import logging
 from contextlib import contextmanager
 from copy import copy
-from typing import Callable, Generator, Iterator, Mapping, Optional, Sequence
+from pathlib import Path
+from typing import Callable, Generator, Iterator, Mapping, Optional, Sequence, Iterable
 from typing import Tuple as Tup
 from typing import Union
 
@@ -25,20 +26,30 @@ logger = logging.getLogger("pocketutils")
 
 class FigureTools:
     @classmethod
-    def cm2in(cls, tup):
+    def cm2in(cls, tup: Union[float, Iterable[float]]):
         """
-
+        Just converts centimeters to inches.
 
         Args:
-            tup:
-
-        Returns:
-
+            tup: A float or sequence of floats (determines the return type)
         """
         if CommonTools.is_true_iterable(tup):
             return [x / 2.54 for x in tup]
         else:
             return float(tup) / 2.54
+
+    @classmethod
+    def in2cm(cls, tup: Union[float, Iterable[float]]):
+        """
+        Just converts inches to centimeters.
+
+        Args:
+            tup: A float or sequence of floats (determines the return type)
+        """
+        if CommonTools.is_true_iterable(tup):
+            return [x * 2.54 for x in tup]
+        else:
+            return float(tup) * 2.54
 
     @classmethod
     def open_figs(cls) -> Sequence[Figure]:
@@ -178,14 +189,12 @@ class FigureTools:
         return n
 
     @classmethod
-    def font_paths(cls) -> Sequence[str]:
+    def font_paths(cls) -> Sequence[Path]:
         """
-
-        Returns:
-
+        Returns the paths of system fonts.
         """
         # noinspection PyUnresolvedReferences
-        return matplotlib.font_manager.findSystemFonts(fontpaths=None)
+        return [Path(p) for p in matplotlib.font_manager.findSystemFonts(fontpaths=None)]
 
     @classmethod
     def text_matrix(

@@ -1,8 +1,10 @@
 from enum import Enum
 from typing import Mapping
 
+from pocketutils.core import SmartEnum
 
-class MsgLevel(Enum):
+
+class MsgLevel(SmartEnum):
     INFO = 1
     SUCCESS = 2
     NOTICE = 3

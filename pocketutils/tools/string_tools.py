@@ -1,7 +1,7 @@
 import json
 import re
 from copy import copy
-from typing import Any, Iterable, Mapping, Optional, Sequence, Tuple, TypeVar, Union
+from typing import Any, Iterable, Mapping, Optional, Sequence, Tuple, TypeVar, Union, Callable
 
 import numpy as np
 
@@ -122,6 +122,22 @@ class StringTools(BaseTools):
             return t
 
     @classmethod
+    def tabs_to_list(cls, s: str) -> Sequence[str]:
+        """
+        Splits by tabs, but preserving quoted tabs, stripping quotes.
+        """
+        pat = re.compile(r"""((?:[^\t"']|"[^"]*"|'[^']*')+)""")
+        # Don't strip double 2x quotes: ex ""55"" should be "55", not 55
+        def strip(i: str) -> str:
+            if i.endswith('"') or i.endswith("'"):
+                i = i[:-1]
+            if i.startswith('"') or i.startswith("'"):
+                i = i[1:]
+            return i.strip()
+
+        return [strip(i) for i in pat.findall(s)]
+
+    @classmethod
     def truncate(cls, s: Optional[str], n: int, always_dots: bool = False) -> Optional[str]:
         """
         Returns a string if it has ``n`` or fewer characters;
@@ -146,45 +162,38 @@ class StringTools(BaseTools):
             return s[:nx] + "…"
         return s
 
-    @classmethod
-    def tabs_to_list(cls, s: str) -> Sequence[str]:
-        """
-        Splits by tabs, but preserving quoted tabs, stripping quotes.
-        """
-        pat = re.compile(r"""((?:[^\t"']|"[^"]*"|'[^']*')+)""")
-        # Don't strip double 2x quotes: ex ""55"" should be "55", not 55
-        def strip(i: str) -> str:
-            if i.endswith('"') or i.endswith("'"):
-                i = i[:-1]
-            if i.startswith('"') or i.startswith("'"):
-                i = i[1:]
-            return i.strip()
-
-        return [strip(i) for i in pat.findall(s)]
-
     # these are provided to avoid having to call with labdas or functools.partial
     @classmethod
-    def truncate60(cls, s):
+    def truncator(cls, n: int = 40, always_dots: bool = False) -> Callable[[str], str]:
+        # pretty much functools.partial
+        def trunc(s: str) -> str:
+            return cls.truncate(s, n, always_dots)
+
+        trunc.__name__ = f"truncate({n},{'…' if always_dots else ''})"
+        return trunc
+
+    @classmethod
+    def truncate60(cls, s: str) -> str:
         return StringTools.truncate(s, 60)
 
     @classmethod
-    def truncate40(cls, s):
+    def truncate40(cls, s: str) -> str:
         return StringTools.truncate(s, 64)
 
     @classmethod
-    def truncate30(cls, s):
+    def truncate30(cls, s: str) -> str:
         return StringTools.truncate(s, 30)
 
     @classmethod
-    def truncate20(cls, s):
+    def truncate20(cls, s: str) -> str:
         return StringTools.truncate(s, 20)
 
     @classmethod
-    def truncate10(cls, s):
+    def truncate10(cls, s: str) -> str:
         return StringTools.truncate(s, 10)
 
     @classmethod
-    def truncate10_nodots(cls, s):
+    def truncate10_nodots(cls, s: str) -> str:
         return StringTools.truncate(s, 10, False)
 
     @classmethod

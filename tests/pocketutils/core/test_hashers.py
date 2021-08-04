@@ -12,23 +12,23 @@ class TestHasher:
         path = load("hashable.txt")
         hasher = Hasher("sha1")
         x = hasher.to_write(path)
+        # note: this is of the FILE (binary)
+        expected = "34d4150adc3347f1dd8ce19fdf65b74d971ab602"
         try:
             assert isinstance(x, PostHashedFile)
             assert not x.files_exist
             assert x.hash_path.name == "hashable.txt.sha1"
             assert x.expected is None
-            assert x.actual == "03cfd743661f07975fa2f1220c5194cbaff48451"
+            assert x.actual == expected
             assert not x.hash_path.exists()
             with pytest.raises(IllegalStateError):
                 x.precomputed()
             x.write()
             assert x.hash_path.exists()
-            assert (
-                x.hash_path.read_text(encoding="utf8") == "03cfd743661f07975fa2f1220c5194cbaff48451"
-            )
+            assert x.hash_path.read_text(encoding="utf8") == expected
             y = x.precomputed()
             assert x.expected is None
-            assert y.expected == "03cfd743661f07975fa2f1220c5194cbaff48451"
+            assert y.expected == expected
             assert y.matches
             y.match_or_raise()
         finally:
@@ -38,11 +38,13 @@ class TestHasher:
 
     def test_to_verify(self):
         hasher = Hasher("sha1")
+        # note: this is of the FILE (binary)
+        expected = "34d4150adc3347f1dd8ce19fdf65b74d971ab602"
         with pytest.raises(IllegalStateError):
             hasher.to_verify(load("hashable.txt"))
         x = hasher.to_verify(load("already_hashed.txt"))
         assert x.actual is not None
-        assert x.actual == "03cfd743661f07975fa2f1220c5194cbaff48451"
+        assert x.actual == expected
         assert x.actual == x.expected
         assert x.matches
         x.match_or_raise()

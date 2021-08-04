@@ -49,6 +49,7 @@ class CommonTools(BaseTools):
             fail_val: Return this value
             exception: Restrict caught exceptions to subclasses of this type
         """
+        # noinspection PyBroadException
         try:
             return function()
         except exception:
@@ -143,13 +144,17 @@ class CommonTools(BaseTools):
             - np.is_nan(x)
             - x is something with 0 length
             - x is iterable and has 0 elements (will call ``__iter__``)
-            - a str(x) is 'nan', 'null', or 'none'; case-insensitive
-        In contrast to is_nan, also returns True if x==''.
+            - a str(x) is 'nan', 'n/a', 'null', or 'none'; case-insensitive
+
+        Things that are **NOT** probable nulls:
+            - "na"
+            - 0
+            - [None]
 
         Raises:
             TypeError If ``x`` is an Iterator. Calling this would empty the iterator, which is dangerous.
         """
-        return cls.is_empty(x) or str(x).lower() in ["nan", "null", "none"]
+        return cls.is_empty(x) or str(x).lower() in ["nan", "n/a", "null", "none"]
 
     @classmethod
     def unique(cls, sequence: Iterable[T]) -> Sequence[T]:
@@ -181,7 +186,6 @@ class CommonTools(BaseTools):
             - The attribute of the first element if ``attr`` is defined on an element
             - None if the the sequence is empty
             - None if the sequence has no attribute ``attr``
-
         """
         try:
             # note: calling iter on an iterator creates a view only
@@ -265,6 +269,27 @@ class CommonTools(BaseTools):
         if s.lower() == "true":
             return True
         raise ValueError(f"{s} is not true/false")
+
+    @classmethod
+    def parse_bool_flex(cls, s: str) -> bool:
+        """
+        Parses a 'true'/'false'/'yes'/'no'/... string to a bool, ignoring case.
+
+        Allowed:
+            - "true", "t", "yes", "y", "1", "+"
+            - "false", "f", "no", "n", "0", "-"
+
+        Raises:
+            ValueError: If neither true nor false
+        """
+        mp = {
+            **{v: True for v in {"true", "t", "yes", "y", "1", "+"}},
+            **{v: False for v in {"false", "f", "no", "n", "0", "-"}},
+        }
+        v = mp.get(s.lower())
+        if v is None:
+            raise ValueError(f"{s.lower()} is not in {','.join(mp.keys())}")
+        return v
 
 
 __all__ = ["CommonTools"]
