@@ -142,6 +142,7 @@ class OpenMode(str):
     """
     Extended file open modes with a superset of meanings.
     The underlying string contains a Python open()-compatible string.
+
         - 'r' means read
         - 'w' and 'o' both mean overwrite
         - 'a' means append

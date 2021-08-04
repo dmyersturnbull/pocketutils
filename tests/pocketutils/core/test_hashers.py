@@ -3,8 +3,10 @@ import pytest
 from pocketutils.core.exceptions import HashValidationError, IllegalStateError
 from pocketutils.core.hashers import *
 
-raises = pytest.raises
 from . import load
+
+
+raises = pytest.raises
 
 
 class TestHasher:
@@ -13,7 +15,7 @@ class TestHasher:
         hasher = Hasher("sha1")
         x = hasher.to_write(path)
         # note: this is of the FILE (binary)
-        expected = "34d4150adc3347f1dd8ce19fdf65b74d971ab602"
+        expected = "cc27c28c5554ac4042688e121e8a8af6377195b0"
         try:
             assert isinstance(x, PostHashedFile)
             assert not x.files_exist
@@ -39,7 +41,7 @@ class TestHasher:
     def test_to_verify(self):
         hasher = Hasher("sha1")
         # note: this is of the FILE (binary)
-        expected = "34d4150adc3347f1dd8ce19fdf65b74d971ab602"
+        expected = "cc27c28c5554ac4042688e121e8a8af6377195b0"
         with pytest.raises(IllegalStateError):
             hasher.to_verify(load("hashable.txt"))
         x = hasher.to_verify(load("already_hashed.txt"))

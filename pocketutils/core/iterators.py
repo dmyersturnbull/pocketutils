@@ -1,5 +1,5 @@
 import abc
-import collections
+from collections.abc import Iterator as _Iterator
 from typing import Any, Generic, Iterable, TypeVar
 
 import numpy as np
@@ -9,7 +9,7 @@ IX = TypeVar("IX")
 
 
 # noinspection PyAbstractClass
-class SizedIterator(collections.Iterator, metaclass=abc.ABCMeta):
+class SizedIterator(_Iterator, metaclass=abc.ABCMeta):
     """
     An iterator with size and progress.
     """

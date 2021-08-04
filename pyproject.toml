@@ -16,7 +16,7 @@ build-backend = "poetry.masonry.api"
 
 [tool.poetry]
 name = "pocketutils"
-version = "0.5.0"
+version = "0.5.1"
 description = "Adorable little Python code for you to copy or import."
 keywords = ["python", "snippets", "utils", "gists", "bioinformatics"]
 authors = ["Douglas Myers-Turnbull"]
@@ -76,6 +76,7 @@ black                    = "==21.7b0"
 pre-commit               = "^2.13"
 pre-commit-hooks         = "^4.0"
 bandit                   = "^1.7"
+hypothesis               = "^6"
 pytest                   = "^6.2"
 coverage                 = {extras = ["toml"], version = "^5.5"}
 pytest-cov               = "^2.11"

@@ -1,1 +1,1 @@
-abc
+do NOT allow a newline here -- git can mess this file up by transparently swapping \n and \r\n

@@ -427,11 +427,11 @@ class HardwareError(_IoError):
 
 
 class DeviceConnectionError(HardwareError):
-    """"Could not connect to the device."""
+    """ "Could not connect to the device."""
 
 
 class MissingDeviceError(HardwareError):
-    """"Could not find the needed device."""
+    """ "Could not find the needed device."""
 
 
 @ErrorUtils.args(key=KeyLike, value=Any)

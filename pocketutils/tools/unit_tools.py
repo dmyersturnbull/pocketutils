@@ -83,7 +83,7 @@ class UnitTools(BaseTools):
         return nicesize(n_bytes)
 
     @classmethod
-    def round_to_sigfigs(cls, num: SupportsFloat, sig_figs: int) -> int:
+    def round_to_sigfigs(cls, num: SupportsFloat, sig_figs: int) -> float:
         """
         Round to specified number of sigfigs.
 
@@ -98,23 +98,10 @@ class UnitTools(BaseTools):
             raise OutOfRangeError(f"sig_figs {sig_figs} is negative", minimum=0)
         num = float(num)
         if num != 0:
-            return int(round(num, -int(math.floor(math.log10(abs(num))) - (sig_figs - 1))))
+            digits = -int(math.floor(math.log10(abs(num))) - (sig_figs - 1))
+            return round(num, digits)
         else:
             return 0  # can't take the log of 0
-
-    @classmethod
-    def nice_dose(
-        cls,
-        micromolar_dose: float,
-        n_sigfigs: Optional[int] = 5,
-        adjust_units: bool = True,
-        use_sigfigs: bool = True,
-        space: str = "",
-    ) -> str:
-        """
-        Deprecated; see ``format_micromolar``.
-        """
-        return cls.format_micromolar(micromolar_dose, n_sigfigs, adjust_units, use_sigfigs, space)
 
     @classmethod
     def format_micromolar(
@@ -130,12 +117,12 @@ class UnitTools(BaseTools):
         Can handle millimolar, micromolar, nanomolar, and picomolar.
 
         Args:
-            use_sigfigs: If True, rounds to a number of significant figures; otherwise round to decimal places
-            n_sigfigs: The micromolar concentration
+            micromolar: Value
             n_sigfigs: For rounding; no rounding if None
             adjust_units: If False, will always use micromolar
+            use_sigfigs: If True, rounds to a number of significant figures; otherwise round to decimal places
             space: Space char between digits and units;
-        good choices are empty, ASCII space, Chars.narrownbsp, Chars.thinspace, and Chars.nbsp.
+                   good choices are empty, ASCII space, Chars.narrownbsp, Chars.thinspace, and Chars.nbsp.
 
         Returns:
             The concentration with a suffix of µM, mM, nM, or mM

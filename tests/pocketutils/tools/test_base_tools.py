@@ -87,12 +87,12 @@ class TestBaseTools:
         assert f(Mammal(Mammal("cat")), lambda m: m.species.species) == "cat"
 
     def test_get_log_function(self):
+        from pocketutils.core import logger
+
         f = BaseTools.get_log_function
-        assert str(f(None)) == "<bound method Logger.info of <Logger pocketutils (WARNING)>>"
-        assert (
-            str(f("WARNING")) == "<bound method Logger.warning of <Logger pocketutils (WARNING)>>"
-        )
-        assert str(f(10)) == "<bound method Logger.debug of <Logger pocketutils (WARNING)>>"
+        assert f("INFO") == logger.info
+        assert f("WARNING") == logger.warning
+        assert f(30) == logger.warning
         w = MockWritable()
         f(w)("testing")
         assert w.data == "write:testing"

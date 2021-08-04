@@ -31,7 +31,7 @@ class TestUnitTools:
         assert str(f(0.0012 / 1000 / 1000, 3)) == "1.2e-09"
         assert str(f(0.0012 / 1000 / 1000, 1)) == "1e-09"
 
-    def test_nice_dose(self):
+    def test_format_micromolar(self):
         f = UnitTools.format_micromolar
         assert f(1.2) == "1.2µM"
         assert f(1.2, space=Chars.narrownbsp) == "1.2" + Chars.narrownbsp + "µM"

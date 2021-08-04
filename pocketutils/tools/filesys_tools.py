@@ -60,6 +60,7 @@ except ImportError:
 
 class FilesysTools(BaseTools):
     """
+    Tools for file/directory creation, etc.
 
     Security concerns
     -----------------
@@ -437,7 +438,7 @@ class FilesysTools(BaseTools):
         If `path` is None, will use `tempfile.mktemp`.
         """
         if path is None:
-            path = tempfile.mktemp()
+            _, path = tempfile.mkstemp()
         try:
             yield Path(path, **kwargs)
         finally:

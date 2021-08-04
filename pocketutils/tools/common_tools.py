@@ -104,12 +104,12 @@ class CommonTools(BaseTools):
             - None
             - NaN
         """
-        return (
-            x is None
-            or isinstance(x, np.float)
-            and np.isnan(x)
-            or (isinstance(x, float) and x == float("nan"))
-        )
+        try:
+            if np.isnan(x):
+                return True
+        except (ValueError, TypeError):
+            pass
+        return x is None or x == float("nan")
 
     @classmethod
     def is_empty(cls, x: Any) -> bool:
@@ -125,11 +125,14 @@ class CommonTools(BaseTools):
         """
         if isinstance(x, Iterator):
             raise RefusingRequestError("Do not call is_empty on an iterator.")
+        try:
+            if np.isnan(x):
+                return True
+        except (ValueError, TypeError):
+            pass
         return (
             x is None
-            or isinstance(x, np.float)
-            and np.isnan(x)
-            or (isinstance(x, float) and x == float("nan"))
+            or x == float("nan")
             or hasattr(x, "__len__")
             and len(x) == 0
             or hasattr(x, "__iter__")

@@ -64,6 +64,13 @@ class HashableFile:
             buffer_size=self.buffer_size,
         )
 
+    def compute(self) -> str:
+        alg = self.algorithm()
+        with self.file_path.open("rb") as f:
+            for chunk in iter(lambda: f.read(self.buffer_size), b""):
+                alg.update(chunk)
+        return alg.hexdigest()
+
     def _read_hash(self) -> str:
         return self.hash_path.read_text(encoding="utf8").strip()
 
@@ -73,11 +80,7 @@ class HashableFile:
     def _get_or_compute(self) -> str:
         if self.actual is not None:
             return self.actual
-        alg = self.algorithm()
-        with self.file_path.open("rb") as f:
-            for chunk in iter(lambda: f.read(self.buffer_size), b""):
-                alg.update(chunk)
-        return alg.hexdigest()
+        return self.compute()
 
 
 @dataclass(frozen=True, unsafe_hash=True, repr=True)

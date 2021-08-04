@@ -12,7 +12,8 @@ from pocketutils.core.web_resource import WebResource
 class TissueTable(pd.DataFrame):
     """
     Contains a Pandas DataFrame of tissue- and cell type-level expression for genes from the Human Protein Atlas.
-    Example usage:
+
+    Example:
         tt = TissueTable()
         tt.tissue('MKNK2') # returns a DataFrame with mean expression of MKNK2 per tissue type. MKN2 is the HGNC symbol.
     """
