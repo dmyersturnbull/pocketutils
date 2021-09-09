@@ -1,8 +1,8 @@
 import json
-import re
 from copy import copy
 from typing import Any, Iterable, Mapping, Optional, Sequence, Tuple, TypeVar, Union, Callable
 
+import regex
 import numpy as np
 
 from pocketutils.core import JsonEncoder
@@ -34,7 +34,7 @@ class StringTools(BaseTools):
 
     @classmethod
     def extract_group_1(
-        cls, pattern: Union[str, re.Pattern], value: Optional[str], ignore_null: bool = False
+        cls, pattern: Union[str, regex.Pattern], value: Optional[str], ignore_null: bool = False
     ) -> Optional[str]:
         """
         Performs a ``fullmatch`` on a target string and returns capture group 1, or None if there was no match.
@@ -47,7 +47,11 @@ class StringTools(BaseTools):
 
         Returns The first capture group, or None
         """
-        pattern = pattern if isinstance(pattern, re.Pattern) else re.compile(pattern)
+        pattern = (
+            pattern
+            if isinstance(pattern, regex.Pattern)
+            else regex.compile(pattern, flags=regex.V1)
+        )
         if pattern.groups != 1:
             raise ValueError(f"Pattern {pattern} has {pattern.groups} groups, not 1")
         if value is None and ignore_null:
@@ -101,7 +105,7 @@ class StringTools(BaseTools):
             n = len(m.group(1)) // nspaces
             return "\t" * n + " " * (len(m.group(1)) % nspaces)
 
-        return re.sub("^( +)", fix, s, flags=re.MULTILINE)
+        return regex.sub("^( +)", fix, s, flags=regex.V1 | regex.MULTILINE)
 
     @classmethod
     def strip_empty_decimal(cls, num: Union[float, str]) -> str:
@@ -126,7 +130,7 @@ class StringTools(BaseTools):
         """
         Splits by tabs, but preserving quoted tabs, stripping quotes.
         """
-        pat = re.compile(r"""((?:[^\t"']|"[^"]*"|'[^']*')+)""")
+        pat = regex.compile(r"""((?:[^\t"']|"[^"]*"|'[^']*')+)""", flags=regex.V1)
         # Don't strip double 2x quotes: ex ""55"" should be "55", not 55
         def strip(i: str) -> str:
             if i.endswith('"') or i.endswith("'"):
@@ -346,7 +350,7 @@ class StringTools(BaseTools):
         Strips pairs of (start, end) from the ends of strings.
 
         Example:
-            >>> StringTools.strip_paired('[(abc]', ['()', '[]'])  # returns '(abc'
+            >>> StringTools.strip_paired("[(abc]", [("(", ")"), ("[", "]"))  # returns "(abc"
 
         Also see ``strip_brackets``
         """
@@ -494,12 +498,10 @@ class StringTools(BaseTools):
         if function is None:
             return Chars.null
         n_args = str(function.__code__.co_argcount) if hasattr(function, "__code__") else "?"
-        boundmatch = re.compile(r"^<bound method [^ .]+\.([^ ]+) of (.+)>$").fullmatch(
-            str(function)
-        )
-        objmatch = re.compile(r"<([A-Za-z0-9_.<>]+)[ ']*object").search(
-            str(function)
-        )  # instance of global or local class
+        pat = regex.compile(r"^<bound method [^ .]+\.([^ ]+) of (.+)>$", flags=regex.V1)
+        boundmatch = pat.fullmatch(str(function))
+        pat = regex.compile(r"<([A-Za-z0-9_.<>]+)[ ']*object", flags=regex.V1)
+        objmatch = pat.search(str(function))  # instance of global or local class
         addr = " @ " + hex(id(function)) if with_address else ""
         if cls.is_lambda(function):
             # simplify lambda functions!
@@ -507,7 +509,8 @@ class StringTools(BaseTools):
         elif boundmatch is not None:
             # it's a method (bound function)
             # don't show the address of the instance AND its method
-            s = re.compile(r"@ ?0x[0-9a-hA-H]+\)?$").sub("", boundmatch.group(2)).strip()
+            pat = regex.compile(r"@ ?0x[0-9a-hA-H]+\)?$", flags=regex.V1)
+            s = pat.sub("", boundmatch.group(2)).strip()
             return (
                 prefix + "`" + s + "`." + boundmatch.group(1) + "(" + n_args + ")" + addr + suffix
             )
@@ -573,7 +576,7 @@ class StringTools(BaseTools):
             if k[0].isupper() and lowercase:
                 continue
             if lowercase:
-                s = re.compile(k, re.IGNORECASE).sub(v, s)
+                s = regex.compile(k, flags=regex.V1 | regex.IGNORECASE).sub(v, s)
             else:
                 s = s.replace(k, v)
         return s

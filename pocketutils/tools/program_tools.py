@@ -1,6 +1,7 @@
-import re
 import subprocess  # nosec
 from dataclasses import dataclass
+
+import regex
 
 from pocketutils.core import PathLike
 from pocketutils.core.exceptions import ParsingError
@@ -76,7 +77,7 @@ class ProgramTools(BaseTools):
 
     @classmethod
     def _parse(cls, text: str):
-        pat = re.compile(r"([\d.]+)-(\d+)-g([0-9a-h]{40})(?:-([a-z]+))?")
+        pat = regex.compile(r"([\d.]+)-(\d+)-g([0-9a-h]{40})(?:-([a-z]+))?", flags=regex.V1)
         # ex: 1.8.6-43-g0ceb89d3a954da84070858319f177abe3869752b-dirty
         m = pat.fullmatch(text)
         if m is None:

@@ -51,8 +51,7 @@ class NestedDotDict(Mapping):
         data = orjson.loads(Path(path).read_text(encoding="utf8"))
         if isinstance(data, list):
             data = {"data": data}
-        data.__class__ = cls
-        return data
+        return cls(data)
 
     @classmethod
     def read_pickle(cls, path: Union[PurePath, str]) -> NestedDotDict:
@@ -63,11 +62,11 @@ class NestedDotDict(Mapping):
         """
         data = Path(path).read_bytes()
         data = pickle.loads(data)  # nosec
-        return NestedDotDict(data)
+        return cls(data)
 
     @classmethod
     def parse_toml(cls, data: str) -> NestedDotDict:
-        return NestedDotDict(tomlkit.loads(data))
+        return cls(tomlkit.loads(data))
 
     @classmethod
     def parse_json(cls, data: str) -> NestedDotDict:
@@ -78,8 +77,7 @@ class NestedDotDict(Mapping):
         data = json.loads(data)
         if isinstance(data, list):
             data = {"data": data}
-        data.__class__ = cls
-        return NestedDotDict(data)
+        return cls(data)
 
     @classmethod
     def parse_pickle(cls, data: ByteString) -> NestedDotDict:
@@ -175,7 +173,6 @@ class NestedDotDict(Mapping):
 
         Raises:
             ValueError: Likely exception raised if calling ``astype`` fails
-
         """
         x = self.get(items)
         if x is None:

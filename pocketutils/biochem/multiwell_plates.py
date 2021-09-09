@@ -1,8 +1,9 @@
-import re
 import typing
 from abc import ABCMeta
 from functools import total_ordering
 from typing import Iterator, Sequence, Type
+
+import regex
 
 from pocketutils.core.exceptions import OutOfRangeError, StringPatternError
 
@@ -171,8 +172,8 @@ class ParsingWB(_WB, metaclass=ABCMeta):
         >>> class ParsingWB1(WB1, ParsingWB): pass
     """
 
-    _pattern = re.compile(
-        r""" *([A-H][0-9]{1,2}) *(?:(-|–|\*|(?:\.\.\.)|…) *([A-H][0-9]{1,2}))? *"""
+    _pattern = regex.compile(
+        r""" *([A-H][0-9]{1,2}) *(?:(-|–|\*|(?:\.\.\.)|…) *([A-H][0-9]{1,2}))? *""", flags=regex.V1
     )
 
     def parse(self, expression: str) -> Sequence[str]:

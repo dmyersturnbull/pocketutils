@@ -4,7 +4,6 @@ import json
 import logging
 import os
 import platform
-import re
 import shutil
 import socket
 import stat
@@ -16,7 +15,7 @@ from getpass import getuser
 from pathlib import Path, PurePath
 from typing import Any, Generator, Iterable, Mapping, Optional, Sequence, SupportsBytes, Union
 
-import dill
+import regex
 import numpy as np
 import pandas as pd
 
@@ -36,6 +35,12 @@ from pocketutils.tools.path_tools import PathTools
 logger = logging.getLogger("pocketutils")
 COMPRESS_LEVEL = 9
 ENCODING = "utf8"
+
+try:
+    import dill
+except ImportError:
+    dill = None
+    logger.debug("Could not import dill", exc_info=True)
 
 try:
     import jsonpickle
@@ -428,14 +433,14 @@ class FilesysTools(BaseTools):
         path = Path(path)
         data = path.read_text(encoding="utf-8")
         for key, value in changes.items():
-            data = re.sub(key, value, data, re.MULTILINE, re.DOTALL)
+            data = regex.sub(key, value, data, flags=regex.V1 | regex.MULTILINE | regex.DOTALL)
         path.write_text(data, encoding="utf-8")
 
     @classmethod
     def tmppath(cls, path: Optional[PathLike] = None, **kwargs) -> Generator[Path, None, None]:
         """
-        Makes a temporary Path. Won't create `path` but will delete it at the end.
-        If `path` is None, will use `tempfile.mktemp`.
+        Makes a temporary Path. Won't create ``path`` but will delete it at the end.
+        If ``path`` is None, will use ``tempfile.mkstemp``.
         """
         if path is None:
             _, path = tempfile.mkstemp()

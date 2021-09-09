@@ -1,5 +1,4 @@
-import re
-
+import regex
 import numpy as np
 import pytest
 
@@ -113,7 +112,8 @@ class TestCommon:
 
     def test_mem_size(self):
         r = CommonTools.mem_size(5)
-        assert re.compile("[0-9]{2}B").fullmatch(r) is not None, f"byte size of 5 is {r}"
+        pat = regex.compile("[0-9]{2}B", flags=regex.V1)
+        assert pat.fullmatch(r) is not None, f"byte size of 5 is {r}"
 
 
 if __name__ == "__main__":

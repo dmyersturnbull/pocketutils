@@ -1,7 +1,8 @@
 import logging
 import math
-import re
 from typing import Optional, SupportsFloat, Tuple, Union
+
+import regex
 
 from pocketutils.core.exceptions import OutOfRangeError, StringPatternError
 from pocketutils.core.internal import nicesize
@@ -179,8 +180,9 @@ class UnitTools(BaseTools):
             - Units must follow the digits, separated by at most whitespace, and are case-sensitive.
         """
         # note the lazy ops in the first group and in the non-(alphanumeric/dot/dash) separator between the drug and dose
-        pat = re.compile(
-            r"^\s*(.*?)(?:[^A-Za-z0-9.\-]+?[\s(\[{]*(\d+(?:.\d*)?)\s*([mµunpf]M)\s*[)\]}]*)?\s*$"
+        pat = regex.compile(
+            r"^\s*(.*?)(?:[^A-Za-z0-9.\-]+?[\s(\[{]*(\d+(?:.\d*)?)\s*([mµunpf]M)\s*[)\]}]*)?\s*$",
+            flags=regex.V1,
         )
         match = pat.fullmatch(text)
         if match is None:
@@ -208,7 +210,7 @@ class UnitTools(BaseTools):
         If multiple matches are found, warns and returns None.
         """
         # we need to make sure mM ex isn't part of a larger name
-        pat1 = re.compile(r"(\d+(?:.\d*)?)\s*([mµunpf]M)\s*[)\]}]*")
+        pat1 = regex.compile(r"(\d+(?:.\d*)?)\s*([mµunpf]M)\s*[)\]}]*", flags=regex.V1)
 
         def find(pat):
             return {

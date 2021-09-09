@@ -1,22 +1,26 @@
 import logging
 import os
-import re
 from typing import Iterable, List, Mapping, Optional, Union
 from urllib import request
 
+import regex
 import pandas as pd
 import uniprot
-from goatools import obo_parser  # uses https://github.com/tanghaibao/goatools
-from goatools.obo_parser import (
-    GOTerm,
-)  # NOT the same as FlatGoTerm, which has no knowledge of hierarchy
+
+# uses https://github.com/tanghaibao/goatools
+from goatools import obo_parser
+
+# NOT the same as FlatGoTerm, which has no knowledge of hierarchy
+from goatools.obo_parser import GOTerm
 
 from pocketutils.core.exceptions import MultipleMatchesError, StringPatternError
 
 # noinspection PyProtectedMember
 from pocketutils.core.input_output import silenced
 
-go_pattern = re.compile(r"GO:(\d+); ([CFP]):([\dA-Za-z- ,()]+); ([A-Z]+):([A-Za-z-_]+)\.")
+go_pattern = regex.compile(
+    r"GO:(\d+); ([CFP]):([\dA-Za-z- ,()]+); ([A-Z]+):([A-Za-z-_]+)\.", flags=regex.V1
+)
 logger = logging.getLogger("pocketutils")
 
 

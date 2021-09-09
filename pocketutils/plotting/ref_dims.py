@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-import re
+import regex
 
 from pocketutils.tools.string_tools import StringTools
 from pocketutils.tools.unit_tools import UnitTools
@@ -69,15 +69,17 @@ class RefDims(dict):
         # For ex, '1/3 "' gets converted to 0.333333 if self.n_sigfigs==6
         # Whereas if the user defined 'inch', then '1/3 inch' will get padding removed, so it might be, say, round(1/3 - 2*0.1/3)
         item = str(item)
-        match = re.compile(r'^ *([0-9.]+) *"? *$').fullmatch(item.lower())
+        pat = regex.compile(r'^ *([0-9.]+) *"? *$', flags=regex.V1)
+        match = pat.fullmatch(item.lower())
         if match is not None:
             return float(match.group(1))
         # now match fancy expressions
         # they're of the form (<numerator>/<denominator>?)? <name>
         # note the lazy ?? here
-        match = re.compile(r"^ *(?:([0-9]+)(?:/([0-9]+))?)?? *([0-9A-Za-z_\-/]+) *$").fullmatch(
-            item.lower()
+        pat = regex.compile(
+            r"^ *(?:([0-9]+)(?:/([0-9]+))?)?? *([0-9A-Za-z_\-/]+) *$", flags=regex.V1
         )
+        match = pat.fullmatch(item.lower())
         pad = self.get("pad", 0.0)
         numerator = int(match.group(1)) if match.group(1) is not None else 1
         denominator = int(match.group(2)) if match.group(2) is not None else 1

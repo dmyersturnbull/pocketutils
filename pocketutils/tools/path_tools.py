@@ -1,6 +1,7 @@
-import re
 import sys
 from typing import Mapping, Optional, Sequence
+
+import regex
 
 from pocketutils.core.exceptions import *
 from pocketutils.tools.base_tools import BaseTools
@@ -119,11 +120,8 @@ class PathTools(BaseTools):
         fixed_bits = [bit for i, bit in enumerate(fixed_bits) if i == 0 or bit not in ["", "."]]
         # unfortunately POSIX turns Path('C:\', '5') into C:\/5
         # this isn't an ideal way to fix it, but it works
-        if (
-            os.name == "posix"
-            and len(fixed_bits) > 0
-            and re.compile(r"^([A-Z]:)(?:\\)?$").fullmatch(fixed_bits[0])
-        ):
+        pat = regex.compile(r"^([A-Z]:)(?:\\)?$", flags=regex.V1)
+        if os.name == "posix" and len(fixed_bits) > 0 and pat.fullmatch(fixed_bits[0]):
             fixed_bits[0] = fixed_bits[0].rstrip("\\")
             fixed_bits.insert(0, "/")
         return Path(*fixed_bits)
@@ -171,7 +169,7 @@ class PathTools(BaseTools):
             # \ is allowed in Windows
             if bit in ["/", "\\"]:
                 return bit
-            m = re.compile(r"^([A-Z]:)(?:\\)?$").fullmatch(bit)
+            m = regex.compile(r"^([A-Z]:)(?:\\)?$", flags=regex.V1).fullmatch(bit)
             # this is interesting
             # for bit=='C:' and is_root_or_drive=None,
             # it could be either a drive letter

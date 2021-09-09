@@ -1,10 +1,10 @@
-import re
 from typing import Optional
 
+import regex
 import pandas as pd
 from IPython.display import HTML, Markdown, display
 
-_color_pattern = re.compile("#?[A-Z0-9a-z]{6}")
+_color_pattern = regex.compile("#?[A-Z0-9a-z]{6}", flags=regex.V1)
 
 
 # noinspection PyTypeChecker

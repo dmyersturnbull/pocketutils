@@ -1,11 +1,11 @@
 import json
 import logging
-import re
 from datetime import datetime
 from functools import total_ordering
 from pathlib import Path
 from typing import Any, Iterator, Sequence, Set
 
+import regex
 import requests
 
 from pocketutils.core import PathLike
@@ -160,7 +160,7 @@ class AtcParser:
             (self.cache_dir / ".is_done").write_text(str(datetime.now()), encoding="utf-8")
 
     def _parse(self, items: list, atcs: dict):
-        pat = re.compile(r"^(?:<[^>]+>)? *([^ ]+) +- +(?:<[^>]+>)? *([^<]+).*$")
+        pat = regex.compile(r"^(?:<[^>]+>)? *([^ ]+) +- +(?:<[^>]+>)? *([^<]+).*$", flags=regex.V1)
         root = atcs["/"]
         for item in items:
             for v0 in [
