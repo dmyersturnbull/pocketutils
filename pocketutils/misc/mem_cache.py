@@ -1,27 +1,26 @@
-import logging
 import operator
 import sys
 from abc import ABC
 from datetime import datetime
-from typing import Callable, Dict, Generic, Iterator, List, Optional, TypeVar
+from typing import Any, Callable, Dict, Generic, Iterator, Mapping, Optional, Sequence, TypeVar
 
-import numpy as np
-import pandas as pd
 from psutil import virtual_memory
 
-from pocketutils.core.internal import nicesize
+# noinspection PyProtectedMember
+from pocketutils.core._internal import nicesize
 
-K = TypeVar("K")
+K = TypeVar("K", covariant=True)
+V = TypeVar("V", contravariant=True)
 
 
-class MemCachePolicy(Generic[K]):
+class MemCachePolicy(Generic[K, V]):
     def should_archive(self) -> bool:
         raise NotImplementedError()
 
     def can_archive(self) -> bool:
         raise NotImplementedError()
 
-    def reindex(self, items: Dict[K, pd.DataFrame]) -> None:
+    def reindex(self, items: Mapping[K, V]) -> None:
         raise NotImplementedError()
 
     def items(self) -> Iterator[K]:
@@ -31,14 +30,14 @@ class MemCachePolicy(Generic[K]):
     def accessed(self, key: K) -> None:
         pass
 
-    def added(self, key: K, value: pd.DataFrame) -> None:
+    def added(self, key: K, value: V) -> None:
         pass
 
     def removed(self, key: K) -> None:
         pass
 
 
-class MemoryLimitingPolicy(MemCachePolicy, Generic[K], ABC):
+class MemoryLimitingPolicy(MemCachePolicy, ABC):
     def __init__(
         self,
         max_memory_bytes: Optional[int] = None,
@@ -63,18 +62,18 @@ class MemoryLimitingPolicy(MemCachePolicy, Generic[K], ABC):
             > virtual_memory().available * self._max_fraction_available_bytes
         )
 
-    def reindex(self, items: Dict[K, pd.DataFrame]) -> None:
+    def reindex(self, items: Mapping[K, V]) -> None:
         for key in set(self._last_accessed.keys()) - set(items.keys()):
             if key not in items.keys():
                 self.removed(key)
         for key, value in items.items():
             self._usage_bytes[key] = sys.getsizeof(value)
-        self._total_memory_bytes = np.sum(self._usage_bytes.values())
+        self._total_memory_bytes = sum(self._usage_bytes.values())
 
     def accessed(self, key: K) -> None:
         self._last_accessed[key] = datetime.now()
 
-    def added(self, key: K, value: pd.DataFrame) -> None:
+    def added(self, key: K, value: V) -> None:
         now = datetime.now()
         self._created[key] = now
         self._last_accessed[key] = now
@@ -89,88 +88,76 @@ class MemoryLimitingPolicy(MemCachePolicy, Generic[K], ABC):
 
     def __str__(self):
         available = virtual_memory().available
-        return "{}(n={}, {}/{}, {}/{}={}%)".format(
-            type(self).__name__,
-            len(self._usage_bytes),
-            nicesize(self._total_memory_bytes),
-            "-" if self._max_memory_bytes is None else nicesize(self._max_memory_bytes),
-            nicesize(self._total_memory_bytes),
-            (
-                "-"
-                if self._max_fraction_available_bytes is None
-                else nicesize(available * self._max_fraction_available_bytes)
-            ),
-            (
-                "-"
-                if self._max_fraction_available_bytes is None
-                else np.round(
-                    100
-                    * self._total_memory_bytes
-                    / (available * self._max_fraction_available_bytes),
-                    3,
-                )
-            ),
+        name = self.__class__.__name__
+        n_items = len(self._usage_bytes)
+        real = nicesize(self._total_memory_bytes)
+        cap_raw = "-" if self._max_memory_bytes is None else nicesize(self._max_memory_bytes)
+        cap_percent = (
+            "-"
+            if self._max_fraction_available_bytes is None
+            else nicesize(available * self._max_fraction_available_bytes)
         )
+        percent = (
+            "-"
+            if self._max_fraction_available_bytes is None
+            else round(
+                100 * self._total_memory_bytes / (available * self._max_fraction_available_bytes),
+                3,
+            )
+        )
+        return f"{name}(n={n_items}, {real}/{cap_raw}, {real}/{cap_percent}={percent}%"
 
     def __repr__(self):
         ordered = list(self.items())
         ss = []
-        if len(ordered) > 0:
-            current_day = None
-            for k in ordered:
-                dt = self._last_accessed[k]
-                if current_day is None or current_day.date() != dt.date():
-                    current_day = dt
-                    ss.append("#" + current_day.strftime("%Y-%m-%d") + "...")
-                ss.append(
-                    "{}:{}@{}".format(
-                        k,
-                        nicesize(self._usage_bytes[k]),
-                        self._last_accessed[k].strftime("%H:%M:%S"),
-                    )
-                )
-        return "{}@{}: [{}]".format(str(self), hex(id(self)), ", ".join(ss))
+        current_day = None
+        for k in ordered:
+            dt = self._last_accessed[k]
+            if current_day is None or current_day.date() != dt.date():
+                current_day = dt
+                ss.append("#" + current_day.strftime("%Y-%m-%d") + "...")
+            nice = nicesize(self._usage_bytes[k])
+            access = self._last_accessed[k].strftime("%H:%M:%S")
+            ss.append(f"{k}:{nice}@{access}")
+        return f"{str(self)}@{hex(id(self))}: [{', '.join(ss)}]"
 
 
-class MemoryLruPolicy(MemoryLimitingPolicy, Generic[K]):
+class MemoryLruPolicy(MemoryLimitingPolicy):
     def items(self) -> Iterator[K]:
         return iter([k for k, v in sorted(self._last_accessed.items(), key=operator.itemgetter(1))])
 
 
-class MemoryMruPolicy(MemoryLimitingPolicy, Generic[K]):
+class MemoryMruPolicy(MemoryLimitingPolicy):
     def items(self) -> Iterator[K]:
-        return iter(
-            [
-                k
-                for k, v in reversed(
-                    sorted(self._last_accessed.items(), key=operator.itemgetter(1))
-                )
-            ]
-        )
+        rev = reversed(sorted(self._last_accessed.items(), key=operator.itemgetter(1)))
+        return iter([k for k, v in rev])
 
 
-class DfMemCache(Generic[K]):
-    def __init__(self, loader: Callable[[K], pd.DataFrame], policy: MemCachePolicy):
+class MemCache(Generic[K, V]):
+    def __init__(
+        self, loader: Callable[[K], V], policy: MemCachePolicy, *, log: Callable[[str], Any]
+    ):
         self._loader = loader
-        self._items = {}  # type: Dict[K, pd.DataFrame]
+        self._items = {}  # type: Dict[K, V]
         self._policy = policy
+        self._log = lambda _: None if log is None else log
 
-    def __getitem__(self, key: K) -> pd.DataFrame:
+    def __getitem__(self, key: K) -> V:
         self._policy.accessed(key)
         if key in self._items:
             return self._items[key]
         else:
             value = self._loader(key)
-            logging.debug(f"Loaded {key}")
+            self._log(f"Loaded {key}")
             self._items[key] = value
             self._policy.added(key, value)
             self.archive()
             return value
 
-    def __call__(self, key: K) -> pd.DataFrame:
+    def __call__(self, key: K) -> V:
         return self[key]
 
-    def archive(self, at_least: Optional[int] = None) -> List[K]:
+    def archive(self, at_least: Optional[int] = None) -> Sequence[K]:
         it = self._policy.items()
         archived = []
         while self._policy.can_archive() and (
@@ -180,15 +167,18 @@ class DfMemCache(Generic[K]):
             self._policy.removed(key)
             del self._items[key]
             archived.append(key)
-            logging.debug(f"Archived {len(archived)} items: {archived}")
+            self._log(f"Archived {len(archived)} items: {archived}")
         return archived
 
     def clear(self) -> None:
         it = self._policy.items()
+        cleared = []
         while self._policy.can_archive():
             key = next(it)
             self._policy.removed(key)
             del self._items[key]
+            cleared.append(key)
+        self._log(f"Cleared {len(cleared)} items: {cleared}")
 
     def remove(self, key: K) -> None:
         if key in self:
@@ -202,15 +192,15 @@ class DfMemCache(Generic[K]):
         self.remove(key)
 
     def __repr__(self):
-        return "{}({})@{}".format(type(self).__name__, repr(self._policy), hex(id(self)))
+        return str(self) + "@" + hex(id(self))
 
     def __str__(self):
-        return "{}({})".format(type(self).__name__, self._policy)
+        return f"{self.__class__.__name__}({repr(self._policy)})"
 
 
 __all__ = [
     "MemCachePolicy",
-    "DfMemCache",
+    "MemCache",
     "MemoryLimitingPolicy",
     "MemoryLruPolicy",
     "MemoryMruPolicy",

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+import warnings
 from copy import deepcopy
 
 
@@ -22,6 +23,10 @@ class LogFormatBuilder:
     _s = None
 
     def __init__(self) -> None:
+        warnings.warn(
+            "LogFormatBuilder will be removed; consider loguru as an alternative",
+            DeprecationWarning,
+        )
         self._s = ""
 
     def __repr__(self) -> str:
@@ -105,6 +110,7 @@ class PrettyRecordFactory:
     """
 
     def __init__(self, max_name: int, max_module: int, max_line: int):
+        warnings.warn("PrettyRecordFactory will be removed; use loguru instead", DeprecationWarning)
         self.max_name, self.max_module, self.max_line = max_name, max_module, max_line
         self.old_factory = deepcopy(logging.getLogRecordFactory())
 

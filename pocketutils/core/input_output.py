@@ -3,10 +3,11 @@ from __future__ import annotations
 import abc
 import contextlib
 import logging
-import requests
 import shutil
 from pathlib import Path
 from typing import Any, TypeVar, Union
+
+import requests
 
 # noinspection PyUnresolvedReferences
 from pocketutils.core import PathLike, PathLikeUtils

@@ -1,10 +1,12 @@
 from __future__ import annotations
 
 import logging
+import warnings
 from contextlib import contextmanager
 from copy import copy
 from pathlib import Path
-from typing import Callable, Generator, Iterator, Mapping, Optional, Sequence, Iterable
+from typing import Any, Callable, Generator, Iterable, Iterator, Mapping, Optional, Sequence
+from typing import Tuple
 from typing import Tuple as Tup
 from typing import Union
 
@@ -16,11 +18,10 @@ from matplotlib import colors as mcolors
 from matplotlib.axes import Axes
 from matplotlib.figure import Figure
 
-from pocketutils.plotting.corners import Corner
+from pocketutils.core.exceptions import XValueError
+from pocketutils.plotting.bound_ticks import AxisTicks, TickBounder
 from pocketutils.tools.common_tools import CommonTools
 
-FigureSeqLike = Union[Figure, Iterator[Figure], Iterator[Tup[str, Figure]], Mapping[str, Figure]]
-KNOWN_EXTENSIONS = ["jpg", "png", "pdf", "svg", "eps", "ps"]
 logger = logging.getLogger("pocketutils")
 
 
@@ -52,23 +53,31 @@ class FigureTools:
             return float(tup) * 2.54
 
     @classmethod
+    def list_open_figs(cls) -> Sequence[Tuple[str, Figure]]:
+        """
+        Returns all currently open figures and their labels via ``Figure.label``.
+        Note that ``Figure.label`` is often empty in practice.
+        """
+        warnings.warn("open_fig_map will be removed; use list_open_figs instead")
+        return [(label, plt.figure(label=label)) for label in plt.get_figlabels()]
+
+    @classmethod
     def open_figs(cls) -> Sequence[Figure]:
         """
         Returns all currently open figures.
         """
+        warnings.warn("open_figs will be removed; use list_open_figs instead", DeprecationWarning)
         return [plt.figure(num=i) for i in plt.get_fignums()]
 
     @classmethod
     def open_fig_map(cls) -> Mapping[str, Figure]:
         """
-        Returns all currently open figures as a dict mapping their labels `Figure.label` to their instances.
-        Note that `Figure.label` is often empty in practice.
-
-        Args:
-
-        Returns:
-
+        Returns all currently open figures as a dict mapping their labels ``Figure.label`` to their instances.
+        Note that ``Figure.label`` is often empty in practice.
         """
+        warnings.warn(
+            "open_fig_map will be removed; use list_open_figs instead", DeprecationWarning
+        )
         return {label: plt.figure(label=label) for label in plt.get_figlabels()}
 
     @classmethod
@@ -76,13 +85,10 @@ class FigureTools:
     def clearing(cls, yes: bool = True) -> Generator[None, None, None]:
         """
         Context manager to clear and close all figures created during its lifespan.
-        When the context manager exits, calls `clf` and `close` on all figures created under it.
+        When the context manager exits, calls ``clf`` and ``close`` on all figures created under it.
 
         Args:
             yes: If False, does nothing
-
-        Yields:
-
         """
         oldfigs = copy(plt.get_fignums())
         yield
@@ -95,13 +101,10 @@ class FigureTools:
     @contextmanager
     def hiding(cls, yes: bool = True) -> Generator[None, None, None]:
         """
-        Context manager to hide figure display by setting `plt.interactive(False)`.
+        Context manager to hide figure display by setting ``plt.interactive(False)``.
 
         Args:
             yes: If False, does nothing
-
-        Yields:
-
         """
         isint = plt.isinteractive()
         if yes:
@@ -114,6 +117,7 @@ class FigureTools:
     def plot1d(
         cls,
         values: np.array,
+        *,
         figsize: Optional[Tup[float, float]] = None,
         x0=None,
         y0=None,
@@ -123,19 +127,7 @@ class FigureTools:
     ) -> Axes:
         """
         Plots a 1D array and returns the axes.
-        kwargs are passed to `Axes.plot`.
-
-        Args:
-            values: np.array:
-            figsize:
-            x0:  (Default value = None)
-            y0:  (Default value = None)
-            x1:  (Default value = None)
-            y1:  (Default value = None)
-            **kwargs:
-
-        Returns:
-
+        kwargs are passed to ``Axes.plot``.
         """
         figure = plt.figure(figsize=figsize)
         ax = figure.add_subplot(1, 1, 1)  # Axes
@@ -148,12 +140,6 @@ class FigureTools:
     def despine(cls, ax: Axes) -> Axes:
         """
         Removes all spines and ticks on an Axes.
-
-        Args:
-            ax: Axes:
-
-        Returns:
-
         """
         ax.set_yticks([])
         ax.set_yticks([])
@@ -176,7 +162,6 @@ class FigureTools:
 
         Returns:
             The number of closed figures
-
         """
         n = len(plt.get_fignums())
         plt.clf()
@@ -215,8 +200,7 @@ class FigureTools:
             color_fn: An optional function mapping (pre-conversion-to-str) values to colors
             adjust_x: Add this value to the x coordinates
             adjust_y: Add this value to the y coordinates
-            **kwargs: Passed to `ax.text`
-
+            **kwargs: Passed to ``ax.text``
         """
         for r, row in enumerate(data.index):
             for c, col in enumerate(data.columns):
@@ -233,18 +217,14 @@ class FigureTools:
     @classmethod
     def add_note_01_coords(cls, ax: Axes, x: float, y: float, s: str, **kwargs) -> Axes:
         """
-        Adds text without a box, using chemfish_rc['general_note_font_size'] (unless overridden in kwargs).
-        ``x`` and ``y`` are in coordinates (0, 1).
+        Adds text without a box, where ``x`` and ``y`` are in coordinates (0, 1).
 
         Args:
-            ax: Axes:
-            x: float:
-            y: float:
-            s: str:
-            **kwargs:
-
-        Returns:
-
+            ax: axes
+            x: x coord in 0-1 units
+            y: y coord in 0-1 units
+            s: The text
+            **kwargs: Passed to ``ax.text``
         """
         t = ax.text(x, y, s=s, transform=ax.transAxes, **kwargs)
         t.set_bbox(dict(alpha=0.0))
@@ -253,61 +233,60 @@ class FigureTools:
     @classmethod
     def add_note_data_coords(cls, ax: Axes, x: float, y: float, s: str, **kwargs) -> Axes:
         """
-        Adds text without a box, using chemfish_rc['general_note_font_size'] (unless overridden in kwargs).
-        ``x`` and ``y`` are in data coordinates.
+        Adds text without a box, where ``x`` and ``y`` are in data coordinates.
 
         Args:
-            ax: Axes:
-            x: float:
-            y: float:
-            s: str:
-            **kwargs:
-
-        Returns:
-
+            ax: axes
+            x: x coord in data units
+            y: y coord in data units
+            s: The text
+            **kwargs: Passed to ``ax.text``
         """
         t = ax.text(x, y, s=s, **kwargs)
         t.set_bbox(dict(alpha=0.0))
         return ax
 
     @classmethod
-    def stamp(cls, ax: Axes, text: str, corner: Corner, **kwargs) -> Axes:
+    def stamp(cls, ax: Axes, text: str, corner: str, **kwargs) -> Axes:
         """
         Adds a "stamp" in the corner.
 
         Example:
             Stamping::
 
-                FigureTools.stamp(ax, 'hello', Corners.TOP_RIGHT)
+                FigureTools.stamp(ax, 'hello', "top_right")
 
         Args:
-            ax: Axes:
-            text: str:
-            corner: Corner:
-            **kwargs:
-
-        Returns:
-
+            ax: Axes
+            text: The text
+            corner: Ignoring ``"_"``, ``"-"``, ``" "``, and case,
+                    must be "topleft", "topright", "bottomleft", or "bottomright".
+            **kwargs: Passed to ``ax.text``;
+                      do not pass "x", "y", "horizontalalignment", or "verticalalignment"
         """
         return cls._text(ax, text, corner, **kwargs)
 
     @classmethod
-    def _text(cls, ax: Axes, text: str, corner: Corner, **kwargs) -> Axes:
+    def alignment_for_corner(cls, corner: str) -> Mapping[str, Any]:
         """
-
+        Get matplotlib arguments appropriate for text in a corner.
 
         Args:
-            ax: Axes:
-            text: str:
-            corner: Corner:
-            **kwargs:
-
-        Returns:
-
+            corner: Ignoring ``"_"``, ``"-"``, ``" "``, and case,
+                    must be "topleft", "topright", "bottomleft", or "bottomright".
         """
-        t = ax.text(s=text, **corner.params(), transform=ax.transAxes, **kwargs)
-        t.set_bbox(dict(alpha=0.0))
-        return ax
+        corner = corner.lower().replace(" ", "").replace("-", "").replace("_", "")
+        valid = {"topleft", "topright", "bottomleft", "bottomright"}
+        if corner not in valid:
+            raise XValueError(f"Corner {corner} not in {valid} (_, ' ', and - ignored)")
+        left = corner.endswith("left")
+        top = corner.startswith("top")
+        return dict(
+            x=0 if left else 1,
+            y=1 if top else 0,
+            horizontalalignment="left" if left else 1,
+            verticalalignment="top" if top else "bottom",
+        )
 
     @classmethod
     def plot_palette(cls, values: Union[Sequence[str], str]) -> Figure:
@@ -316,9 +295,6 @@ class FigureTools:
 
         Args:
             values: A string of a color (starting with #), a sequence of colors (each starting with #)
-
-        Returns:
-
         """
         n = len(values)
         figure = plt.figure(figsize=(8.0, 2.0))
@@ -331,6 +307,41 @@ class FigureTools:
         )
         cls.despine(ax)
         return figure
+
+    @classmethod
+    def bind_to_ticks(
+        cls,
+        ax: Axes,
+        *,
+        x0: Union[bool, float] = True,
+        y0: Union[bool, float] = True,
+        x1: Union[bool, float] = True,
+        y1: Union[bool, float] = True,
+        major: bool = True,
+    ) -> Axes:
+        """
+        Forces Axes limits to start and/or end at major or minor ticks.
+
+        Each argument in the constructor can be:
+        - ``True`` -- set the bound according to the ticks
+        - ``False`` -- do not change the bound
+        - a ``float`` - set to this
+
+        Args:
+            ax: The axes, of course
+            x0: left bound (``.getxlim()[0]``)
+            y0: bottom bound (``.getylim()[0]``)
+            x1: right bound (``.getxlim()[1]``)
+            y1: top bound (``.getylim()[1]``)
+            major: Use major tick marks rather than minor
+        """
+        return TickBounder(x0=x0, y0=y0, x1=x1, y1=y1, major=major).adjust(ax)
+
+    @classmethod
+    def _text(cls, ax: Axes, text: str, corner: str, **kwargs) -> Axes:
+        t = ax.text(s=text, **cls.alignment_for_corner(corner), transform=ax.transAxes, **kwargs)
+        t.set_bbox(dict(alpha=0.0))
+        return ax
 
 
 __all__ = ["FigureTools"]

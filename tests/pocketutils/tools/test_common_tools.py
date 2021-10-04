@@ -1,6 +1,6 @@
-import regex
 import numpy as np
 import pytest
+import regex
 
 from pocketutils.core.mocks import *
 from pocketutils.tools.common_tools import CommonTools

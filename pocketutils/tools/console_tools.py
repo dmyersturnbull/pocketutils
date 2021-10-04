@@ -1,6 +1,7 @@
 import logging
 import sys
 import time
+import warnings
 from typing import Callable, Union
 
 from pocketutils.tools.base_tools import BaseTools
@@ -16,6 +17,10 @@ class ConsoleTools(BaseTools):
 
     @classmethod
     def prompt_yes_no(cls, msg: str, writer: Callable[[str], None] = sys.stdout.write) -> bool:
+        warnings.warn(
+            f"prompt_yes_no will be removed; use typer.prompt with confirmation=True instead",
+            DeprecationWarning,
+        )
         while True:
             writer(msg + " ")
             command = input("")
@@ -31,6 +36,7 @@ class ConsoleTools(BaseTools):
         cls,
         path: str,
         wait: int = 5,
+        *,
         delete_fn: Callable[[str], None] = FilesysTools.delete_surefire,
         writer: Callable[[str], None] = sys.stdout.write,
     ):
@@ -49,6 +55,7 @@ class ConsoleTools(BaseTools):
     def confirm(
         cls,
         msg: Union[None, str, Callable[[], None]] = None,
+        *,
         input_fn: Callable[[str], str] = input,
         writer: Callable[[str], None] = sys.stdout.write,
     ) -> bool:
@@ -61,6 +68,10 @@ class ConsoleTools(BaseTools):
         Returns:
             True if the user answered 'yes'; False otherwise
         """
+        warnings.warn(
+            f"prompt_yes_no will be removed; use typer.prompt with confirmation=True instead",
+            DeprecationWarning,
+        )
         if msg is None:
             msg = "Confirm? [yes/no]"
         if isinstance(msg, str):
@@ -81,7 +92,7 @@ class ConsoleTools(BaseTools):
     @classmethod
     def clear_line(cls, n: int = 1, writer: Callable[[str], None] = sys.stdout.write) -> None:
         """
-        Writes control characters to stdout to delete the previous line and move the curser up.
+        Writes control characters to stdout to delete the previous line and move the cursor up.
         This only works in a shell.
             n: The number of lines to erase
             writer Write here

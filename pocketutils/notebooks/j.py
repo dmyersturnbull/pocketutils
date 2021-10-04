@@ -1,7 +1,7 @@
 from typing import Optional
 
-import regex
 import pandas as pd
+import regex
 from IPython.display import HTML, Markdown, display
 
 _color_pattern = regex.compile("#?[A-Z0-9a-z]{6}", flags=regex.V1)
@@ -131,7 +131,7 @@ class JFonts:
         for family in plt.rcParams["font.family"]:
             items = "\n".join(
                 [
-                    f'<li style="font-family:{name};">{name}</li>'
+                    f'<li style="font-family:{family};">{family}</li>'
                     for font in plt.rcParams.get("font." + family, [])
                 ]
             )
@@ -148,7 +148,7 @@ class JFonts:
         """
         Shows an HTML table of all typefaces rendered as themselves. Ex; will show Helvetica in Helvetica.
         Displays as an HTML table with `n_cols`.
-        Thanks to http://jonathansoma.com/lede/data-studio/matplotlib/list-all-fonts-available-in-matplotlib-plus-samples/.
+        Thanks to https://jonathansoma.com/lede/data-studio/matplotlib/list-all-fonts-available-in-matplotlib-plus-samples/.
 
         Args:
             n_cols: Number of columns in the created HTML table
@@ -156,7 +156,7 @@ class JFonts:
         from matplotlib.font_manager import fontManager
 
         def _show_font(name: str):
-            return f"<p style='font-family:{name};'>{font}</p>"
+            return f"<p style='font-family:{name};'>{name}</p>"
 
         fonts = set([f.name for f in fontManager.ttflist])
         code = "\n".join([_show_font(font) for font in sorted(fonts)])

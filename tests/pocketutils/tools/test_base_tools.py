@@ -99,7 +99,7 @@ class TestBaseTools:
         w = MockCallable()
         f(w)("testing")
         assert w.data == "call:testing"
-        w = WritableWritableCallable()
+        w = WritableCallable()
         f(w)("testing")
         assert w.data == "call:testing"
 

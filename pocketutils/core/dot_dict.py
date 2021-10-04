@@ -10,7 +10,7 @@ from typing import Tuple as Tup
 from typing import Type, TypeVar, Union
 
 import orjson
-import tomlkit
+import toml
 
 PICKLE_PROTOCOL = 5
 T = TypeVar("T")
@@ -40,7 +40,7 @@ class NestedDotDict(Mapping):
 
     @classmethod
     def read_toml(cls, path: Union[PurePath, str]) -> NestedDotDict:
-        return NestedDotDict(tomlkit.loads(Path(path).read_text(encoding="utf8")))
+        return NestedDotDict(toml.loads(Path(path).read_text(encoding="utf8")))
 
     @classmethod
     def read_json(cls, path: Union[PurePath, str]) -> NestedDotDict:
@@ -66,7 +66,7 @@ class NestedDotDict(Mapping):
 
     @classmethod
     def parse_toml(cls, data: str) -> NestedDotDict:
-        return cls(tomlkit.loads(data))
+        return cls(toml.loads(data))
 
     @classmethod
     def parse_json(cls, data: str) -> NestedDotDict:

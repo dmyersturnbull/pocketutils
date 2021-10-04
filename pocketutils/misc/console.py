@@ -4,13 +4,12 @@ Experimental replacement for fancy consoles.
 import abc
 import logging
 import sys
-from typing import Callable, Optional, TypeVar, Generic, Sequence
+from typing import Callable, Generic, Optional, Sequence, TypeVar
 
-from colorama import Style, Fore
+from colorama import Fore, Style
 
 from pocketutils.core.input_output import Writeable
 from pocketutils.misc.messages import *
-
 
 logger = logging.getLogger("pocketutils")
 L = TypeVar("L", covariant=True)

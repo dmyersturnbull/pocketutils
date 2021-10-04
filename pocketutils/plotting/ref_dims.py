@@ -18,7 +18,7 @@ class RefDims(dict):
             widths['(2/1) 2_col']
 
     NOTES!!!
-    If `width_pad` (`height_pad`, respectively) is set, this will be included in the calculation.
+    If ``width_pad`` (``height_pad``, respectively) is set, this will be included in the calculation.
     For example, (1/3) 2_col will subtract off the appropriate padding for 3 cols (2 spaces shared between 3 columns).
     The size is then rounded to sigfigs after -- normally 6 sigfigs, but overridden with width_sigfigs / height_sigfigs.
     The sum / difference is applied after.
@@ -26,12 +26,6 @@ class RefDims(dict):
     """
 
     def __init__(self, axis: str, n_sigfigs: int = 6):
-        """
-
-        Args:
-            axis:
-            n_sigfigs:
-        """
         super().__init__()
         self.axis = axis
         self.n_sigfigs = n_sigfigs
@@ -40,14 +34,8 @@ class RefDims(dict):
 
     def point(self, item: str) -> float:
         """
-        Returns the resulting value (calling `self[item]`), also setting the text and value pointers in-place.
+        Returns the resulting value (calling ``self[item]``), also setting the text and value pointers in-place.
         It's best for this to match plt.rcParams[figure.figsize], but this is not required.
-
-        Args:
-            item: str:
-
-        Returns:
-
         """
         scale = self[item]
         self.current_text = item
@@ -55,14 +43,6 @@ class RefDims(dict):
         return scale
 
     def __getitem__(self, item: str) -> float:
-        """
-
-        Args:
-            item:
-
-        Returns:
-
-        """
         # first, match exact inches
         # If name is empty or double quote, assume it means inch (ex: '1' is 1 inch; 1/3 is 1/3 inch)
         # And in this case, ignore padding (take the size as-is, except for rounding)
@@ -94,12 +74,6 @@ class RefDims(dict):
         return UnitTools.round_to_sigfigs(name_val / frac - (frac - 1) * pad / frac, self.n_sigfigs)
 
     def __setitem__(self, key: str, value: float):
-        """
-        Args:
-            key:
-            value:
-
-        """
         try:
             super().__setitem__(key, float(value))
         except Exception:

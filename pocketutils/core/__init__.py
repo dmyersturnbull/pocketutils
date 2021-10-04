@@ -9,11 +9,10 @@ from typing import Any, Callable, Generic, Iterable, Sequence, Type, TypeVar
 
 import numpy as np
 
-from pocketutils.core.exceptions import ImmutableError
-
 # noinspection PyProtectedMember
-from pocketutils.core.internal import PathLike, PathLikeUtils
-from pocketutils.core.internal import look as _look
+from pocketutils.core._internal import PathLike, PathLikeUtils
+from pocketutils.core._internal import look as _look
+from pocketutils.core.exceptions import ImmutableError
 
 T = TypeVar("T", covariant=True)
 

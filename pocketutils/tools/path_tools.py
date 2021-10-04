@@ -1,5 +1,5 @@
 import sys
-from typing import Mapping, Optional, Sequence
+from typing import Callable, Mapping, Optional, Sequence
 
 import regex
 
@@ -80,9 +80,12 @@ class PathTools(BaseTools):
 
     @classmethod
     def sanitize_path(
-        cls, path: PathLike, is_file: Optional[bool] = None, show_warnings: bool = True
+        cls,
+        path: PathLike,
+        is_file: Optional[bool] = None,
+        show_warnings: Union[bool, Callable[[str], Any]] = True,
     ) -> Path:
-        """
+        r"""
         Sanitizes a path for major OSes and filesystems.
         Also see sanitize_path_nodes and sanitize_path_node.
         Platform-dependent.
@@ -93,14 +96,13 @@ class PathTools(BaseTools):
         # the sanitization should be as uniform as possible for both platforms
         # this works for at least Windows+NTFS
         # tilde substitution for long filenames in Windows -- is unsupported
+        w = {True: logger.warning, False: lambda _: None}.get(show_warnings, show_warnings)
         if path.startswith("\\\\?"):
-            logger.warning(
-                f"Long UNC Windows paths (\\\\? prefix) are not supported (path '{path}')"
-            )
+            w(f"Long UNC Windows paths (\\\\? prefix) are not supported (path '{path}')", path=path)
         bits = str(path).strip().replace("\\", "/").split("/")
         new_path = cls.sanitize_path_nodes(bits, is_file=is_file)
-        if new_path != path and show_warnings:
-            logger.warning(f"Sanitized filename {path} → {new_path}")
+        if new_path != path:
+            w(f"Sanitized filename {path} → {new_path}")
         return Path(new_path)
 
     @classmethod
@@ -134,7 +136,7 @@ class PathTools(BaseTools):
         is_root_or_drive: Optional[bool] = None,
         include_fat: bool = False,
     ) -> str:
-        """
+        r"""
         Sanitizes a path node such that it will be fine for major OSes and filesystems.
         For example:
         - 'plums;and/or;apples' becomes 'plums_and_or_apples' (escaped ; and /)
@@ -254,12 +256,6 @@ class PathTools(BaseTools):
         # never allow '.' (or ' ') to end a filename
         bit = bit.rstrip(".")
         return bit
-
-    @classmethod
-    def _replace_all(cls, s: str, rep: Mapping[str, str]) -> str:
-        for k, v in rep.items():
-            s = s.replace(k, v)
-        return s
 
 
 __all__ = ["PathTools"]

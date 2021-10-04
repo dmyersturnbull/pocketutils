@@ -9,15 +9,26 @@ import socket
 import stat
 import sys
 import tempfile
+import warnings
 from contextlib import contextmanager
-from datetime import datetime
+from datetime import datetime, timezone
 from getpass import getuser
 from pathlib import Path, PurePath
-from typing import Any, Generator, Iterable, Mapping, Optional, Sequence, SupportsBytes, Union
+from typing import (
+    Any,
+    Generator,
+    Iterable,
+    Mapping,
+    Optional,
+    Sequence,
+    SupportsBytes,
+    Type,
+    Union,
+)
 
-import regex
 import numpy as np
 import pandas as pd
+import regex
 
 from pocketutils.core import JsonEncoder
 from pocketutils.core.exceptions import (
@@ -77,12 +88,14 @@ class FilesysTools(BaseTools):
     @classmethod
     def pkl(cls, stuff: Any, path: PathLike) -> None:
         """Save to a file with dill."""
+        warnings.warn("pkl will be removed", DeprecationWarning)
         data = dill.dumps(stuff, protocol=5)  # nosec
         Path(path).write_bytes(data)
 
     @classmethod
     def unpkl(cls, path: PathLike):
         """Load a file with dill."""
+        warnings.warn("unpkl will be removed", DeprecationWarning)
         # ignore encoding param, which is only useful for unpickling Python 2-generated
         data = Path(path).read_bytes()
         return dill.loads(data)  # nosec
@@ -98,35 +111,70 @@ class FilesysTools(BaseTools):
         return WebResource(url, archive_member, local_path)
 
     @classmethod
-    def get_env_info(cls, extras: Optional[Mapping[str, Any]] = None) -> Mapping[str, str]:
+    def get_env_info(cls, *, include_insecure: bool = False) -> Mapping[str, str]:
         """
         Get a dictionary of some system and environment information.
         Includes os_release, hostname, username, mem + disk, shell, etc.
+
+        Args:
+            include_insecure: Include data like hostname and username
+
+        .. caution ::
+            Even with ``include_insecure=False``, avoid exposing this data to untrusted
+            sources. For example, this includes the specific OS release, which could
+            be used in attack.
         """
-        if extras is None:
-            extras = {}
+
+        now = datetime.now(timezone.utc).astimezone().isoformat()
+        data = {}
+
+        def _try(os_fn, k: str, *args):
+            if any((a is None for a in args)):
+                return None
+            try:
+                v = os_fn(*args)
+                data[k] = v
+                return v
+            except OSError:
+                return None
+
+        data.update(
+            dict(
+                os_release=platform.platform(),
+                python_version=sys.version,
+                environment_info_capture_datetime=now,
+            )
+        )
+        if "SHELL" in os.environ:
+            data["shell"] = os.environ["SHELL"]
+        if include_insecure:
+            data.update(
+                dict(
+                    hostname=socket.gethostname(),
+                    username=getuser(),
+                    cwd=os.getcwd(),
+                    login=os.getlogin(),
+                )
+            )
+            pid = _try(os.getpid, "pid")
+            ppid = _try(os.getppid, "parent_pid", pid)
+            _try(os.getpriority, "priority", os.PRIO_PROCESS, pid)
+            _try(os.getpriority, "parent_priority", os.PRIO_PROCESS, ppid)
         try:
             import psutil
-
-            pdata = {
-                "disk_used": psutil.disk_usage(".").used,
-                "disk_free": psutil.disk_usage(".").free,
-                "memory_used": psutil.virtual_memory().used,
-                "memory_available": psutil.virtual_memory().available,
-            }
         except ImportError:
-            psutil, pdata = None, {}
-            logger.warning("Couldn't load psutil")
-        mains = {
-            "os_release": platform.platform(),
-            "hostname": socket.gethostname(),
-            "username": getuser(),
-            "python_version": sys.version,
-            "shell": os.environ["SHELL"],
-            "environment_info_capture_datetime": datetime.now().isoformat(),
-            **psutil,
-        }
-        return {k: str(v) for k, v in {**mains, **pdata, **extras}.items()}
+            psutil = None
+            logger.warning("psutil is not installed, so cannot get extended env info")
+        if psutil is not None:
+            data.update(
+                dict(
+                    disk_used=psutil.disk_usage(".").used,
+                    disk_free=psutil.disk_usage(".").free,
+                    memory_used=psutil.virtual_memory().used,
+                    memory_available=psutil.virtual_memory().available,
+                )
+            )
+        return data
 
     @classmethod
     def delete_surefire(cls, path: PathLike) -> Optional[Exception]:
@@ -161,27 +209,41 @@ class FilesysTools(BaseTools):
         return chmod_err
 
     @classmethod
-    def trash(cls, path: PathLike, trash_dir: PathLike = Path):
+    def trash(cls, path: PathLike, trash_dir: Optional[PathLike] = None) -> None:
+        """
+        Trash a file or directory.
+
+        Args:
+            path: The path to move to the trash
+            trash_dir: If None, uses :meth:`pocketutils.tools.path_tools.PathTools.guess_trash`
+        """
+        if trash_dir is None:
+            trash_dir = PathTools.guess_trash()
         logger.debug(f"Trashing {path} to {trash_dir} ...")
         shutil.move(str(path), str(trash_dir))
         logger.debug(f"Trashed {path} to {trash_dir}")
 
     @classmethod
-    def try_cleanup(cls, path: Path) -> None:
+    def try_cleanup(cls, path: Path, *, bound: Type[Exception] = PermissionError) -> None:
         """
         Try to delete a file (probably temp file), if it exists, and log any PermissionError.
         """
         path = Path(path)
+        # noinspection PyBroadException
         try:
             path.unlink(missing_ok=True)
-        except PermissionError:
+        except bound:
             logger.error(f"Permission error preventing deleting {path}")
 
     @classmethod
     def read_lines_file(cls, path: PathLike, ignore_comments: bool = False) -> Sequence[str]:
         """
-        Returns a list of lines in the file, optionally skipping lines starting with '#' or that only contain whitespace.
+        Returns a list of lines in the file.
+        Optionally skips lines starting with '#' or that only contain whitespace.
         """
+        warnings.warn(
+            "read_lines_file will be removed; use typeddfs's read_lines instead", DeprecationWarning
+        )
         lines = []
         with FilesysTools.open_file(path, "r") as f:
             for line in f.readlines():
@@ -193,7 +255,8 @@ class FilesysTools(BaseTools):
     @classmethod
     def read_properties_file(cls, path: PathLike) -> Mapping[str, str]:
         """
-        Reads a .properties file, which is a list of lines with key=value pairs (with an equals sign).
+        Reads a .properties file.
+        A list of lines with key=value pairs (with an equals sign).
         Lines beginning with # are ignored.
         Each line must contain exactly 1 equals sign.
 
@@ -203,6 +266,10 @@ class FilesysTools(BaseTools):
         Returns:
             A dict mapping keys to values, both with surrounding whitespace stripped
         """
+        warnings.warn(
+            "read_properties_file will be removed; use typeddfs's read_properties instead",
+            DeprecationWarning,
+        )
         dct = {}
         with FilesysTools.open_file(path, "r") as f:
             for i, line in enumerate(f.readlines()):
@@ -210,7 +277,7 @@ class FilesysTools(BaseTools):
                 if len(line) == 0 or line.startswith("#"):
                     continue
                 if line.count("=") != 1:
-                    raise ParsingError(f"Bad line {i} in {path}")
+                    raise ParsingError(f"Bad line {i} in {path}", resource=path)
                 k, v = line.split("=")
                 k, v = k.strip(), v.strip()
                 if k in dct:
@@ -222,6 +289,10 @@ class FilesysTools(BaseTools):
     def write_properties_file(
         cls, properties: Mapping[Any, Any], path: Union[str, PurePath], mode: str = "o"
     ):
+        warnings.warn(
+            "write_properties_file will be removed; use typeddfs's write_properties instead",
+            DeprecationWarning,
+        )
         if not OpenMode(mode).write:
             raise ContradictoryRequestError(f"Cannot write text to {path} in mode {mode}")
         with FilesysTools.open_file(path, mode) as f:
@@ -252,27 +323,32 @@ class FilesysTools(BaseTools):
         Make a directory (ok if exists, will make parents).
         Avoids a bug on Windows where the path '' breaks. Just doesn't make the path '' (assumes it means '.').
         """
+        warnings.warn("make_dirs will be removed; the upstream bug was fixed", DeprecationWarning)
         # '' can break on Windows
         if str(s) != "":
             Path(s).mkdir(exist_ok=True, parents=True)
 
     @classmethod
     def save_json(cls, data: Any, path: PathLike, mode: str = "w") -> None:
+        warnings.warn("save_json will be removed; use orjson instead", DeprecationWarning)
         with cls.open_file(path, mode) as f:
             json.dump(data, f, ensure_ascii=False, cls=JsonEncoder)
 
     @classmethod
     def load_json(cls, path: PathLike):
+        warnings.warn("save_json will be removed; use orjson instead", DeprecationWarning)
         return json.loads(Path(path).read_text(encoding="utf8"))
 
     @classmethod
     def save_jsonpkl(cls, data, path: PathLike, mode: str = "w") -> None:
+        warnings.warn("save_jsonpickle will be removed; wrap orjson instead", DeprecationWarning)
         if jsonpickle is None:
             raise ImportError("No jsonpickle")
         FilesysTools.write_text(jsonpickle.encode(data), path, mode=mode)
 
     @classmethod
     def load_jsonpkl(cls, path: PathLike) -> dict:
+        warnings.warn("load_jsonpkl will be removed; wrap orjson instead", DeprecationWarning)
         if jsonpickle is None:
             raise ImportError("No jsonpickle")
         return jsonpickle.decode(FilesysTools.read_text(path))
@@ -337,14 +413,17 @@ class FilesysTools(BaseTools):
 
     @classmethod
     def read_bytes(cls, path: PathLike) -> bytes:
+        warnings.warn("read_bytes will be removed; use pathlib instead", DeprecationWarning)
         return Path(path).read_bytes()
 
     @classmethod
     def read_text(cls, path: PathLike) -> str:
+        warnings.warn("read_text will be removed; use pathlib instead", DeprecationWarning)
         return Path(path).read_text(encoding="utf-8")
 
     @classmethod
     def write_bytes(cls, data: Any, path: PathLike, mode: str = "wb") -> None:
+        warnings.warn("write_bytes will be removed; use pathlib instead", DeprecationWarning)
         if not OpenMode(mode).write or not OpenMode(mode).binary:
             raise ContradictoryRequestError(f"Cannot write bytes to {path} in mode {mode}")
         with cls.open_file(path, mode) as f:
@@ -352,6 +431,7 @@ class FilesysTools(BaseTools):
 
     @classmethod
     def write_text(cls, data: Any, path: PathLike, mode: str = "w"):
+        warnings.warn("write_text will be removed; use pathlib instead", DeprecationWarning)
         if not OpenMode(mode).write or OpenMode(mode).binary:
             raise ContradictoryRequestError(f"Cannot write text to {path} in mode {mode}")
         with cls.open_file(path, mode) as f:
@@ -367,6 +447,7 @@ class FilesysTools(BaseTools):
         Raises specific informative errors.
         Cannot set overwrite in append mode.
         """
+        warnings.warn("open_file will be removed", DeprecationWarning)
         path = Path(path)
         mode = OpenMode(mode)
         if mode.write and mode.safe and path.exists():
@@ -394,6 +475,9 @@ class FilesysTools(BaseTools):
             FileExistsError: If the path exists and append is False
             PathIsNotFileError: If append is True, and the path exists but is not a file
         """
+        warnings.warn(
+            "write_lines will be removed; use typeddfs's write_lines instead", DeprecationWarning
+        )
         path = Path(path)
         mode = OpenMode(mode)
         if not mode.overwrite or mode.binary:
@@ -410,10 +494,16 @@ class FilesysTools(BaseTools):
 
     @classmethod
     def sha1(cls, x: SupportsBytes) -> str:
+        warnings.warn(
+            "sha1 will be removed; use hash_hex(x, algorithm='sha1') instead", DeprecationWarning
+        )
         return cls.hash_hex(x, "sha1")
 
     @classmethod
     def sha256(cls, x: SupportsBytes) -> str:
+        warnings.warn(
+            "sha1 will be removed; use hash_hex(x, algorithm='sha256') instead", DeprecationWarning
+        )
         return cls.hash_hex(x, "sha256")
 
     @classmethod
@@ -451,7 +541,7 @@ class FilesysTools(BaseTools):
 
     @classmethod
     def tmpfile(
-        cls, path: Optional[PathLike] = None, spooled: bool = False, **kwargs
+        cls, path: Optional[PathLike] = None, *, spooled: bool = False, **kwargs
     ) -> Generator[Writeable, None, None]:
         """
         Simple wrapper around tempfile.TemporaryFile, tempfile.NamedTemporaryFile, and tempfile.SpooledTemporaryFile.

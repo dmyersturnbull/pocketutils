@@ -1,9 +1,10 @@
 import json
+import warnings
 from copy import copy
-from typing import Any, Iterable, Mapping, Optional, Sequence, Tuple, TypeVar, Union, Callable
+from typing import Any, Callable, Iterable, Mapping, Optional, Sequence, Tuple, TypeVar, Union
 
-import regex
 import numpy as np
+import regex
 
 from pocketutils.core import JsonEncoder
 from pocketutils.core.chars import *
@@ -36,6 +37,7 @@ class StringTools(BaseTools):
     def extract_group_1(
         cls, pattern: Union[str, regex.Pattern], value: Optional[str], ignore_null: bool = False
     ) -> Optional[str]:
+        warnings.warn("extract_group_1 will be removed", DeprecationWarning)
         """
         Performs a ``fullmatch`` on a target string and returns capture group 1, or None if there was no match.
 
@@ -157,6 +159,8 @@ class StringTools(BaseTools):
         Returns:
             A string or None
         """
+        if always_dots is not False:
+            warnings.warn("always_dots argument will be removed", DeprecationWarning)
         if s is None and always_dots:
             return "…" * n
         if s is None:
@@ -201,9 +205,9 @@ class StringTools(BaseTools):
         return StringTools.truncate(s, 10, False)
 
     @classmethod
-    def longest_str(cls, parts: Iterable[str]) -> str:
+    def longest(cls, parts: Iterable[T]) -> T:
         """
-        Returns the argmax by length.
+        Returns an element with the highest ``len``.
         """
         mx = ""
         for i, x in enumerate(parts):
@@ -212,9 +216,16 @@ class StringTools(BaseTools):
         return mx
 
     @classmethod
-    def strip_off_start(cls, s: str, pre: str):
+    def longest_str(cls, parts: Iterable[str]) -> str:
         """
-        Strips the full string `pre` from the start of `str`.
+        Returns the argmax by length.
+        """
+        return cls.longest(parts)
+
+    @classmethod
+    def strip_off_start(cls, s: str, pre: str) -> str:
+        """
+        Strips the full string ``pre`` from the start of ``str``.
         See ``Tools.strip_off`` for more info.
         """
         if not isinstance(pre, str):
@@ -224,9 +235,9 @@ class StringTools(BaseTools):
         return s
 
     @classmethod
-    def strip_off_end(cls, s: str, suf: str):
+    def strip_off_end(cls, s: str, suf: str) -> str:
         """
-        Strips the full string `suf` from the end of `str`.
+        Strips the full string ``suf`` from the end of ``str``.
         See `Tools.strip_off` for more info.
         """
         if not isinstance(suf, str):
@@ -286,7 +297,8 @@ class StringTools(BaseTools):
     def strip_brackets(cls, text: str) -> str:
         """
         Strips any and all pairs of brackets from start and end of a string, but only if they're paired.
-        See ``strip_paired``
+        See Also:
+             strip_paired
         """
         pieces = [
             ("(", ")"),
@@ -307,7 +319,9 @@ class StringTools(BaseTools):
     def strip_quotes(cls, text: str) -> str:
         """
         Strips any and all pairs of quotes from start and end of a string, but only if they're paired.
-        See ``strip_paired``
+
+        See Also:
+            strip_paired
         """
         pieces = [
             ("`", "`"),
@@ -322,7 +336,9 @@ class StringTools(BaseTools):
     def strip_brackets_and_quotes(cls, text: str) -> str:
         """
         Strips any and all pairs of brackets and quotes from start and end of a string, but only if they're paired.
-        See ``strip_paired``
+
+        See Also:
+            strip_paired
         """
         pieces = [
             ("(", ")"),
@@ -372,6 +388,7 @@ class StringTools(BaseTools):
         """
         Simply replace multiple things in a string.
         """
+        warnings.warn("replace_all will be removed", DeprecationWarning)
         for k, v in rep.items():
             s = s.replace(k, v)
         return s
@@ -477,7 +494,7 @@ class StringTools(BaseTools):
 
     @classmethod
     def pretty_function(
-        cls, function, with_address: bool = False, prefix: str = "⟨", suffix: str = "⟩"
+        cls, function, *, with_address: bool = False, prefix: str = "⟨", suffix: str = "⟩"
     ) -> str:
         """
         Get a better and shorter name for a function than str(function).
@@ -585,6 +602,7 @@ class StringTools(BaseTools):
     def join(
         cls,
         seq: Iterable[T],
+        *,
         sep: str = "\t",
         attr: Optional[str] = None,
         prefix: str = "",
@@ -615,6 +633,7 @@ class StringTools(BaseTools):
     def join_kv(
         cls,
         seq: Mapping[T, V],
+        *,
         sep: str = "\t",
         eq: str = "=",
         prefix: str = "",

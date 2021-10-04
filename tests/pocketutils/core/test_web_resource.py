@@ -1,7 +1,7 @@
 from pathlib import Path
 
-import pytest
 import pandas as pd
+import pytest
 
 from pocketutils.core.web_resource import *
 

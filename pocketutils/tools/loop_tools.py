@@ -2,6 +2,7 @@ import itertools
 import logging
 import multiprocessing
 import time
+import warnings
 from datetime import datetime
 from typing import Any, Callable, Collection, Iterable, Iterator, Optional, TypeVar, Union
 
@@ -21,6 +22,7 @@ class LoopTools(BaseTools):
         every_i: int = 10,
         n_total: Optional[int] = None,
     ) -> Iterator[T]:
+        warnings.warn("loop may be removed", PendingDeprecationWarning)
         log = cls.get_log_function(log)
         if hasattr(things, "__len__") or n_total is not None:
             # noinspection PyTypeChecker
@@ -30,6 +32,7 @@ class LoopTools(BaseTools):
 
     @classmethod
     def parallel(cls, items, function, n_cores: int = 2) -> None:
+        warnings.warn("parallel may be removed", PendingDeprecationWarning)
         t0 = time.monotonic()
         print(
             "\n[{}] Using {} cores...".format(datetime.now().strftime("%Y-%m-%d %H:%M:%S"), n_cores)

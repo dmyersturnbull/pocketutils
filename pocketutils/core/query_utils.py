@@ -1,6 +1,6 @@
-import time
 import random
-from typing import Optional, Callable, Mapping
+import time
+from typing import Callable, Mapping, Optional
 from urllib import request
 
 

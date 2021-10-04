@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import hashlib
+import warnings
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Callable, Optional, Union
@@ -35,6 +36,7 @@ class HashableFile:
     buffer_size: int = 16 * 1024
 
     def __post_init__(self):
+        warnings.warn("hashers will be removed; use typeddfs's Checksums instead")
         if not self.file_path.exists():
             raise FileDoesNotExistError(f"File {self.file_path} not found", path=self.file_path)
 

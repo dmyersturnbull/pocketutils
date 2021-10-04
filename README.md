@@ -14,27 +14,68 @@
 
 Adorable little Python functions for you to copy or import.
 
-`pip install pocketutils`. To get the optional packages, use:
-`pip install pocketutils[tools,biochem,misc,notebooks,plotting]`
+`pip install pocketutils` or
+`pip install pocketutils[all]`
+[Apache](https://spdx.org/licenses/Apache-2.0.html)-licensed.
 
+### Basic usage – `Tools`
 
-[Apache](https://spdx.org/licenses/Apache-2.0.html)-licensed. To
+```python
+from pocketutils.full import Tools
 
+Tools.zip_strict([1, 2, 3], [5, 6])  # error <-- lengths must match
+Tools.strip_brackets("( (xy)")  # "(xy" <-- strips paired only
+Tools.sanitize_path("x\ty")  # "xy"  <-- very robust cross-platform sanitization
+Tools.delete_surefire("my_file")  # <-- Attempts to fix permissions if needed
+Tools.git_description("my_repo").tag  # <-- get git repo info
+Tools.pretty_function(lambda s: None)  # "<λ(1)> <-- decent name for any object
+Tools.roman_to_arabic("XIV")  # 14  <-- inverse function too
+Tools.delta_time_to_str(delta_sec=60 * 2 + 5)  # "02:05"  <-- handles days too
+Tools.round_to_sigfigs(135.3, 2)  # 140  <-- rounding to sigfigs-proper
+Tools.pretty_float(-float("-inf"))  # "−∞"  <-- proper unicode, no trailing 0s
+Tools.stream_cmd_call(["cat", "big-file"], callback=fn)  # <-- buffer never fills
+Tools.strip_off("hippopotamus", "hippo")  # "potamus"  <-- what .strip() should do
+Tools.strip_quotes("'hello'")  # "hello"
+Tools.truncate10("looong string")  # "looong st…"
+Tools.parse_bool("true")  # True
+Tools.parse_bool_flex("yes")  # True
+Tools.look(item, "purchase.buyer.first_name")  # None if purchase or buyer is None
+Tools.friendly_size(n_bytes=2 * 14)  # "16.38 kb"
+Tools.is_probable_null("NaN")  # True
+Tools.is_true_iterable("kitten")  # False
+Tools.or_null(some_function)  # None if it fails
+Tools.or_raise(None)  # raises an error (of your choice)
+Tools.trash(unwanted_file)  # move to os-specific trash
+Tools.pretty_dict({"contents": {"greeting": "hi"}})  # indented
+Tools.save_diagnostics(Tools.get_env_info())  # record diagnostic info
+Tools.is_lambda(lambda: None)  # True
+Tools.longest(["a", "a+b"])  # "a+b"  # anything with len
+Tools.only([1, 2])  # error -- multiple items
+Tools.first(iter([]))  # None <-- better than try: next(iter(x)) except:...
+# lots of others
+```
 
-Among the more useful are `zip_strict`, `frozenlist`, `SmartEnum`, `is_lambda`, `strip_paired_brackets`,
-`sanitize_path_node`, `TomlData`, `NestedDocDict`, `PrettyRecordFactory`, `parallel_with_cursor`,
-`loop_timing`, `HashableFile`, `QueryExecutor`, `WebResource`, `get_env_info`, `git_description`, `git_hash`,
-`delete_surefire`, `roman_to_arabic`, `pretty_float`, `pretty_function`, `round_to_sigfigs`,
-`prompt_yes_no`, and `stream_cmd_call`.
+### More things
 
-Also has functions for plotting, machine learning, and bioinformatics.
-Some of the more useful are `ConfusionMatrix`, `DecisionFrame`,
-[`PeakFinder`](https://en.wikipedia.org/wiki/Topographic_prominence), `AtcParser` (for PubChem ATC codes),
-`WellBase1` (for multiwell plates), and [`TissueTable`](https://www.proteinatlas.org/).
+- `FancyLoguru` (really useful)
+- `NestedDotDict` (esp. for toml and json)
+- `QueryUtils` (handles rate-limiting, etc.)
+- `FigTools` (for matplotlib)
+- `J` (tools to interact with Jupyter)
+- `WB1` (microwell plate nomenclature)
+- `Chars` (e.g. `Chars.shelled(s)` or `Chars.snowflake`)
+- `exceptions` (general-purpose exceptions that can store relevant info)
+
+_Even more, albeit more obscure:_
+
+- `TissueExpression`, `UniprotGo`, `AtcTree`, `PlateRois`
+- `WebResource`, `magic_template`
+- `color_schemes`, `FigSaver`, `RefDims`
+- `LoopTools`
+- `MemCache`
 
 [See the docs 📚](https://pocketutils.readthedocs.io/en/stable/), or just
 [browse the code](https://github.com/dmyersturnbull/pocketutils/tree/main/pocketutils).
-
 [New issues](https://github.com/dmyersturnbull/pocketutils/issues) and pull requests are welcome.
 Please refer to the [contributing guide](https://github.com/dmyersturnbull/pocketutils/blob/main/CONTRIBUTING.md)
 and [security policy](https://github.com/dmyersturnbull/pocketutils/blob/main/SECURITY.md).  

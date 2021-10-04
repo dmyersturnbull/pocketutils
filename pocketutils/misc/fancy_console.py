@@ -1,5 +1,6 @@
 import enum
 import logging
+import warnings
 from pathlib import Path
 from typing import Callable, Iterable, Mapping, Optional, Union
 
@@ -49,6 +50,9 @@ class ColorMessages:
             log_fn: If set, additionally logs every message with this function
             kwargs: Arguments 'top', 'bottom', 'sides', and 'line_length'
         """
+        warnings.warn(
+            f"ColorMessages will be removed; use typer.prompt instead", DeprecationWarning
+        )
         _cmap = ColorMessages.default_color_map()
         if color_map is not None:
             _cmap.update(color_map)
@@ -119,6 +123,9 @@ class DeletePrompter:
         trash_fn: Callable[[PathLike], None] = FilesysTools.trash,
         dry: bool = False,
     ):
+        warnings.warn(
+            f"DeletePrompter will be removed; use typer.prompt instead", DeprecationWarning
+        )
         self.allow_dirs = allow_dirs
         self.notify, self.allow_ignore = notify, ignorable
         self.delete_fn, self.trash_fn = delete_fn, trash_fn

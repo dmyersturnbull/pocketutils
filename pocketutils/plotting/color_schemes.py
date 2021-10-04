@@ -156,35 +156,35 @@ class FancyCmaps:
     """
 
     @classmethod
-    def white_red(cls, bad: str = "333333") -> Colormap:
+    def white_red(cls, *, bad: str = "333333") -> Colormap:
         """A colormap from pure white to pure red."""
         cmap = LinearSegmentedColormap.from_list("white_red", ["#ffffff", "#ff0000"])
         cmap.set_bad(color=bad)
         return cmap
 
     @classmethod
-    def white_blue(cls, bad: str = "333333") -> Colormap:
+    def white_blue(cls, *, bad: str = "333333") -> Colormap:
         """A colormap from pure white to pure blue."""
         cmap = LinearSegmentedColormap.from_list("white_blue", ["#ffffff", "#0000ff"])
         cmap.set_bad(color=bad)
         return cmap
 
     @classmethod
-    def blue_white(cls, bad: str = "333333") -> Colormap:
+    def blue_white(cls, *, bad: str = "333333") -> Colormap:
         """A colormap from pure white to pure blue."""
         cmap = LinearSegmentedColormap.from_list("blue_white", ["#0000ff", "#ffffff"])
         cmap.set_bad(color=bad)
         return cmap
 
     @classmethod
-    def white_black(cls, bad: str = "333333") -> Colormap:
+    def white_black(cls, *, bad: str = "333333") -> Colormap:
         """A colormap from pure white to pure black."""
         cmap = LinearSegmentedColormap.from_list("white_black", ["#ffffff", "#000000"])
         cmap.set_bad(color=bad)
         return cmap
 
     @classmethod
-    def blue_white_red(cls, bad: str = "333333") -> Colormap:
+    def blue_white_red(cls, *, bad: str = "333333") -> Colormap:
         """A colormap from pure blue to pure red."""
         cmap = LinearSegmentedColormap.from_list(
             "blue_white_red", ["#0000ff", "#ffffff", "#ff0000"]

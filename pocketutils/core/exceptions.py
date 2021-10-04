@@ -21,6 +21,13 @@ _DW = DeprecationWarning
 _PDW = PendingDeprecationWarning
 
 
+###################################################################################################
+#                                                                                                 #
+#                                             utilities                                           #
+#                                                                                                 #
+###################################################################################################
+
+
 class ErrorUtils:
     """Utilities for creating and modifying errors."""
 
@@ -106,8 +113,15 @@ class _FnUtils:
         )
 
 
+###################################################################################################
+#                                                                                                 #
+#                                           warning types                                         #
+#                                                                                                 #
+###################################################################################################
+
+
 # NOTE: line 2nd col at 50 chars, no matter what
-# This indendation makes it easy to see new definitions
+# This indentation makes it easy to see new definitions
 # If not possible, adjust only for that line
 # Don't adjust existing lines from 50 to avoid git tracking
 
@@ -130,21 +144,6 @@ class XWarning(UserWarning):
 
     info = _FnUtils.info
     __eq__ = _FnUtils.eq
-
-
-class Error(XException):
-    """Abstract exception could reasonably be recovered from. Subclass names should end with 'Error'."""
-
-
-class NaturalExpectedError(Error):
-    """Non-specific exception to short-circuit behavior but meaning 'all ok'."""
-
-
-ErrorUtils.args(name=str)
-
-
-class CodeIncompleteError(Error, NotImplementedError):
-    """The code is not finished!"""
 
 
 class _CodeWarning(XWarning):
@@ -202,16 +201,50 @@ class DataWarning(XWarning):
     """External data is suspicious / might contain an error."""
 
 
+###################################################################################################
+#                                                                                                 #
+#                                            error types                                          #
+#                                                                                                 #
+###################################################################################################
+
+
+class Error(XException):
+    """
+    Abstract exception that could reasonably be recovered from.
+    Subclass names should end with 'Error'.
+    """
+
+
+class NaturalExpectedError(Error):
+    """Non-specific exception to short-circuit behavior but meaning 'all ok'."""
+
+
+@ErrorUtils.args(name=str)
+class CodeIncompleteError(Error, NotImplementedError):
+    """The code is not finished!"""
+
+
 class IllegalStateError(Error, AssertionError):
-    """An assertion failed marking invalid state, potentially recoverable."""
+    """
+    An assertion failed marking invalid state, potentially recoverable.
+    See Also:
+         :class:`OpStateError`
+    """
 
 
 class UnsupportedOpError(Error):
-    """Used as a replacement for NotImplementedError, where the method SHOULD NOT be implemented."""
+    """
+    Used as a replacement for NotImplementedError, where the method *should not* be implemented.
+    This also differs from ``NotImplemented`` in that is permanent
+    and that it should not (usually) be raised in special methods like ``__lt__``.
+    """
 
 
 class NotConstructableError(UnsupportedOpError):
-    """Constructing this object is not supported. It's probably a singleton, static utils, or has factory methods."""
+    """
+    Constructing this object is not supported.
+    It's probably a singleton, static utils, or has factory methods.
+    """
 
 
 @ErrorUtils.args(class_name=str)
@@ -220,16 +253,24 @@ class ImmutableError(UnsupportedOpError):
 
 
 class OpStateError(UnsupportedOpError):
-    """The operation cannot be performed on an object in this state."""
+    """
+    The operation cannot be performed on an object in this state.
+    See Also:
+         :class:`IllegalStateError`
+    """
 
 
 @ErrorUtils.args(n=int)
 class MultipleMatchesError(Error):
-    """Multiple records match; has argument `n` containing the number matched as an int"""
+    """
+    Multiple records match when only 1 was expected.
+    Also applies if 0 or records are permitted.
+    Has argument ``n`` containing the number.
+    """
 
 
 class UserError(Error):
-    """A bad command, etc, from a user (not a programmer)"""
+    """An error caused by input from a user of an application."""
 
 
 @ErrorUtils.args(cmd=str)
@@ -251,20 +292,20 @@ class RefusingRequestError(UserError):
 
 @ErrorUtils.args(key=KeyLike)
 class ResourceError(Error):
-    """A problem finding or loading a resource (file, network connection, hardware, etc.)"""
+    """A problem finding or loading a resource (file, network connection, hardware, etc.)."""
 
 
 class LockedError(ResourceError):
-    """A resource was found but is locked (ex a hardware component in use)"""
+    """A resource was found but is locked (ex a hardware component in use)."""
 
 
 class MissingEnvVarError(ResourceError):
-    """Missing a required environment variable"""
+    """Missing a required environment variable."""
 
 
 @ErrorUtils.args(expected=str, actual=str)
 class HashValidationFailedError(ResourceError):
-    """The hash of a resource did not validate"""
+    """A checksum did not validate."""
 
 
 HashValidationError = HashValidationFailedError
@@ -279,47 +320,57 @@ class MismatchedDataError(ResourceError):
 
 
 class MissingResourceError(ResourceError):
-    """Could not find a resource (general case)"""
+    """Could not find a resource (general case)."""
 
 
 class LookupFailedError(MissingResourceError):
     """Could not find a resource by name."""
 
 
-class _ReqError(Error):
-    """A generic error related to arguments"""
-
-
-class AmbiguousRequestError(_ReqError):
-    """Insufficient information was passed to resolve the operation"""
-
-
-class ContradictoryRequestError(_ReqError):
-    """Contradictory information was passed"""
+class RequestError(Error):
+    """A generic error related to arguments."""
 
 
 @ErrorUtils.args(key=KeyLike)
-class ReservedError(_ReqError):
-    """A key is reserved by the code and cannot be used"""
+class RefusingError(RequestError):
+    """
+    General-case refusal to run an operation, not clearly caused by an application user.
+
+    See Also:
+        RefusingRequestError
+    """
+
+
+class AmbiguousRequestError(RequestError):
+    """Insufficient information was passed to resolve the operation."""
+
+
+class ContradictoryRequestError(RequestError):
+    """Contradictory information was passed."""
 
 
 @ErrorUtils.args(key=KeyLike)
-class AlreadyUsedError(_ReqError):
-    """A key was specified twice"""
+class ReservedError(RequestError):
+    """A key is reserved by the code and cannot be used."""
+
+
+@ErrorUtils.args(key=KeyLike)
+class AlreadyUsedError(RequestError):
+    """A key was specified twice."""
 
 
 class _SizeError(Error):
-    """Too small or large for the operation"""
+    """Too small or large for the operation."""
 
 
 @ErrorUtils.args(length=int, minimum=int, maximum=int)
 class LengthError(_SizeError):
-    """The length is too large or too small"""
+    """The length is too large or too small."""
 
 
 @ErrorUtils.args(lengths=Collection[int])
 class LengthMismatchError(_SizeError):
-    """The objects (1 or more) have different lengths"""
+    """The objects (2 or more) have different lengths."""
 
 
 @ErrorUtils.args(expected=int, actual=int)
@@ -328,35 +379,35 @@ class WrongDimensionError(_SizeError):
 
 
 class EmptyCollectionError(_SizeError):
-    """The object has no elements"""
+    """The object has no elements."""
 
 
 @ErrorUtils.args(expected=str, actual=str)
 class XTypeError(Error, TypeError):
-    """A TypeError containing the expected and actual types"""
+    """A TypeError containing the expected and actual types."""
 
 
 @ErrorUtils.args(value=KeyLike)
 class XValueError(Error, ValueError):
-    """A ValueError containing the value"""
+    """A ValueError containing the value."""
 
 
 @ErrorUtils.args(pattern=str)
 class StringPatternError(XValueError):
-    """A string did not match a required regular expression"""
+    """A string did not match a required regular expression."""
 
 
 @ErrorUtils.args(minimum=int, maximum=int)
 class OutOfRangeError(XValueError):
-    """A numerical value is outside a required range"""
+    """A numerical value is outside a required range."""
 
 
 class ZeroDistanceError(XValueError):
-    """Two (or more) values are the same by distance"""
+    """Two (or more) values are the same by distance."""
 
 
 class NullValueError(XValueError):
-    """A value of None, NaN, or similar was given"""
+    """A value of None, NaN, or similar was given."""
 
 
 @ErrorUtils.args(value=KeyLike)
@@ -365,34 +416,26 @@ class _NumericError(Error):
 
 
 class NumericConversionError(_NumericError):
-    """Could not convert one numeric type to another"""
+    """Could not convert one numeric type to another."""
 
 
 class InexactRoundError(_NumericError):
-    """A floating-point number could not be cast to an integer"""
+    """A floating-point number could not be cast to an integer."""
 
 
 @ErrorUtils.args(key=KeyLike)
-class _KeyError(Error, KeyError):
-    """KeyError that contains the failed key"""
-
-
-class MissingColumnError(_KeyError):
-    """Missing column in a DataFrame"""
-
-
-class UnexpectedColumnError(_KeyError):
-    """Unexpected column in a DataFrame"""
+class XKeyError(Error, KeyError):
+    """KeyError that contains the failed key."""
 
 
 # parsing files or similar resources
 @ErrorUtils.args(resource=Any)
 class _ParsingLikeError(Error):
-    """Failed to parse"""
+    """Failed to parse."""
 
 
 class ParsingError(Error):
-    """Syntax error when parsing"""
+    """Syntax error when parsing."""
 
 
 @ErrorUtils.args(item=KeyLike)
@@ -401,19 +444,19 @@ class UnrecognizedKeyError(_ParsingLikeError):
 
 
 @ErrorUtils.args(item=KeyLike)
-class _WrapLikeError(Error):
+class AbstractWrappedError(Error):
     pass
 
 
-class DataIntegrityError(_WrapLikeError):
+class DataIntegrityError(AbstractWrappedError):
     """Data is missing, incomplete, or invalid. More complex than a missing value."""
 
 
-class AlgorithmError(_WrapLikeError):
+class AlgorithmError(AbstractWrappedError):
     """A wrapper for some less meaningful error."""
 
 
-class ConstructionError(_WrapLikeError):
+class ConstructionError(AbstractWrappedError):
     """A wrapper for some less meaningful error."""
 
 
@@ -473,17 +516,29 @@ class PathError(_IoError):
     """Error involving a path on the filesystem."""
 
 
+class IllegalPathError(PathError, ValueError):
+    """Not a valid path (e.g. not ok on the filesystem)."""
+
+
 class FileDoesNotExistError(PathError):
-    """The path is not a valid file."""
+    """A file is expected, but the path does not exist."""
 
 
 class DirDoesNotExistError(PathError):
-    """The path is not a valid directory."""
-
-
-class IllegalPathError(PathError):
-    """Not a valid path."""
+    """A directory is expected, but the path does not exist."""
 
 
 class PathExistsError(PathError):
     """The path already exists."""
+
+
+class XFileExistsError(PathError, FileExistsError):
+    """The file already exists."""
+
+
+class PathIsNotAFileError(PathExistsError):
+    """The path already exists and is not a file."""
+
+
+class PathIsNotADirError(PathExistsError):
+    """The path already exists and is not a directory."""

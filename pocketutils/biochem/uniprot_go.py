@@ -3,8 +3,8 @@ import os
 from typing import Iterable, List, Mapping, Optional, Union
 from urllib import request
 
-import regex
 import pandas as pd
+import regex
 import uniprot
 
 # uses https://github.com/tanghaibao/goatools

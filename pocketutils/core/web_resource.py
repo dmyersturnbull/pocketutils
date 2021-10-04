@@ -13,25 +13,15 @@ from pocketutils.core import PathLike
 logger = logging.getLogger("pocketutils")
 
 
-@enum.unique
-class ArchiveType(enum.Enum):
-    FLAT = 1
-    ZIP = 2
-    TAR = 3
-    TARGZ = 4
-
-
 class WebResource:
     """
     Useful for extracting files from ZIP and GZIPing them.
     """
 
     def __init__(self, url: str, archive_member: Optional[str], local_path: PathLike):
-        self._url, self._archive_member, self._local_path = (
-            url,
-            archive_member,
-            Path(local_path),
-        )
+        self._url = url
+        self._archive_member = archive_member
+        self._local_path = Path(local_path)
 
     def download(self, redownload: bool = False):
         now = datetime.now()
@@ -93,13 +83,8 @@ class WebResource:
     def path(self) -> Path:
         return self._local_path
 
-    def delete(self) -> bool:
-        if self.exists:
-            self.path.unlink()
-            self._info_path.unlink()
-            return True
-        else:
-            return False
+    def delete(self) -> None:
+        self.path.unlink(missing_ok=True)
 
     def __is_gzip(self, path):
         try:

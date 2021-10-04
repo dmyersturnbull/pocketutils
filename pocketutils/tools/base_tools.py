@@ -14,8 +14,8 @@ from typing import (
     Union,
 )
 
+from pocketutils.core._internal import look as _look
 from pocketutils.core.exceptions import LengthError, LengthMismatchError, MultipleMatchesError
-from pocketutils.core.internal import look as _look
 
 logger = logging.getLogger("pocketutils")
 Y = TypeVar("Y")

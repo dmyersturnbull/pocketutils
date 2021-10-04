@@ -57,11 +57,11 @@ class NumericTools(BaseTools):
         return int(np.floor(f))
 
     @classmethod
-    def imin(cls, *f):
+    def imin(cls, *f) -> int:
         return int(np.min(f))
 
     @classmethod
-    def imax(cls, *f):
+    def imax(cls, *f) -> int:
         return int(np.max(f))
 
     @classmethod

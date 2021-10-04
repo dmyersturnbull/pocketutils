@@ -37,5 +37,5 @@ class MockCallable:
         self.data = "call:" + data
 
 
-class WritableWritableCallable(MockCallable, MockWritable):
+class WritableCallable(MockWritable, MockCallable):
     pass

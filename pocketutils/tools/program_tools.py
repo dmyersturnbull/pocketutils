@@ -1,4 +1,5 @@
 import subprocess  # nosec
+import warnings
 from dataclasses import dataclass
 
 import regex
@@ -46,6 +47,9 @@ class ProgramTools(BaseTools):
         """
         Gets the hex of the most recent Git commit hash in git_repo_dir.
         """
+        warnings.warn(
+            "commit_hash will be removed; use git_description instead", DeprecationWarning
+        )
         return cls.git_description(git_repo_dir).hash
 
     @classmethod

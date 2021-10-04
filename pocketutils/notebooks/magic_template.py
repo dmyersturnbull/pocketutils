@@ -12,25 +12,25 @@ logger = logging.getLogger("pocketutils")
 
 class MagicTemplate:
     @classmethod
-    def from_path(cls, path: PathLike, prefix: str = "${{", suffix: str = "}}") -> MagicTemplate:
+    def from_path(cls, path: PathLike, *, prefix: str = "${{", suffix: str = "}}") -> __qualname__:
         return MagicTemplate(
-            lambda: Path(path).read_text(encoding="utf8"), prefix=prefix, suffix=suffix
+            reader=lambda: Path(path).read_text(encoding="utf8"), prefix=prefix, suffix=suffix
         )
 
     @classmethod
-    def from_text(cls, text: str, prefix: str = "${{", suffix: str = "}}") -> MagicTemplate:
-        return MagicTemplate(lambda: text, prefix=prefix, suffix=suffix)
+    def from_text(cls, text: str, *, prefix: str = "${{", suffix: str = "}}") -> __qualname__:
+        return MagicTemplate(reader=lambda: text, prefix=prefix, suffix=suffix)
 
-    def __init__(self, reader: Callable[[], str], prefix: str = "${{", suffix: str = "}}"):
+    def __init__(self, *, reader: Callable[[], str], prefix: str = "${{", suffix: str = "}}"):
         self._reader = reader
         self._entries = {}
         self._prefix, self._suffix = prefix, suffix
 
-    def add(self, key: str, value: Union[Any, Callable[[str], str]]) -> MagicTemplate:
+    def add(self, key: str, value: Union[Any, Callable[[str], str]]) -> __qualname__:
         self._entries[key] = value
         return self
 
-    def add_version(self, semantic_version: str) -> MagicTemplate:
+    def add_version(self, semantic_version: str) -> __qualname__:
         self._entries.update(
             {
                 "version": semantic_version,
@@ -41,7 +41,7 @@ class MagicTemplate:
         )
         return self
 
-    def add_datetime(self, at: Optional[datetime] = None):
+    def add_datetime(self, at: Optional[datetime] = None) -> __qualname__:
         if at is None:
             now = LazyWrap.new_type("datetime", datetime.now)()
         else:

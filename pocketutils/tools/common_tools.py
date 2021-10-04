@@ -17,9 +17,9 @@ from typing import (
 
 import numpy as np
 
+from pocketutils.core._internal import nicesize
 from pocketutils.core.exceptions import RefusingRequestError
 from pocketutils.core.input_output import DevNull
-from pocketutils.core.internal import nicesize
 from pocketutils.tools.base_tools import BaseTools
 
 Y = TypeVar("Y")

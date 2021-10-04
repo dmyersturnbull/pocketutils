@@ -1,3 +1,4 @@
+import warnings
 from pathlib import Path
 from typing import Any, Dict, Mapping, Sequence, TypeVar, Union
 
@@ -19,6 +20,9 @@ class PandasTools(BaseTools):
         Returns:
              A copy of the dataframe with col_seq as the first columns
         """
+        warnings.warn(
+            "PandasTools will be removed; use typeddfs' cfirst instead", DeprecationWarning
+        )
         if isinstance(cols, str) or isinstance(cols, int):
             cols = [cols]
         if len(df) == 0:  # will break otherwise
@@ -28,6 +32,7 @@ class PandasTools(BaseTools):
 
     @classmethod
     def df_to_dict(cls, d: pd.DataFrame) -> Dict[Any, Any]:
+        warnings.warn("PandasTools will be removed", DeprecationWarning)
         if len(d.columns) != 2:
             raise LengthError(
                 f"Need exactly 2 columns (key, value); got {len(d.columns)}",
@@ -46,6 +51,7 @@ class PandasTools(BaseTools):
     def dict_to_df(
         cls, dct: Mapping[Any, Any], keys: str = "name", values: str = "value"
     ) -> pd.DataFrame:
+        warnings.warn("PandasTools will be removed", DeprecationWarning)
         dct = dict(dct)
         return (
             pd.DataFrame.from_dict(dct, orient="index")
@@ -65,6 +71,7 @@ class PandasTools(BaseTools):
 
     @classmethod
     def series_to_df(cls, series, column: str) -> pd.DataFrame:
+        warnings.warn("PandasTools will be removed", DeprecationWarning)
         return pd.DataFrame(series).reset_index(drop=True).rename(columns={0: column})
 
 

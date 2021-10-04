@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import datetime
 import logging
+import warnings
 from datetime import datetime
 from pathlib import Path
 from typing import Optional
@@ -21,6 +22,10 @@ class BasicFlexLogger:
         formatter=logging.Formatter("%(asctime)s %(levelname)-8s: %(message)s"),
     ):
         """Initializes a logger that can write to a log file and/or stdout."""
+        warnings.warn(
+            "BasicFlexLogger will be replaced; consider loguru as an alternative",
+            DeprecationWarning,
+        )
         self._underlying = logging.getLogger(name)
         self._underlying.setLevel(logging.NOTSET)
         self._formatter = formatter

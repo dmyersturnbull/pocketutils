@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import enum
 import logging
+import warnings
 from contextlib import contextmanager
 from functools import total_ordering
 from typing import Generator, Mapping, Union
@@ -125,6 +126,10 @@ class AdvancedLogger(logging.Logger):
             log_factory = Log(7, 13, 5).modifying(logger)
             logger.setLevel('INFO')   # good start; can be changed
     """
+
+    def __init__(self, *args, **kwargs):
+        warnings.warn("AdvancedLogger will be removed; use loguru instead", DeprecationWarning)
+        super().__init__(*args, **kwargs)
 
     @contextmanager
     def suppressed(

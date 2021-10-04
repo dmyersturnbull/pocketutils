@@ -1,4 +1,4 @@
-from enum import Enum
+import warnings
 from typing import Mapping
 
 from pocketutils.core import SmartEnum
@@ -13,12 +13,16 @@ class MsgLevel(SmartEnum):
 
 
 class MsgFormatter:
+    def __init__(self):
+        warnings.warn("MsgFormatter will be removed", DeprecationWarning)
+
     def __call__(self, message: str, level: MsgLevel) -> str:
         raise NotImplementedError()
 
 
 class MsgFormatterSimple(MsgFormatter):
     def __init__(self, prefixes: Mapping[MsgLevel, str], suffixes: Mapping[MsgLevel, str]):
+        super().__init__()
         self.prefixes, self.suffixes = prefixes, suffixes
 
     def __call__(self, message: str, level: MsgLevel) -> str:

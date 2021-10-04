@@ -4,8 +4,8 @@ from typing import Optional, SupportsFloat, Tuple, Union
 
 import regex
 
+from pocketutils.core._internal import nicesize
 from pocketutils.core.exceptions import OutOfRangeError, StringPatternError
-from pocketutils.core.internal import nicesize
 from pocketutils.tools.base_tools import BaseTools
 from pocketutils.tools.string_tools import StringTools
 
@@ -47,41 +47,38 @@ class UnitTools(BaseTools):
 
         Args:
             ms: The milliseconds
-            space: Space char between digits and 'ms' or 'd' for day (if used);
-                   good choices are empty, ASCII space, Chars.narrownbsp, Chars.thinspace, and Chars.nbsp.
+            space: Space char between digits and 'ms' (if used);
+                   good choices are empty, ASCII space, Chars.narrownbsp,
+                   Chars.thinspace, and Chars.nbsp.
 
         Returns:
             A string of one of the formats above
         """
-        is_neg = ms < 0
         ms = abs(int(ms))
         seconds = int((ms / 1000) % 60)
         minutes = int((ms / (1000 * 60)) % 60)
         hours = int((ms / (1000 * 60 * 60)) % 24)
         days = int(ms / (1000 * 60 * 60 * 24))
+        z_hr = str(hours).zfill(2)
+        z_min = str(minutes).zfill(2)
+        z_sec = str(seconds).zfill(2)
+        sgn = "−" if ms < 0 else ""
         if ms < 1000:
-            s = f"{space}{ms}ms"
+            return f"{sgn}{ms}{space}ms"
         elif days > 1:
-            s = "{}{}d:{}:{}:{}".format(
-                days,
-                space,
-                str(hours).zfill(2),
-                str(minutes).zfill(2),
-                str(seconds).zfill(2),
-            )
+            return f"{days}d:{z_hr}:{z_min}:{z_sec}"
         elif hours > 1:
-            s = "{}:{}:{}".format(str(hours).zfill(2), str(minutes).zfill(2), str(seconds).zfill(2))
+            return f"{sgn}{z_hr}:{z_min}:{z_sec}"
         else:
-            s = "{}:{}".format(str(minutes).zfill(2), str(seconds).zfill(2))
-        return "−" + s if is_neg else s
+            return f"{sgn}{z_min}:{z_sec}"
 
     @classmethod
-    def friendly_size(cls, n_bytes: int) -> str:
+    def friendly_size(cls, n_bytes: int, *, space: str = " ") -> str:
         """
         Returns a text representation of a number of bytes.
         Uses base 2 with IEC 1998, rounded to 0 decimal places, and without a space.
         """
-        return nicesize(n_bytes)
+        return nicesize(n_bytes, space=space)
 
     @classmethod
     def round_to_sigfigs(cls, num: SupportsFloat, sig_figs: int) -> float:
@@ -109,6 +106,7 @@ class UnitTools(BaseTools):
         cls,
         micromolar: float,
         n_sigfigs: Optional[int] = 5,
+        *,
         adjust_units: bool = True,
         use_sigfigs: bool = True,
         space: str = "",
@@ -150,20 +148,13 @@ class UnitTools(BaseTools):
         if n_sigfigs is None:
             pass
         elif use_sigfigs:
-            d = UnitTools.round_to_sigfigs(d, n_sigfigs)
+            d = cls.round_to_sigfigs(d, n_sigfigs)
         else:
             d = round(d, n_sigfigs)
         if round(d) == d and str(d).endswith(".0"):
             return str(d)[:-2] + space + unit
         else:
             return str(d) + space + unit
-
-    @classmethod
-    def split_drug_dose(cls, text: str) -> Tuple[str, Optional[float]]:
-        """
-        Deprecated; see ``split_micromolar``.
-        """
-        return cls.split_species_micromolar(text)
 
     @classmethod
     def split_species_micromolar(cls, text: str) -> Tuple[str, Optional[float]]:
@@ -191,15 +182,8 @@ class UnitTools(BaseTools):
             return text.strip(), None
         else:
             drug = match.group(1).strip("([{)]}")
-            dose = UnitTools.dose_to_micromolar(float(match.group(2)), match.group(3))
+            dose = UnitTools.concentration_to_micromolar(float(match.group(2)), match.group(3))
             return drug, dose
-
-    @classmethod
-    def extract_dose(cls, text: str) -> Optional[float]:
-        """
-        Deprecated; see ``extract_micromolar``.
-        """
-        return cls.extract_micromolar(text)
 
     @classmethod
     def extract_micromolar(cls, text: str) -> Optional[float]:
@@ -214,7 +198,7 @@ class UnitTools(BaseTools):
 
         def find(pat):
             return {
-                UnitTools.dose_to_micromolar(float(match.group(1)), match.group(2))
+                UnitTools.concentration_to_micromolar(float(match.group(1)), match.group(2))
                 for match in pat.finditer(text)
                 if match is not None
             }
@@ -225,13 +209,6 @@ class UnitTools(BaseTools):
         elif len(matches) > 1:
             logger.warning(f"Found {len(matches)} potential doses: {matches} . Returning None.")
         return None
-
-    @classmethod
-    def dose_to_micromolar(cls, digits: Union[str, float], units: str) -> float:
-        """
-        Deprecated; see ``concentration_to_micromolar``.
-        """
-        return cls.concentration_to_micromolar(digits, units)
 
     @classmethod
     def concentration_to_micromolar(cls, digits: Union[str, float], units: str) -> float:

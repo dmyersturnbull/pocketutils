@@ -5,7 +5,6 @@ from pocketutils.core.hashers import *
 
 from . import load
 
-
 raises = pytest.raises
 
 
