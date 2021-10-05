@@ -12,6 +12,7 @@ Pocket Utils
     tools
     jupyter
     biochem
+    plotting
     misc
 
 
@@ -44,6 +45,7 @@ You can import the most general-purpose parts of pocketutils like this:
 .. code:: python
 
    from pocketutils.full import *
+
    print(Tools)
 
 
