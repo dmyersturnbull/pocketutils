@@ -11,7 +11,7 @@ raises = pytest.raises
 class TestStringTools:
     def test_pretty_dict(self):
         f = StringTools.pretty_dict
-        assert f({"☢": "☡"}) == '{\n\t"☢": "☡"\n}'
+        assert f({"☢": "☡"}) == '{\n  "☢": "☡"\n}'
 
     def test_retab(self):
         f = StringTools.retab
@@ -41,7 +41,7 @@ class TestStringTools:
         assert "123" == f("123", 3)
         assert "123" == f("123", 6)
         assert None is f(None, 4)
-        assert "…………" == f(None, 4, True)
+        assert "xx" == f(None, 4, null="xx")
 
     def fix_greek(self):
         f = StringTools.fix_greek

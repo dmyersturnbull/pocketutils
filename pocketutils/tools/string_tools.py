@@ -13,6 +13,7 @@ from pocketutils.tools.base_tools import BaseTools
 
 T = TypeVar("T")
 V = TypeVar("V")
+_control_chars = regex.compile(r"\p{C}", flags=regex.V1)
 
 
 class StringTools(BaseTools):
@@ -22,15 +23,12 @@ class StringTools(BaseTools):
         Returns a pretty-printed dict, complete with indentation. Will fail on non-JSON-serializable datatypes.
         """
         # return Pretty.condensed(dct)
-        return cls.retab(
-            json.dumps(
-                dct,
-                default=JsonEncoder().default,
-                sort_keys=True,
-                indent=1,
-                ensure_ascii=False,
-            ),
-            1,
+        return json.dumps(
+            dct,
+            default=JsonEncoder().default,
+            sort_keys=True,
+            indent=2,
+            ensure_ascii=False,
         )
 
     @classmethod
@@ -62,6 +60,38 @@ class StringTools(BaseTools):
         if match is None:
             return None
         return match.group(1)
+
+    @classmethod
+    def join_to_str(cls, *items: Any, last: str, sep: str = ", ") -> str:
+        """
+        Joins items to something like "cat, dog, and pigeon" or "cat, dog, or pigeon".
+
+        Args:
+            *items: Items to join; ``str(item) for item in items`` will be used
+            last: Probably "and", "or", "and/or", or ""
+                    Spaces are added/removed as needed if ``suffix`` is alphanumeric
+                    or "and/or", after stripping whitespace off the ends.
+            sep: Used to separate all words; include spaces as desired
+
+        Examples:
+            - ``join_to_str(["cat", "dog", "elephant"], last="and")  # cat, dog, and elephant``
+            - ``join_to_str(["cat", "dog"], last="and")  # cat and dog``
+            - ``join_to_str(["cat", "dog", "elephant"], last="", sep="/")  # cat/dog/elephant``
+        """
+        if last.strip().isalpha() or last.strip() == "and/or":
+            last = last.strip() + " "
+        items = [str(s).strip("'" + '"' + " ") for s in items]
+        if len(items) > 2:
+            return sep.join(items[:-1]) + sep + last + items[-1]
+        else:
+            return (" " + last + " ").join(items)
+
+    @classmethod
+    def strip_control_chars(cls, s: str) -> str:
+        """
+        Strips all characters under the Unicode 'Cc' category.
+        """
+        return _control_chars.sub("", s)
 
     @classmethod
     def roman_to_arabic(
@@ -131,6 +161,8 @@ class StringTools(BaseTools):
     def tabs_to_list(cls, s: str) -> Sequence[str]:
         """
         Splits by tabs, but preserving quoted tabs, stripping quotes.
+        In other words, will not split within a quoted substring.
+        Double and single quotes are handled.
         """
         pat = regex.compile(r"""((?:[^\t"']|"[^"]*"|'[^']*')+)""", flags=regex.V1)
         # Don't strip double 2x quotes: ex ""55"" should be "55", not 55
@@ -144,7 +176,13 @@ class StringTools(BaseTools):
         return [strip(i) for i in pat.findall(s)]
 
     @classmethod
-    def truncate(cls, s: Optional[str], n: int, always_dots: bool = False) -> Optional[str]:
+    def truncate(
+        cls,
+        s: Optional[str],
+        n: int,
+        *,
+        null: Optional[str] = None,
+    ) -> Optional[str]:
         """
         Returns a string if it has ``n`` or fewer characters;
         otherwise truncates to length ``n-1`` and appends ``…`` (UTF character).
@@ -154,17 +192,13 @@ class StringTools(BaseTools):
         Args:
             s: The string
             n: The maximum length, inclusive
-            always_dots: Use dots instead of returning None; see above
+            null: Replace ``None`` with this string
 
         Returns:
             A string or None
         """
-        if always_dots is not False:
-            warnings.warn("always_dots argument will be removed", DeprecationWarning)
-        if s is None and always_dots:
-            return "…" * n
         if s is None:
-            return None
+            return null
         if len(s) > n:
             nx = max(0, n - 1)
             return s[:nx] + "…"
@@ -172,37 +206,19 @@ class StringTools(BaseTools):
 
     # these are provided to avoid having to call with labdas or functools.partial
     @classmethod
-    def truncator(cls, n: int = 40, always_dots: bool = False) -> Callable[[str], str]:
+    def truncating(
+        cls,
+        n: int = 40,
+        always_dots: bool = False,
+        *,
+        null: Optional[str] = None,
+    ) -> Callable[[str], str]:
         # pretty much functools.partial
         def trunc(s: str) -> str:
-            return cls.truncate(s, n, always_dots)
+            return cls.truncate(s, n, null=null)
 
         trunc.__name__ = f"truncate({n},{'…' if always_dots else ''})"
         return trunc
-
-    @classmethod
-    def truncate60(cls, s: str) -> str:
-        return StringTools.truncate(s, 60)
-
-    @classmethod
-    def truncate40(cls, s: str) -> str:
-        return StringTools.truncate(s, 64)
-
-    @classmethod
-    def truncate30(cls, s: str) -> str:
-        return StringTools.truncate(s, 30)
-
-    @classmethod
-    def truncate20(cls, s: str) -> str:
-        return StringTools.truncate(s, 20)
-
-    @classmethod
-    def truncate10(cls, s: str) -> str:
-        return StringTools.truncate(s, 10)
-
-    @classmethod
-    def truncate10_nodots(cls, s: str) -> str:
-        return StringTools.truncate(s, 10, False)
 
     @classmethod
     def longest(cls, parts: Iterable[T]) -> T:
@@ -508,7 +524,7 @@ class StringTools(BaseTools):
 
         Args:
             function: Can be anything, but especially useful for functions
-            with_address: Include `@ hex-mem-addr` in the name
+            with_address: Include ``@ hex-mem-addr`` in the name
             prefix: Prefix to the whole string
             suffix: Suffix to the whole string
         """

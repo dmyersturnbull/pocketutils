@@ -57,7 +57,7 @@ class CommonTools(BaseTools):
 
     @classmethod
     def succeeds(cls, function: Callable[[], Any], exception=Exception) -> bool:
-        """Returns True iff `function` does not raise an error."""
+        """Returns True iff ``function`` does not raise an error."""
         return cls.try_none(function, exception=exception) is not None
 
     @classmethod
@@ -217,7 +217,9 @@ class CommonTools(BaseTools):
         skip_none: bool = False,
     ) -> Mapping[Y, Sequence[Z]]:
         """
-        Builds a mapping of some attribute in `sequence` to the containing elements of ``sequence``.
+        Builds a mapping from keys to multiple values.
+        Builds a mapping of some attribute in ``sequence`` to
+        the containing elements of ``sequence``.
 
         Args:
             sequence: Any iterable

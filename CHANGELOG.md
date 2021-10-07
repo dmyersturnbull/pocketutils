@@ -3,9 +3,36 @@
 Adheres to [Semantic Versioning 2.0](https://semver.org/spec/v2.0.0.html) and
 [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [0.7.0] - 2021-10-06
+
+### Added
+
+- `list_package_versions`
+- `enum.py`
+
+### Changed
+
+- `get_env_info` includes more
+
+### Removed
+
+- About half of the deprecated functions
+
+## [0.6.0] - 2021-10-05
+
+### Added
+
+- fancy loguru
+
+### Changed
+
+- Deprecated a lot of code
+- A few misc backwards-incompatible changes
+
 ## [0.5.0] - 2021-06-08
 
 ### Added:
+
 - `flex` arg on `parse_bool`
 
 ### Changed:

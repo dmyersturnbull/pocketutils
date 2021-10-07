@@ -1,4 +1,5 @@
 import sys
+import warnings
 from typing import Callable, Mapping, Optional, Sequence
 
 import regex
@@ -30,7 +31,8 @@ class PathTools(BaseTools):
     def guess_trash(cls) -> Path:
         """
         Chooses a reasonable path for trash based on the OS.
-        This is not reliable. For a more sophisticated solution, see https://github.com/hsoft/send2trash
+        This is not reliable. For a more sophisticated solution,
+        see https://github.com/hsoft/send2trash
         However, even that can fail.
         """
         plat = sys.platform.lower()
@@ -61,28 +63,24 @@ class PathTools(BaseTools):
         return exists
 
     @classmethod
-    def prep_file(cls, path: PathLike, exist_ok: bool = True) -> bool:
+    def prep_file(cls, path: PathLike, exist_ok: bool = True) -> None:
         """
-        Prepares a file path by making its parent directory (if it doesn't exist) and checking it.
+        Prepares a file path by making its parent directory.
+        Same as ``pathlib.Path.mkdir`` but makes sure ``path`` is a file if it exists.
         """
         # On some platforms we get generic exceptions like permissions errors, so these are better
         path = Path(path)
-        exists = path.exists()
         # check for errors first; don't make the dirs and then fail
-        if exists and not exist_ok:
-            raise FileExistsError(f"Path {path} already exists")
-        elif exists and not path.is_file() and not path.is_symlink():  # TODO check link?
+        if path.exists() and not path.is_file() and not path.is_symlink():
             raise FileDoesNotExistError(f"Path {path} exists but is not a file")
-        # NOTE! exist_ok in mkdir throws an error on Windows
-        if not path.parent.exists():
-            Path(path.parent).mkdir(parents=True, exist_ok=True)
-        return exists
+        Path(path.parent).mkdir(parents=True, exist_ok=exist_ok)
 
     @classmethod
     def sanitize_path(
         cls,
         path: PathLike,
         is_file: Optional[bool] = None,
+        *,
         show_warnings: Union[bool, Callable[[str], Any]] = True,
     ) -> Path:
         r"""

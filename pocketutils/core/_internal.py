@@ -23,15 +23,6 @@ class PathLikeUtils:
         )
 
 
-if sys.version_info < (3, 9):
-    # TODO remove both of these on 0.5 release, breaking backwards-compat
-    # This breaks on Python 3.9
-    # https://github.com/dmyersturnbull/pocketutils/issues/2
-    PathLike.isinstance = PathLikeUtils.isinstance
-    # and this just provides backwards-compat until 0.5 release
-    pathlike_isinstance = PathLikeUtils.isinstance
-
-
 class Pretty:
     @classmethod
     def condensed(cls, item, depth=1):
@@ -103,9 +94,6 @@ def nicesize(nbytes: int, space: str = "") -> str:
 
 
 def look(obj: Y, attrs: Union[str, Iterable[str], Callable[[Y], Z]]) -> Optional[Z]:
-    """
-    See VeryCommonTools.look.
-    """
     if attrs is None:
         return obj
     if not isinstance(attrs, str) and hasattr(attrs, "__len__") and len(attrs) == 0:

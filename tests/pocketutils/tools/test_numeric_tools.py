@@ -1,7 +1,6 @@
 import numpy as np
 import pytest
 
-from pocketutils.core.exceptions import LengthError
 from pocketutils.tools.numeric_tools import NumericTools
 
 raises = pytest.raises

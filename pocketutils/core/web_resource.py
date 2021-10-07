@@ -61,7 +61,6 @@ class WebResource:
                     extracted.unlink()
                 if dled is not None and dled.exists():
                     dled.unlink()
-            print(to_path, to_path.exists())
 
     def datetime_downloaded(self) -> datetime:
         return datetime.fromisoformat(self.metadata()["datetime_downloaded"])

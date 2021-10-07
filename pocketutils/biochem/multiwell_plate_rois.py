@@ -3,7 +3,7 @@ from dataclasses import dataclass
 from enum import Enum
 from typing import Dict
 
-from pocketutils.core.exceptions import OutOfRangeError, ErrorUtils
+from pocketutils.core.exceptions import ErrorUtils, OutOfRangeError
 
 
 class Edge(Enum):

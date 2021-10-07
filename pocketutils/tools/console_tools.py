@@ -2,7 +2,7 @@ import logging
 import sys
 import time
 import warnings
-from typing import Callable, Union
+from typing import Callable, Optional, Union
 
 from pocketutils.tools.base_tools import BaseTools
 from pocketutils.tools.filesys_tools import FilesysTools
@@ -17,10 +17,10 @@ class ConsoleTools(BaseTools):
 
     @classmethod
     def prompt_yes_no(cls, msg: str, writer: Callable[[str], None] = sys.stdout.write) -> bool:
-        warnings.warn(
-            f"prompt_yes_no will be removed; use typer.prompt with confirmation=True instead",
-            DeprecationWarning,
-        )
+        """
+        Asks for "yes" or "no" via ``input``.
+        Consider using ``typer.prompt`` instead.
+        """
         while True:
             writer(msg + " ")
             command = input("")
@@ -60,7 +60,8 @@ class ConsoleTools(BaseTools):
         writer: Callable[[str], None] = sys.stdout.write,
     ) -> bool:
         """
-        Asks for a confirmation from the user using the bulletin input().
+        Asks for a confirmation from the user using the builtin ``input``.
+        Consider using ``typer.prompt`` instead.
             msg: If None defaults to 'Confirm? [yes/no]'
             input_fn: Function to get the user input (its argument is always '')
             writer: Print using this function (should not print a newline by default)
@@ -68,10 +69,6 @@ class ConsoleTools(BaseTools):
         Returns:
             True if the user answered 'yes'; False otherwise
         """
-        warnings.warn(
-            f"prompt_yes_no will be removed; use typer.prompt with confirmation=True instead",
-            DeprecationWarning,
-        )
         if msg is None:
             msg = "Confirm? [yes/no]"
         if isinstance(msg, str):
@@ -81,12 +78,10 @@ class ConsoleTools(BaseTools):
 
         while True:
             msg()
-            command = input_fn("")
-            if command.lower() == "/exit":
-                break
-            if command.lower() in ["yes", "y"]:
+            command = input_fn("").lower()
+            if command in ["yes", "y"]:
                 return True
-            elif command.lower() in ["no", "n"]:
+            elif command in ["no", "n"]:
                 return False
 
     @classmethod

@@ -147,7 +147,7 @@ class JFonts:
     def every(cls, n_cols: int = 4) -> None:
         """
         Shows an HTML table of all typefaces rendered as themselves. Ex; will show Helvetica in Helvetica.
-        Displays as an HTML table with `n_cols`.
+        Displays as an HTML table with ``n_cols``.
         Thanks to https://jonathansoma.com/lede/data-studio/matplotlib/list-all-fonts-available-in-matplotlib-plus-samples/.
 
         Args:

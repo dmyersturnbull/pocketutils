@@ -11,13 +11,14 @@ Loguru logging extension that, configurably:
 - mandes utf-8
 """
 from __future__ import annotations
+
 import logging
 import os
 import sys
 from dataclasses import dataclass
 from inspect import cleandoc
 from pathlib import Path
-from typing import Mapping, Optional, Union, Any, Callable, TypeVar, Generic, TextIO, AbstractSet
+from typing import AbstractSet, Any, Callable, Generic, Mapping, Optional, TextIO, TypeVar, Union
 
 # noinspection PyProtectedMember
 import loguru._defaults as _defaults
@@ -26,6 +27,7 @@ from loguru import logger
 
 # noinspection PyProtectedMember
 from loguru._logger import Logger
+
 from pocketutils.core.exceptions import IllegalStateError, XValueError
 
 Formatter = Union[str, Callable[[Mapping[str, Any]], str]]

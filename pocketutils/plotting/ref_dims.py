@@ -17,11 +17,11 @@ class RefDims(dict):
             widths['1/3 2_col']
             widths['(2/1) 2_col']
 
-    NOTES!!!
-    If ``width_pad`` (``height_pad``, respectively) is set, this will be included in the calculation.
-    For example, (1/3) 2_col will subtract off the appropriate padding for 3 cols (2 spaces shared between 3 columns).
-    The size is then rounded to sigfigs after -- normally 6 sigfigs, but overridden with width_sigfigs / height_sigfigs.
-    The sum / difference is applied after.
+    .. note::
+        If ``width_pad`` (``height_pad``, respectively) is set, this will be included in the calculation.
+        For example, (1/3) 2_col will subtract off the appropriate padding for 3 cols (2 spaces shared between 3 columns).
+        The size is then rounded to sigfigs after -- normally 6 sigfigs, but overridden with width_sigfigs / height_sigfigs.
+        The sum / difference is applied after.
 
     """
 

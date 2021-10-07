@@ -1,12 +1,15 @@
 import gzip
 import hashlib
+import importlib.metadata
 import json
+import locale
 import logging
 import os
 import platform
 import shutil
 import socket
 import stat
+import struct
 import sys
 import tempfile
 import warnings
@@ -14,17 +17,7 @@ from contextlib import contextmanager
 from datetime import datetime, timezone
 from getpass import getuser
 from pathlib import Path, PurePath
-from typing import (
-    Any,
-    Generator,
-    Iterable,
-    Mapping,
-    Optional,
-    Sequence,
-    SupportsBytes,
-    Type,
-    Union,
-)
+from typing import Any, Generator, Iterable, Mapping, Optional, Sequence, SupportsBytes, Type, Union
 
 import numpy as np
 import pandas as pd
@@ -46,12 +39,6 @@ from pocketutils.tools.path_tools import PathTools
 logger = logging.getLogger("pocketutils")
 COMPRESS_LEVEL = 9
 ENCODING = "utf8"
-
-try:
-    import dill
-except ImportError:
-    dill = None
-    logger.debug("Could not import dill", exc_info=True)
 
 try:
     import jsonpickle
@@ -78,27 +65,9 @@ class FilesysTools(BaseTools):
     """
     Tools for file/directory creation, etc.
 
-    Security concerns
-    -----------------
-
-    Please note that several of these functions expose security concerns.
-    In particular, ``pkl``, ``unpkl``, and any others that involve pickle or its derivatives.
+    .. caution::
+        Some functions may be insecure.
     """
-
-    @classmethod
-    def pkl(cls, stuff: Any, path: PathLike) -> None:
-        """Save to a file with dill."""
-        warnings.warn("pkl will be removed", DeprecationWarning)
-        data = dill.dumps(stuff, protocol=5)  # nosec
-        Path(path).write_bytes(data)
-
-    @classmethod
-    def unpkl(cls, path: PathLike):
-        """Load a file with dill."""
-        warnings.warn("unpkl will be removed", DeprecationWarning)
-        # ignore encoding param, which is only useful for unpickling Python 2-generated
-        data = Path(path).read_bytes()
-        return dill.loads(data)  # nosec
 
     @classmethod
     def new_hasher(cls, algorithm: str = "sha1") -> Hasher:
@@ -109,6 +78,18 @@ class FilesysTools(BaseTools):
         cls, url: str, archive_member: Optional[str], local_path: PathLike
     ) -> WebResource:
         return WebResource(url, archive_member, local_path)
+
+    @classmethod
+    def is_linux(cls) -> bool:
+        return sys.platform == "linux"
+
+    @classmethod
+    def is_windows(cls) -> bool:
+        return sys.platform == "win32"
+
+    @classmethod
+    def is_macos(cls) -> bool:
+        return sys.platform == "darwin"
 
     @classmethod
     def get_env_info(cls, *, include_insecure: bool = False) -> Mapping[str, str]:
@@ -124,8 +105,16 @@ class FilesysTools(BaseTools):
             sources. For example, this includes the specific OS release, which could
             be used in attack.
         """
+        try:
+            import psutil
+        except ImportError:
+            psutil = None
+            logger.warning("psutil is not installed, so cannot get extended env info")
 
         now = datetime.now(timezone.utc).astimezone().isoformat()
+        uname = platform.uname()
+        language_code, encoding = locale.getlocale()
+        # build up this dict:
         data = {}
 
         def _try(os_fn, k: str, *args):
@@ -135,36 +124,56 @@ class FilesysTools(BaseTools):
                 v = os_fn(*args)
                 data[k] = v
                 return v
-            except OSError:
+            except (OSError, ImportError):
                 return None
 
         data.update(
             dict(
-                os_release=platform.platform(),
-                python_version=sys.version,
+                platform=platform.platform(),
+                python=".".join(str(i) for i in sys.version_info),
+                os=uname.system,
+                os_release=uname.release,
+                os_version=uname.version,
+                machine=uname.machine,
+                byte_order=sys.byteorder,
+                processor=uname.processor,
+                build=sys.version,
+                python_bits=8 * struct.calcsize("P"),
                 environment_info_capture_datetime=now,
+                encoding=encoding,
+                locale=locale,
+                recursion_limit=sys.getrecursionlimit(),
+                float_info=sys.float_info,
+                int_info=sys.int_info,
+                flags=sys.flags,
+                hash_info=sys.hash_info,
+                implementation=sys.implementation,
+                switch_interval=sys.getswitchinterval(),
+                filesystem_encoding=sys.getfilesystemencoding(),
             )
         )
+        if "LANG" in os.environ:
+            data["lang"] = os.environ["LANG"]
         if "SHELL" in os.environ:
             data["shell"] = os.environ["SHELL"]
+        if "LC_ALL" in os.environ:
+            data["lc_all"] = os.environ["LC_ALL"]
+        if hasattr(sys, "winver"):
+            data["win_ver"] = (sys.getwindowsversion(),)
+        if hasattr(sys, "macver"):
+            data["mac_ver"] = (sys.mac_ver(),)
+        if hasattr(sys, "linux_distribution"):
+            data["linux_distribution"] = (sys.linux_distribution(),)
         if include_insecure:
-            data.update(
-                dict(
-                    hostname=socket.gethostname(),
-                    username=getuser(),
-                    cwd=os.getcwd(),
-                    login=os.getlogin(),
-                )
-            )
+            _try(getuser, "username")
+            _try(os.getlogin, "login")
+            _try(socket.gethostname, "hostname")
+            _try(os.getcwd, "cwd")
             pid = _try(os.getpid, "pid")
-            ppid = _try(os.getppid, "parent_pid", pid)
-            _try(os.getpriority, "priority", os.PRIO_PROCESS, pid)
-            _try(os.getpriority, "parent_priority", os.PRIO_PROCESS, ppid)
-        try:
-            import psutil
-        except ImportError:
-            psutil = None
-            logger.warning("psutil is not installed, so cannot get extended env info")
+            ppid = _try(os.getppid, "parent_pid")
+            if hasattr(os, "getpriority"):
+                _try(os.getpriority, "priority", os.PRIO_PROCESS, pid)
+                _try(os.getpriority, "parent_priority", os.PRIO_PROCESS, ppid)
         if psutil is not None:
             data.update(
                 dict(
@@ -174,7 +183,23 @@ class FilesysTools(BaseTools):
                     memory_available=psutil.virtual_memory().available,
                 )
             )
-        return data
+        return {k: str(v) for k, v in dict(data).items()}
+
+    @classmethod
+    def list_package_versions(cls) -> Mapping[str, str]:
+        """
+        Returns installed packages and their version numbers.
+        Reliable; uses importlib (Python 3.8+).
+        """
+        # calling .metadata reads the metadata file
+        # and .version is an alias to .metadata["version"]
+        # so make sure to only read once
+        # TODO: get installed extras?
+        dct = {}
+        for d in importlib.metadata.distributions():
+            meta = d.metadata
+            dct[meta["name"]] = meta["version"]
+        return dct
 
     @classmethod
     def delete_surefire(cls, path: PathLike) -> Optional[Exception]:
@@ -241,9 +266,6 @@ class FilesysTools(BaseTools):
         Returns a list of lines in the file.
         Optionally skips lines starting with '#' or that only contain whitespace.
         """
-        warnings.warn(
-            "read_lines_file will be removed; use typeddfs's read_lines instead", DeprecationWarning
-        )
         lines = []
         with FilesysTools.open_file(path, "r") as f:
             for line in f.readlines():
@@ -266,10 +288,6 @@ class FilesysTools(BaseTools):
         Returns:
             A dict mapping keys to values, both with surrounding whitespace stripped
         """
-        warnings.warn(
-            "read_properties_file will be removed; use typeddfs's read_properties instead",
-            DeprecationWarning,
-        )
         dct = {}
         with FilesysTools.open_file(path, "r") as f:
             for i, line in enumerate(f.readlines()):
@@ -289,10 +307,6 @@ class FilesysTools(BaseTools):
     def write_properties_file(
         cls, properties: Mapping[Any, Any], path: Union[str, PurePath], mode: str = "o"
     ):
-        warnings.warn(
-            "write_properties_file will be removed; use typeddfs's write_properties instead",
-            DeprecationWarning,
-        )
         if not OpenMode(mode).write:
             raise ContradictoryRequestError(f"Cannot write text to {path} in mode {mode}")
         with FilesysTools.open_file(path, mode) as f:
@@ -318,17 +332,6 @@ class FilesysTools(BaseTools):
                 )
 
     @classmethod
-    def make_dirs(cls, s: PathLike) -> None:
-        """
-        Make a directory (ok if exists, will make parents).
-        Avoids a bug on Windows where the path '' breaks. Just doesn't make the path '' (assumes it means '.').
-        """
-        warnings.warn("make_dirs will be removed; the upstream bug was fixed", DeprecationWarning)
-        # '' can break on Windows
-        if str(s) != "":
-            Path(s).mkdir(exist_ok=True, parents=True)
-
-    @classmethod
     def save_json(cls, data: Any, path: PathLike, mode: str = "w") -> None:
         warnings.warn("save_json will be removed; use orjson instead", DeprecationWarning)
         with cls.open_file(path, mode) as f:
@@ -338,20 +341,6 @@ class FilesysTools(BaseTools):
     def load_json(cls, path: PathLike):
         warnings.warn("save_json will be removed; use orjson instead", DeprecationWarning)
         return json.loads(Path(path).read_text(encoding="utf8"))
-
-    @classmethod
-    def save_jsonpkl(cls, data, path: PathLike, mode: str = "w") -> None:
-        warnings.warn("save_jsonpickle will be removed; wrap orjson instead", DeprecationWarning)
-        if jsonpickle is None:
-            raise ImportError("No jsonpickle")
-        FilesysTools.write_text(jsonpickle.encode(data), path, mode=mode)
-
-    @classmethod
-    def load_jsonpkl(cls, path: PathLike) -> dict:
-        warnings.warn("load_jsonpkl will be removed; wrap orjson instead", DeprecationWarning)
-        if jsonpickle is None:
-            raise ImportError("No jsonpickle")
-        return jsonpickle.decode(FilesysTools.read_text(path))
 
     @classmethod
     def read_any(
@@ -367,7 +356,8 @@ class FilesysTools(BaseTools):
         Mapping[str, str],
     ]:
         """
-        Reads a variety of simple formats based on filename extension, including '.txt', 'csv', .xml', '.properties', '.json'.
+        Reads a variety of simple formats based on filename extension.
+        Includes '.txt', 'csv', .xml', '.properties', '.json'.
         Also reads '.data' (binary), '.lines' (text lines).
         And formatted lists: '.strings', '.floats', and '.ints' (ex: "[1, 2, 3]").
         """
@@ -392,10 +382,8 @@ class FilesysTools(BaseTools):
             return path.read_bytes()
         elif ext == "json":
             return FilesysTools.load_json(path)
-        elif ext == "pkl":
-            return FilesysTools.unpkl(path)
         elif ext in ["npy", "npz"]:
-            return np.load(str(path), allow_pickle=True)
+            return np.load(str(path), allow_pickle=False)
         elif ext == "properties":
             return FilesysTools.read_properties_file(path)
         elif ext == "csv":
@@ -412,32 +400,6 @@ class FilesysTools(BaseTools):
             raise TypeError(f"Did not recognize resource file type for file {path}")
 
     @classmethod
-    def read_bytes(cls, path: PathLike) -> bytes:
-        warnings.warn("read_bytes will be removed; use pathlib instead", DeprecationWarning)
-        return Path(path).read_bytes()
-
-    @classmethod
-    def read_text(cls, path: PathLike) -> str:
-        warnings.warn("read_text will be removed; use pathlib instead", DeprecationWarning)
-        return Path(path).read_text(encoding="utf-8")
-
-    @classmethod
-    def write_bytes(cls, data: Any, path: PathLike, mode: str = "wb") -> None:
-        warnings.warn("write_bytes will be removed; use pathlib instead", DeprecationWarning)
-        if not OpenMode(mode).write or not OpenMode(mode).binary:
-            raise ContradictoryRequestError(f"Cannot write bytes to {path} in mode {mode}")
-        with cls.open_file(path, mode) as f:
-            f.write(data)
-
-    @classmethod
-    def write_text(cls, data: Any, path: PathLike, mode: str = "w"):
-        warnings.warn("write_text will be removed; use pathlib instead", DeprecationWarning)
-        if not OpenMode(mode).write or OpenMode(mode).binary:
-            raise ContradictoryRequestError(f"Cannot write text to {path} in mode {mode}")
-        with cls.open_file(path, mode) as f:
-            f.write(str(data))
-
-    @classmethod
     @contextmanager
     def open_file(cls, path: PathLike, mode: str):
         """
@@ -447,7 +409,6 @@ class FilesysTools(BaseTools):
         Raises specific informative errors.
         Cannot set overwrite in append mode.
         """
-        warnings.warn("open_file will be removed", DeprecationWarning)
         path = Path(path)
         mode = OpenMode(mode)
         if mode.write and mode.safe and path.exists():
@@ -475,9 +436,6 @@ class FilesysTools(BaseTools):
             FileExistsError: If the path exists and append is False
             PathIsNotFileError: If append is True, and the path exists but is not a file
         """
-        warnings.warn(
-            "write_lines will be removed; use typeddfs's write_lines instead", DeprecationWarning
-        )
         path = Path(path)
         mode = OpenMode(mode)
         if not mode.overwrite or mode.binary:
@@ -491,20 +449,6 @@ class FilesysTools(BaseTools):
                 f.write(str(x) + "\n")
             n += 1
         return n
-
-    @classmethod
-    def sha1(cls, x: SupportsBytes) -> str:
-        warnings.warn(
-            "sha1 will be removed; use hash_hex(x, algorithm='sha1') instead", DeprecationWarning
-        )
-        return cls.hash_hex(x, "sha1")
-
-    @classmethod
-    def sha256(cls, x: SupportsBytes) -> str:
-        warnings.warn(
-            "sha1 will be removed; use hash_hex(x, algorithm='sha256') instead", DeprecationWarning
-        )
-        return cls.hash_hex(x, "sha256")
 
     @classmethod
     def hash_hex(cls, x: SupportsBytes, algorithm: str) -> str:

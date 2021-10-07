@@ -130,8 +130,10 @@ class BaseTools:
     @classmethod
     def zip_list(cls, *args) -> List[Tuple[Any]]:
         """
-        Same as ``zip_strict``, but converts to a list and can provide a more detailed error message.
-        Zips two sequences into a list of tuples and raises an IndexError if the lengths don't match.
+        Same as ``zip_strict``, but more informative.
+        Converts to a list and can provide a more detailed error message.
+        Zips two sequences into a list of tuples and raises an
+        IndexError if the lengths don't match.
 
         Args:
             args: Same as with ``zip``
@@ -163,11 +165,11 @@ class BaseTools:
     @classmethod
     def to_true_iterable(cls, s: Any) -> Iterable[Any]:
         """
-        See ``BaseTools.is_true_iterable``.
+        See :meth:`is_true_iterable`.
 
-        Ex:
-            - to_true_iterable('abc')         # ['abc']
-            - to_true_iterable(['ab', 'cd')]  # ['ab', 'cd']
+        Examples:
+            - ``to_true_iterable('abc')         # ['abc']``
+            - ``to_true_iterable(['ab', 'cd')]  # ['ab', 'cd']``
         """
         if BaseTools.is_true_iterable(s):
             return s
@@ -177,7 +179,8 @@ class BaseTools:
     @classmethod
     def is_true_iterable(cls, s: Any) -> bool:
         """
-        Returns whether `s` is a probably "proper" iterable -- in other words, iterable but not a string or bytes
+        Returns whether ``s`` is a probably "proper" iterable.
+        In other words, iterable but not a string or bytes
         """
         return (
             s is not None

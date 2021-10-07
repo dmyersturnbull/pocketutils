@@ -139,7 +139,7 @@ class LazyWrap:
 
 class SmartEnum(enum.Enum):
     """
-    An enum with a classmethod `of` that parses a string of the member's name.
+    An enum with a classmethod ``of`` that parses a string of the member's name.
     """
 
     @classmethod
