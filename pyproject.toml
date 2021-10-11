@@ -16,7 +16,7 @@ build-backend = "poetry.masonry.api"
 
 [tool.poetry]
 name = "pocketutils"
-version = "0.7.1"
+version = "0.8.0"
 description = "Adorable little Python code for you to copy or import."
 keywords = ["python", "snippets", "utils", "gists", "bioinformatics"]
 authors = ["Douglas Myers-Turnbull"]
@@ -48,7 +48,8 @@ Download = "https://pypi.org/project/pocketutils/"
 #########################################################################################
 
 [tool.poetry.dependencies]
-python                   = ">=3.8, <4"
+python                   = "^3.8"
+defusedxml               = ">=0.7, <1.0"
 orjson                   = "^3.4"
 regex                    = ">=2021"
 toml                     = ">=0.10, <1.0"
@@ -56,9 +57,6 @@ tomlkit                  = ">=0.7, <1.0"
 
 loguru                   = {version=">=0.5, <1.0", optional=true}
 
-defusedxml               = {version=">=0.7, <1.0", optional=true}
-dill                     = {version=">=0.3, <1.0", optional=true}
-jsonpickle               = {version="^2", optional=true}
 joblib                   = {version="^1", optional=true}
 numpy                    = {version="^1.19", optional=true}
 pandas                   = {version="^1.2", optional=true}
@@ -70,7 +68,6 @@ goatools                 = {version="^1", optional=true}
 requests                 = {version="^2", optional=true}
 uniprot                  = {version="^1.3", optional=true}
 
-colorama                 = {version=">=0.4, <1.0", optional=true}
 psutil                   = {version="^5", optional=true}
 typer                    = {version=">=0.4, <1.0", optional=true}
 
@@ -96,17 +93,17 @@ sphinx-rtd-theme         = "^1"
 
 
 [tool.poetry.extras]
-tools      = ["dill", "jsonpickle", "joblib", "numpy", "pandas", "defusedxml", "pint", "loguru"]
+tools      = ["joblib", "numpy", "pandas", "pint", "loguru"]
 plotting   = ["matplotlib", "numpy", "pandas"]
 notebooks  = ["ipython", "pandas"]
-misc       = ["colorama", "psutil", "typer"]
+misc       = ["psutil", "typer"]
 biochem    = ["goatools", "requests", "uniprot", "numpy", "pandas", "pint"]
 all = [
-     "defusedxml", "dill", "joblib", "jsonpickle", "numpy", "pandas", "pint",
+    "joblib", "numpy", "pandas", "pint",
     "loguru",
     "matplotlib",
     "ipython",
-    "colorama", "psutil", "typer",
+    "psutil", "typer",
     "goatools", "requests", "uniprot"
 ]
 

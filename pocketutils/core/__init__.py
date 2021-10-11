@@ -2,12 +2,8 @@ from __future__ import annotations
 
 import abc
 import enum
-import json
 import logging
-from datetime import date, datetime
 from typing import Any, Callable, Generic, Iterable, Sequence, Type, TypeVar
-
-import numpy as np
 
 # noinspection PyProtectedMember
 from pocketutils.core._internal import PathLike, PathLikeUtils
@@ -30,15 +26,6 @@ class Sentinel:
 
     def __init__(self):
         pass
-
-
-class JsonEncoder(json.JSONEncoder):
-    def default(self, obj):
-        if isinstance(obj, np.ndarray):
-            return obj.tolist()
-        elif isinstance(obj, (datetime, date)):
-            return obj.isoformat()
-        return json.JSONEncoder.default(self, obj)
 
 
 V = TypeVar("V")
@@ -257,7 +244,6 @@ class OptRow:
 
 __all__ = [
     "Sentinel",
-    "JsonEncoder",
     "SmartEnum",
     "frozenlist",
     "PathLike",

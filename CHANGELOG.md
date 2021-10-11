@@ -3,6 +3,27 @@
 Adheres to [Semantic Versioning 2.0](https://semver.org/spec/v2.0.0.html) and
 [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [0.8.0] - 2021-10-11
+
+### Added
+
+- `FilesysTools.get_info`
+- `UnitTools.approx_time_wrt`
+
+### Changed
+
+- Renamed functions in `PathTools`
+- Path sanitization is more flexible
+- defusedxml is now required
+- json code uses `orjson`
+- Renamed `extract_group_1` to `extract_group` and improved
+
+### Removed
+
+- Some deprecated functions
+- `s` from `OpenMode`
+- jsonpickle and dill
+
 ## [0.7.1] - 2021-10-10
 
 ### Added

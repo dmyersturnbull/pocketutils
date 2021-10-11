@@ -36,6 +36,16 @@ class TestFilesysTools:
         with pytest.raises(ParsingError):
             f(load("bad2.properties"))
 
+    def test_get_info(self):
+        file = load("lines.lines")
+        info = FilesysTools.get_info(file)
+        assert info.is_file
+        assert info.mod_or_create_dt is not None
+        info = FilesysTools.get_info(".")
+        assert info.is_dir
+        assert not info.is_file
+        assert info.mod_or_create_dt is not None
+
     def test_get_env_info(self):
         data = FilesysTools.get_env_info(include_insecure=True)
         assert len(data) > 20

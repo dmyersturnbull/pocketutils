@@ -1,5 +1,6 @@
 import logging
 import math
+from datetime import datetime, date, timedelta
 from typing import Optional, SupportsFloat, Tuple, Union
 
 import regex
@@ -17,18 +18,60 @@ _UNIT_REG = UnitRegistry()
 
 class UnitTools(BaseTools):
     @classmethod
-    def delta_time_to_str(cls, delta_sec: float, space: str = "") -> str:
+    def approx_time_wrt(
+        cls,
+        now: Union[date, datetime],
+        then: Union[date, datetime],
+        *,
+        skip_today: bool = False,
+        sig: int = 3,
+    ) -> str:
+        """
+        Describes ``then`` with higher resolution for smaller differences to ``now``.
+
+        Examples:
+            - ``approx_time_wrt(date(2021, 1, 12), date(1996, 10, 1))  # "1996"``
+            - ``approx_time_wrt(date(2021, 1, 12), date(2021, 10, 1))  # "2021-01-12"``
+            - ``approx_time_wrt(date(2021, 10, 1), datetime(2021, 10, 1, 11, 55))  # "2021-01-12 11:55"``
+            - ``approx_time_wrt(date(2021, 10, 1), datetime(2021, 10, 1, 11, 0, 0, 30, 222222))  # "2021-01-12 00:00:30"``
+            - ``approx_time_wrt(date(2021, 10, 1), datetime(2021, 10, 1, 11, 0, 0, 2, 222222))  # "2021-01-12 00:00:02.222"``
+            - ``approx_time_wrt(date(2021, 10, 1), datetime(2021, 10, 1, 11, 0, 0, 2, 22))  # "2021-01-12 00:00:02.000022"``
+        """
+        delta = now - then if now > then else then - now
+        tot_days = (delta.days) + (delta.seconds / 86400) + (delta.microseconds / 86400 / 10 ** 6)
+        tot_secs = tot_days * 86400
+        _today = "" if skip_today and then.date() == now.date() else "%Y-%m-%d "
+        if tot_days > sig * 365.24219:
+            return str(then.year)
+        elif tot_days > sig * 30.437:
+            return then.strftime("%Y-%m")
+        elif tot_days > sig:
+            return then.strftime("%Y-%m-%d")
+        elif tot_secs > sig * 60:
+            return then.strftime(_today + "%H:%M")
+        elif tot_secs > sig:
+            return then.strftime(_today + "%H:%M:%S")
+        elif tot_secs > sig / 1000:
+            return then.strftime(_today + "%H:%M:%S") + "." + str(round(then.microsecond / 1000))
+        else:
+            return then.strftime(_today + "%H:%M:%S.%f")
+
+    @classmethod
+    def delta_time_to_str(cls, delta_sec: Union[float, timedelta], *, space: str = "") -> str:
         """
         Returns a pretty string from a difference in time in seconds.
         Rounds hours and minutes to 2 decimal places, and seconds to 1.
         Ex: delta_time_to_str(313) == 5.22min
             delta_sec: The time in seconds
             space: Space char between digits and units;
-                good choices are empty, ASCII space, Chars.narrownbsp, Chars.thinspace, and Chars.nbsp.
+                   good choices are empty, ASCII space, Chars.narrownbsp, Chars.thinspace,
+                   and Chars.nbsp.
 
         Returns:
             A string with units 'hr', 'min', or 's'
         """
+        if isinstance(delta_sec, timedelta):
+            delta_sec = delta_sec.total_seconds()
         if abs(delta_sec) > 60 * 60 * 3:
             return (
                 StringTools.strip_empty_decimal(str(round(delta_sec / 60 / 60, 2))) + space + "hr"

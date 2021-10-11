@@ -1,6 +1,5 @@
 import sys
-import warnings
-from typing import Callable, Mapping, Optional, Sequence
+from typing import Callable, Optional, Sequence
 
 import regex
 
@@ -44,95 +43,81 @@ class PathTools(BaseTools):
             return Path.home() / ".trash"
 
     @classmethod
-    def prep_dir(cls, path: PathLike, exist_ok: bool = True) -> bool:
-        """
-        Prepares a directory by making it if it doesn't exist.
-        If exist_ok is False, calls logger.warning it already exists
-        """
-        path = Path(path)
-        exists = path.exists()
-        # On some platforms we get generic exceptions like permissions errors,
-        # so these are better
-        if exists and not path.is_dir():
-            raise DirDoesNotExistError(f"Path {path} exists but is not a file")
-        if exists and not exist_ok:
-            logger.warning(f"Directory {path} already exists")
-        if not exists:
-            # NOTE! exist_ok in mkdir throws an error on Windows
-            path.mkdir(parents=True)
-        return exists
-
-    @classmethod
-    def prep_file(cls, path: PathLike, exist_ok: bool = True) -> None:
-        """
-        Prepares a file path by making its parent directory.
-        Same as ``pathlib.Path.mkdir`` but makes sure ``path`` is a file if it exists.
-        """
-        # On some platforms we get generic exceptions like permissions errors, so these are better
-        path = Path(path)
-        # check for errors first; don't make the dirs and then fail
-        if path.exists() and not path.is_file() and not path.is_symlink():
-            raise FileDoesNotExistError(f"Path {path} exists but is not a file")
-        Path(path.parent).mkdir(parents=True, exist_ok=exist_ok)
-
-    @classmethod
     def sanitize_path(
         cls,
         path: PathLike,
-        is_file: Optional[bool] = None,
         *,
-        show_warnings: Union[bool, Callable[[str], Any]] = True,
+        is_file: Optional[bool] = None,
+        fat: bool = False,
+        trim: bool = False,
+        warn: Union[bool, Callable[[str], Any]] = True,
     ) -> Path:
         r"""
         Sanitizes a path for major OSes and filesystems.
         Also see sanitize_path_nodes and sanitize_path_node.
-        Platform-dependent.
+        Mostly platform-independent.
+
+        The idea is to sanitize for both Windows and Posix, regardless of the platform in use.
+        The sanitization should be as uniform as possible for both platforms.
+        This works for at least Windows+NTFS.
+        Tilde substitution for long filenames in Windows is unsupported.
+
         A corner case is drive letters in Linux:
         "C:\\Users\\john" is converted to '/C:/users/john' if os.name=='posix'
         """
-        # the idea is to sanitize for both Windows and Posix, regardless of the platform in use
-        # the sanitization should be as uniform as possible for both platforms
-        # this works for at least Windows+NTFS
-        # tilde substitution for long filenames in Windows -- is unsupported
-        w = {True: logger.warning, False: lambda _: None}.get(show_warnings, show_warnings)
+        w = {True: logger.warning, False: lambda _: None}.get(warn, warn)
+        path = str(path)
         if path.startswith("\\\\?"):
-            w(f"Long UNC Windows paths (\\\\? prefix) are not supported (path '{path}')", path=path)
+            raise IllegalPathError(
+                f"Long UNC Windows paths (\\\\? prefix) are not supported (path '{path}')"
+            )
         bits = str(path).strip().replace("\\", "/").split("/")
-        new_path = cls.sanitize_path_nodes(bits, is_file=is_file)
+        new_nodes = list(cls.sanitize_nodes(bits, is_file=is_file, fat=fat, trim=trim))
+        # unfortunately POSIX turns Path('C:\', '5') into C:\/5
+        # this isn't an ideal way to fix it, but it works
+        pat = regex.compile(r"^([A-Z]:)(?:\\)?$", flags=regex.V1)
+        if os.name == "posix" and len(new_nodes) > 0 and pat.fullmatch(new_nodes[0]):
+            new_nodes[0] = new_nodes[0].rstrip("\\")
+            new_nodes.insert(0, "/")
+        new_path = Path(*new_nodes)
         if new_path != path:
             w(f"Sanitized filename {path} → {new_path}")
         return Path(new_path)
 
     @classmethod
-    def sanitize_path_nodes(cls, bits: Sequence[PathLike], is_file: Optional[bool] = None) -> Path:
+    def sanitize_nodes(
+        cls,
+        bits: Sequence[PathLike],
+        *,
+        is_file: Optional[bool] = None,
+        fat: bool = False,
+        trim: bool = False,
+    ) -> Sequence[str]:
         fixed_bits = [
             bit + os.sep
             if i == 0 and bit.strip() in ["", ".", ".."]
-            else cls.sanitize_path_node(
+            else cls.sanitize_node(
                 bit,
                 is_file=(False if i < len(bits) - 1 else is_file),
+                trim=trim,
+                fat=fat,
                 is_root_or_drive=(None if i == 0 else False),
             )
             for i, bit in enumerate(bits)
             if bit.strip() not in ["", "."]
             or i == 0  # ignore // (empty) just like Path does (but fail on sanitize_path_node(' '))
         ]
-        fixed_bits = [bit for i, bit in enumerate(fixed_bits) if i == 0 or bit not in ["", "."]]
-        # unfortunately POSIX turns Path('C:\', '5') into C:\/5
-        # this isn't an ideal way to fix it, but it works
-        pat = regex.compile(r"^([A-Z]:)(?:\\)?$", flags=regex.V1)
-        if os.name == "posix" and len(fixed_bits) > 0 and pat.fullmatch(fixed_bits[0]):
-            fixed_bits[0] = fixed_bits[0].rstrip("\\")
-            fixed_bits.insert(0, "/")
-        return Path(*fixed_bits)
+        return [bit for i, bit in enumerate(fixed_bits) if i == 0 or bit not in ["", "."]]
 
     @classmethod
-    def sanitize_path_node(
+    def sanitize_node(
         cls,
         bit: PathLike,
+        *,
         is_file: Optional[bool] = None,
         is_root_or_drive: Optional[bool] = None,
-        include_fat: bool = False,
+        fat: bool = False,
+        trim: bool = False,
     ) -> str:
         r"""
         Sanitizes a path node such that it will be fine for major OSes and filesystems.
@@ -148,7 +133,8 @@ class PathTools(BaseTools):
             bit: The node
             is_file: False for directories, True otherwise, None if unknown
             is_root_or_drive: True if known to be the root ('/') or a drive ('C:\'), None if unknown
-            include_fat: Also make compatible with FAT filesystems
+            fat: Also make compatible with FAT filesystems
+            trim: Truncate to 254 chars (otherwise fails)
 
         Returns:
             A string
@@ -229,11 +215,12 @@ class PathTools(BaseTools):
             "LPT8",
             "LPT9",
         }
-        if include_fat:
+        if fat:
             bad_strs += {"$IDLE$", "CONFIG$", "KEYBD$", "SCREEN$", "CLOCK$", "LST"}
         # just dots is invalid
         if set(bit.replace(" ", "")) == "." and bit not in ["..", "."]:
-            raise IllegalPathError(f"Node '{source_bit}' is invalid")
+            bit = "_" + bit + "_"
+            # raise IllegalPathError(f"Node '{source_bit}' is invalid")
         for q in bad_chars:
             bit = bit.replace(q, "_")
         if bit.upper() in bad_strs:
@@ -244,15 +231,19 @@ class PathTools(BaseTools):
             if stub.upper() in bad_strs:
                 bit = "_" + stub + "_" + ext
         if bit.strip() == "":
-            raise IllegalPathError(f"Node '{source_bit}' is empty or contains only whitespace")
-        # do this after
-        if len(bit) > 254:
-            raise IllegalPathError(f"Node '{source_bit}' has more than 254 characters")
-        bit = bit.strip()
+            bit = "_" + bit + "_"
+            # raise IllegalPathError(f"Node '{source_bit}' is empty or contains only whitespace")
+        # "." cannot end a node
+        bit = bit.rstrip()
         if is_file is not True and (bit == "." or bit == ".."):
             return bit
-        # never allow '.' (or ' ') to end a filename
-        bit = bit.rstrip(".")
+        # never allow '.' or ' ' to end a filename
+        bit = bit.rstrip(". ")
+        # do this after
+        if len(bit) > 254 and trim:
+            bit = bit[:254]
+        elif len(bit) > 254:
+            raise IllegalPathError(f"Node '{source_bit}' has more than 254 characters")
         return bit
 
 

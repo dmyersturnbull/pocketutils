@@ -16,6 +16,7 @@ from typing import (
 )
 
 import numpy as np
+import pandas as pd
 
 from pocketutils.core._internal import nicesize
 from pocketutils.core.exceptions import RefusingRequestError
@@ -100,23 +101,24 @@ class CommonTools(BaseTools):
     @classmethod
     def is_null(cls, x: Any) -> bool:
         """
-        Returns True if x is either:
-            - None
-            - NaN
+        Returns True if:
+            - x is ``None``
+            - x is ``float('NaN')``
+            - ``pd.isna(x)``
         """
         try:
-            if np.isnan(x):
+            if pd.isna(x):
                 return True
         except (ValueError, TypeError):
             pass
-        return x is None or x == float("nan")
+        return x is None or x == float("NaN")
 
     @classmethod
     def is_empty(cls, x: Any) -> bool:
         """
         Returns True iff either:
             - x is None
-            - np.is_nan(x)
+            - pd.is_na(x)
             - x is something with 0 length
             - x is iterable and has 0 elements (will call ``__iter__``)
 
@@ -126,13 +128,13 @@ class CommonTools(BaseTools):
         if isinstance(x, Iterator):
             raise RefusingRequestError("Do not call is_empty on an iterator.")
         try:
-            if np.isnan(x):
+            if pd.isna(x):
                 return True
         except (ValueError, TypeError):
             pass
         return (
             x is None
-            or x == float("nan")
+            or x == float("NaN")
             or hasattr(x, "__len__")
             and len(x) == 0
             or hasattr(x, "__iter__")
@@ -144,7 +146,7 @@ class CommonTools(BaseTools):
         """
         Returns True iff either:
             - x is None
-            - np.is_nan(x)
+            - pd.isna(x)
             - x is something with 0 length
             - x is iterable and has 0 elements (will call ``__iter__``)
             - a str(x) is 'nan', 'n/a', 'null', or 'none'; case-insensitive
@@ -155,7 +157,8 @@ class CommonTools(BaseTools):
             - [None]
 
         Raises:
-            TypeError If ``x`` is an Iterator. Calling this would empty the iterator, which is dangerous.
+            TypeError If ``x`` is an Iterator.
+                      Calling this would empty the iterator, which is dangerous.
         """
         return cls.is_empty(x) or str(x).lower() in ["nan", "n/a", "null", "none"]
 
@@ -200,11 +203,12 @@ class CommonTools(BaseTools):
     @classmethod
     def iter_rowcol(cls, n_rows: int, n_cols: int) -> Generator[Tuple[int, int], None, None]:
         """
-        An iterator over (row column) pairs for a row-first traversal of a grid with ``n_cols`` columns.
+        An iterator over (row column) pairs for a row-first grid traversal.
 
         Example:
-            >>> it = CommonTools.iter_rowcol(5, 3)
-            >>> [next(it) for _ in range(5)]  # [(0,0),(0,1),(0,2),(1,0),(1,1)]
+            .. code-block::
+                it = CommonTools.iter_rowcol(5, 3)
+                [next(it) for _ in range(5)]  # [(0,0),(0,1),(0,2),(1,0),(1,1)]
         """
         for i in range(n_rows * n_cols):
             yield i // n_cols, i % n_cols

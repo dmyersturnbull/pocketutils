@@ -1,12 +1,12 @@
-import json
+import re
 import warnings
 from copy import copy
 from typing import Any, Callable, Iterable, Mapping, Optional, Sequence, Tuple, TypeVar, Union
 
 import numpy as np
+import orjson
 import regex
 
-from pocketutils.core import JsonEncoder
 from pocketutils.core.chars import *
 from pocketutils.core.exceptions import OutOfRangeError
 from pocketutils.tools.base_tools import BaseTools
@@ -23,43 +23,42 @@ class StringTools(BaseTools):
         Returns a pretty-printed dict, complete with indentation. Will fail on non-JSON-serializable datatypes.
         """
         # return Pretty.condensed(dct)
-        return json.dumps(
-            dct,
-            default=JsonEncoder().default,
-            sort_keys=True,
-            indent=2,
-            ensure_ascii=False,
-        )
+        return orjson.dumps(dct, option=orjson.OPT_INDENT_2).decode(encoding="utf8")
 
     @classmethod
-    def extract_group_1(
-        cls, pattern: Union[str, regex.Pattern], value: Optional[str], ignore_null: bool = False
+    def extract_group(
+        cls,
+        pattern: Union[str, re.Pattern, regex.Pattern],
+        value: Optional[str],
+        *,
+        group: int = 0,
+        ignore_null: bool = False,
     ) -> Optional[str]:
-        warnings.warn("extract_group_1 will be removed", DeprecationWarning)
         """
-        Performs a ``fullmatch`` on a target string and returns capture group 1, or None if there was no match.
+        Extracts a capture group from a regex full-match.
+        Returns None if there was no match.
+        **Always** uses https://pypi.org/project/regex with ``flags=regex.V1``.
 
         Args:
             pattern: Regex pattern
             value: The target string
-            ignore_null: If True, returns None if ``value`` is None; otherwise raises a ValueError if ``value`` is None
-                         (Useful for *map*-like operations.)
+            group: The group number
+            ignore_null: Return None if ``value`` is None instead of raising a ValueError
 
-        Returns The first capture group, or None
+        Returns The capture group, or None
         """
-        pattern = (
-            pattern
-            if isinstance(pattern, regex.Pattern)
-            else regex.compile(pattern, flags=regex.V1)
-        )
-        if pattern.groups != 1:
-            raise ValueError(f"Pattern {pattern} has {pattern.groups} groups, not 1")
+        if isinstance(pattern, re.Pattern):
+            pattern = regex.compile(pattern.pattern, flags=regex.V1)
+        elif isinstance(pattern, str):
+            pattern = regex.compile(pattern, flags=regex.V1)
+        elif isinstance(pattern, regex.Pattern) and not pattern.flags & regex.V1:
+            pattern = regex.compile(pattern.pattern, flags=regex.V1)
         if value is None and ignore_null:
             return None
         match = pattern.fullmatch(value)
         if match is None:
             return None
-        return match.group(1)
+        return match.group(group)
 
     @classmethod
     def join_to_str(cls, *items: Any, last: str, sep: str = ", ") -> str:
@@ -382,7 +381,8 @@ class StringTools(BaseTools):
         Strips pairs of (start, end) from the ends of strings.
 
         Example:
-            >>> StringTools.strip_paired("[(abc]", [("(", ")"), ("[", "]"))  # returns "(abc"
+            .. code-block::
+                StringTools.strip_paired("[(abc]", [("(", ")"), ("[", "]"))  # returns "(abc"
 
         Also see ``strip_brackets``
         """

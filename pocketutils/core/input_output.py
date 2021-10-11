@@ -147,7 +147,7 @@ class OpenMode(str):
         - 'r' means read
         - 'w' and 'o' both mean overwrite
         - 'a' means append
-        - 's' means "safe" -- complain if it exists (neither overwrite nor append)
+        - 'x' means "safe" -- complain if it exists (neither overwrite nor append)
         - 'b' means binary
         - 'z' means compressed with gzip; works in both binary and text modes
         - 'd' means detect gzip
@@ -157,11 +157,7 @@ class OpenMode(str):
     def __init__(self, mode: str):
         self._raw = mode.replace("w", "o")
         self.internal = (
-            self._raw.replace("o", "w")
-            .replace("s", "w")
-            .replace("z", "")
-            .replace("i", "")
-            .replace("d", "")
+            self._raw.replace("o", "w").replace("z", "").replace("i", "").replace("d", "")
         )
 
     def __repr__(self):
@@ -180,7 +176,7 @@ class OpenMode(str):
 
     @property
     def safe(self) -> bool:
-        return "s" in self._raw
+        return "x" in self._raw
 
     @property
     def overwrite(self) -> bool:

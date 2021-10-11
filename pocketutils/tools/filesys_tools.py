@@ -1,36 +1,37 @@
 import gzip
 import hashlib
 import importlib.metadata
-import json
 import locale
 import logging
 import os
 import platform
 import shutil
 import socket
-import stat
 import struct
 import sys
+import stat
 import tempfile
-import warnings
 from contextlib import contextmanager
+from dataclasses import dataclass
 from datetime import datetime, timezone
 from getpass import getuser
 from pathlib import Path, PurePath
+import pathlib
 from typing import Any, Generator, Iterable, Mapping, Optional, Sequence, SupportsBytes, Type, Union
 
+from defusedxml import ElementTree
 import numpy as np
+import orjson
 import pandas as pd
 import regex
 
-from pocketutils.core import JsonEncoder
 from pocketutils.core.exceptions import (
     AlreadyUsedError,
     ContradictoryRequestError,
     FileDoesNotExistError,
     ParsingError,
+    DirDoesNotExistError,
 )
-from pocketutils.core.hashers import *
 from pocketutils.core.input_output import OpenMode, PathLike, Writeable
 from pocketutils.core.web_resource import *
 from pocketutils.tools.base_tools import BaseTools
@@ -38,27 +39,142 @@ from pocketutils.tools.path_tools import PathTools
 
 logger = logging.getLogger("pocketutils")
 COMPRESS_LEVEL = 9
-ENCODING = "utf8"
-
-try:
-    import jsonpickle
-    import jsonpickle.ext.numpy as jsonpickle_numpy
-
-    jsonpickle_numpy.register_handlers()
-    import jsonpickle.ext.pandas as jsonpickle_pandas
-
-    jsonpickle_pandas.register_handlers()
-except ImportError:
-    # zero them all out
-    jsonpickle, jsonpickle_numpy, jsonpickle_pandas = None, None, None
-    logger.debug("Could not import jsonpickle", exc_info=True)
 
 
-try:
-    from defusedxml import ElementTree
-except ImportError:
-    logger.warning("Could not import defusedxml; falling back to xml")
-    from xml.etree import ElementTree
+@dataclass(frozen=True, repr=True)
+class PathInfo:
+    """
+    Info about an extant or nonexistent path as it was at some time.
+    Use this to avoid making repeated filesystem calls (e.g. ``.is_dir()``):
+    None of the properties defined here make OS calls.
+
+    Attributes:
+        source: The original path used for lookup; may be a symlink
+        resolved: The fully resolved path, or None if it does not exist
+        as_of: A datetime immediately before the system calls (system timezone)
+        real_stat: ``os.stat_result``, or None if the path does not exist
+        link_stat: ``os.stat_result``, or None if the path is not a symlink
+        has_access: Path exists and has the 'a' flag set
+        has_read: Path exists and has the 'r' flag set
+        has_write: Path exists and has the 'w' flag set
+
+    All of the additional properties refer to the resolved path,
+    except for :meth:`is_symlink`, :meth:`is_valid_symlink`,
+    and :meth:`is_broken_symlink`.
+    """
+
+    source: Path
+    resolved: Optional[Path]
+    as_of: datetime
+    real_stat: Optional[os.stat_result]
+    link_stat: Optional[os.stat_result]
+    has_access: bool
+    has_read: bool
+    has_write: bool
+
+    @property
+    def mod_or_create_dt(self) -> Optional[datetime]:
+        """
+        Returns the modification or access datetime.
+        Uses whichever is available: creation on Windows and modification on Unix-like.
+        """
+        if os.name == "nt":
+            return self._get_dt("st_ctime")
+        # will work on posix; on java try anyway
+        return self._get_dt("st_mtime")
+
+    @property
+    def mod_dt(self) -> Optional[datetime]:
+        """
+        Returns the modification datetime, if known.
+        Returns None on Windows or if the path does not exist.
+        """
+        if os.name == "nt":
+            return None
+        return self._get_dt("st_mtime")
+
+    @property
+    def create_dt(self) -> Optional[datetime]:
+        """
+        Returns the creation datetime, if known.
+        Returns None on Unix-like systems or if the path does not exist.
+        """
+        if os.name == "posix":
+            return None
+        return self._get_dt("st_ctime")
+
+    @property
+    def access_dt(self) -> Optional[datetime]:
+        """
+        Returns the access datetime.
+        *Should* never return None if the path exists, but not guaranteed.
+        """
+        return self._get_dt("st_atime")
+
+    @property
+    def exists(self) -> bool:
+        """
+        Returns whether the resolved path exists.
+        """
+        return self.real_stat is not None
+
+    @property
+    def is_file(self) -> bool:
+        return self.exists and stat.S_ISREG(self.real_stat.st_mode)
+
+    @property
+    def is_dir(self) -> bool:
+        return self.exists and stat.S_ISDIR(self.real_stat.st_mode)
+
+    @property
+    def is_readable_dir(self) -> bool:
+        return self.is_file and self.has_access and self.has_read
+
+    @property
+    def is_writeable_dir(self) -> bool:
+        return self.is_dir and self.has_access and self.has_write
+
+    @property
+    def is_readable_file(self) -> bool:
+        return self.is_file and self.has_access and self.has_read
+
+    @property
+    def is_writeable_file(self) -> bool:
+        return self.is_file and self.has_access and self.has_write
+
+    @property
+    def is_block_device(self) -> bool:
+        return self.exists and stat.S_ISBLK(self.real_stat.st_mode)
+
+    @property
+    def is_char_device(self) -> bool:
+        return self.exists and stat.S_ISCHR(self.real_stat.st_mode)
+
+    @property
+    def is_socket(self) -> bool:
+        return self.exists and stat.S_ISSOCK(self.real_stat.st_mode)
+
+    @property
+    def is_fifo(self) -> bool:
+        return self.exists and stat.S_ISFIFO(self.real_stat.st_mode)
+
+    @property
+    def is_symlink(self) -> bool:
+        return self.link_stat is not None
+
+    @property
+    def is_valid_symlink(self) -> bool:
+        return self.is_symlink and self.exists
+
+    @property
+    def is_broken_symlink(self) -> bool:
+        return self.is_symlink and not self.exists
+
+    def _get_dt(self, attr: str) -> Optional[datetime]:
+        if self.real_stat is None:
+            return None
+        sec = getattr(self.real_stat, attr)
+        return datetime.fromtimestamp(sec).astimezone()
 
 
 class FilesysTools(BaseTools):
@@ -68,10 +184,6 @@ class FilesysTools(BaseTools):
     .. caution::
         Some functions may be insecure.
     """
-
-    @classmethod
-    def new_hasher(cls, algorithm: str = "sha1") -> Hasher:
-        return Hasher(algorithm)
 
     @classmethod
     def new_webresource(
@@ -90,6 +202,80 @@ class FilesysTools(BaseTools):
     @classmethod
     def is_macos(cls) -> bool:
         return sys.platform == "darwin"
+
+    @classmethod
+    def get_info(
+        cls, path: PathLike, *, expand_user: bool = False, strict: bool = False
+    ) -> PathInfo:
+        path = Path(path)
+        has_ignore_error = hasattr(pathlib, "_ignore_error")
+        if not has_ignore_error:
+            logger.debug("No _ignore_error found; some OSErrors may be suppressed")
+        resolved = None
+        real_stat = None
+        has_access = False
+        has_read = False
+        has_write = False
+        link_stat = None
+        as_of = datetime.now().astimezone()
+        if has_ignore_error or path.is_symlink() or path.exists():
+            link_stat = cls.__stat_raw(path)
+        if link_stat is not None:
+            if expand_user:
+                resolved = path.expanduser().resolve(strict=strict)
+            else:
+                resolved = path.resolve(strict=strict)
+            if stat.S_ISLNK(link_stat.st_mode):
+                real_stat = cls.__stat_raw(resolved)
+            else:
+                real_stat = link_stat
+            has_access = os.access(path, os.X_OK, follow_symlinks=True)
+            has_read = os.access(path, os.R_OK, follow_symlinks=True)
+            has_write = os.access(path, os.W_OK, follow_symlinks=True)
+            if not stat.S_ISLNK(link_stat.st_mode):
+                link_stat = None
+        return PathInfo(
+            source=path,
+            resolved=resolved,
+            as_of=as_of,
+            real_stat=real_stat,
+            link_stat=link_stat,
+            has_access=has_access,
+            has_read=has_read,
+            has_write=has_write,
+        )
+
+    @classmethod
+    def prep_dir(cls, path: PathLike, *, exist_ok: bool = True) -> bool:
+        """
+        Prepares a directory by making it if it doesn't exist.
+        If exist_ok is False, calls logger.warning it already exists
+        """
+        path = Path(path)
+        exists = path.exists()
+        # On some platforms we get generic exceptions like permissions errors,
+        # so these are better
+        if exists and not path.is_dir():
+            raise DirDoesNotExistError(f"Path {path} exists but is not a file")
+        if exists and not exist_ok:
+            logger.warning(f"Directory {path} already exists")
+        if not exists:
+            # NOTE! exist_ok in mkdir throws an error on Windows
+            path.mkdir(parents=True)
+        return exists
+
+    @classmethod
+    def prep_file(cls, path: PathLike, *, exist_ok: bool = True) -> None:
+        """
+        Prepares a file path by making its parent directory.
+        Same as ``pathlib.Path.mkdir`` but makes sure ``path`` is a file if it exists.
+        """
+        # On some platforms we get generic exceptions like permissions errors, so these are better
+        path = Path(path)
+        # check for errors first; don't make the dirs and then fail
+        if path.exists() and not path.is_file() and not path.is_symlink():
+            raise FileDoesNotExistError(f"Path {path} exists but is not a file")
+        Path(path.parent).mkdir(parents=True, exist_ok=exist_ok)
 
     @classmethod
     def get_env_info(cls, *, include_insecure: bool = False) -> Mapping[str, str]:
@@ -159,11 +345,11 @@ class FilesysTools(BaseTools):
         if "LC_ALL" in os.environ:
             data["lc_all"] = os.environ["LC_ALL"]
         if hasattr(sys, "winver"):
-            data["win_ver"] = (sys.getwindowsversion(),)
-        if hasattr(sys, "macver"):
-            data["mac_ver"] = (sys.mac_ver(),)
+            data["win_ver"] = sys.getwindowsversion()
+        if hasattr(sys, "mac_ver"):
+            data["mac_ver"] = sys.mac_ver()
         if hasattr(sys, "linux_distribution"):
-            data["linux_distribution"] = (sys.linux_distribution(),)
+            data["linux_distribution"] = sys.linux_distribution()
         if include_insecure:
             _try(getuser, "username")
             _try(os.getlogin, "login")
@@ -261,13 +447,13 @@ class FilesysTools(BaseTools):
             logger.error(f"Permission error preventing deleting {path}")
 
     @classmethod
-    def read_lines_file(cls, path: PathLike, ignore_comments: bool = False) -> Sequence[str]:
+    def read_lines_file(cls, path: PathLike, *, ignore_comments: bool = False) -> Sequence[str]:
         """
         Returns a list of lines in the file.
         Optionally skips lines starting with '#' or that only contain whitespace.
         """
         lines = []
-        with FilesysTools.open_file(path, "r") as f:
+        with cls.open_file(path, "r") as f:
             for line in f.readlines():
                 line = line.strip()
                 if not ignore_comments or not line.startswith("#") and not len(line.strip()) == 0:
@@ -282,6 +468,9 @@ class FilesysTools(BaseTools):
         Lines beginning with # are ignored.
         Each line must contain exactly 1 equals sign.
 
+        .. caution::
+            The escaping is not compliant with the standard
+
         Args:
             path: Read the file at this local path
 
@@ -289,7 +478,7 @@ class FilesysTools(BaseTools):
             A dict mapping keys to values, both with surrounding whitespace stripped
         """
         dct = {}
-        with FilesysTools.open_file(path, "r") as f:
+        with cls.open_file(path, "r") as f:
             for i, line in enumerate(f.readlines()):
                 line = line.strip()
                 if len(line) == 0 or line.startswith("#"):
@@ -306,7 +495,13 @@ class FilesysTools(BaseTools):
     @classmethod
     def write_properties_file(
         cls, properties: Mapping[Any, Any], path: Union[str, PurePath], mode: str = "o"
-    ):
+    ) -> None:
+        """
+        Writes a .properties file.
+
+        .. caution::
+            The escaping is not compliant with the standard
+        """
         if not OpenMode(mode).write:
             raise ContradictoryRequestError(f"Cannot write text to {path} in mode {mode}")
         with FilesysTools.open_file(path, mode) as f:
@@ -333,14 +528,12 @@ class FilesysTools(BaseTools):
 
     @classmethod
     def save_json(cls, data: Any, path: PathLike, mode: str = "w") -> None:
-        warnings.warn("save_json will be removed; use orjson instead", DeprecationWarning)
         with cls.open_file(path, mode) as f:
-            json.dump(data, f, ensure_ascii=False, cls=JsonEncoder)
+            f.write(orjson.dumps(data).decode(encoding="utf8"))
 
     @classmethod
-    def load_json(cls, path: PathLike):
-        warnings.warn("save_json will be removed; use orjson instead", DeprecationWarning)
-        return json.loads(Path(path).read_text(encoding="utf8"))
+    def load_json(cls, path: PathLike) -> Union[dict, list]:
+        return orjson.loads(Path(path).read_text(encoding="utf8"))
 
     @classmethod
     def read_any(
@@ -375,19 +568,19 @@ class FilesysTools(BaseTools):
             ]
 
         if ext == "lines":
-            return FilesysTools.read_lines_file(path)
+            return cls.read_lines_file(path)
         elif ext == "txt":
-            return path.read_text("utf-8")
+            return path.read_text(encoding="utf-8")
         elif ext == "data":
             return path.read_bytes()
         elif ext == "json":
-            return FilesysTools.load_json(path)
+            return cls.load_json(path)
         elif ext in ["npy", "npz"]:
-            return np.load(str(path), allow_pickle=False)
+            return np.load(str(path), allow_pickle=False, encoding="utf8")
         elif ext == "properties":
-            return FilesysTools.read_properties_file(path)
+            return cls.read_properties_file(path)
         elif ext == "csv":
-            return pd.read_csv(path)
+            return pd.read_csv(path, encoding="utf8")
         elif ext == "ints":
             return load_list(int)
         elif ext == "floats":
@@ -401,26 +594,25 @@ class FilesysTools(BaseTools):
 
     @classmethod
     @contextmanager
-    def open_file(cls, path: PathLike, mode: str):
+    def open_file(cls, path: PathLike, mode: Union[OpenMode, str], *, mkdir: bool = False):
         """
-        Opens a file in a safer way, always using the encoding set in Kale (utf8) by default.
-        This avoids the problems of accidentally overwriting, forgetting to set mode, and not setting the encoding.
-        Note that the default encoding on open() is not UTF on Windows.
-        Raises specific informative errors.
-        Cannot set overwrite in append mode.
+        Opens a text file, always using utf8, optionally gzipped.
+
+        See Also:
+            :class:`pocketutils.core.input_output.OpenMode`
         """
         path = Path(path)
         mode = OpenMode(mode)
-        if mode.write and mode.safe and path.exists():
-            raise FileDoesNotExistError(f"Path {path} already exists")
+        if mode.write and mkdir:
+            path.parent.mkdir(exist_ok=True, parents=True)
         if not mode.read:
-            PathTools.prep_file(path, exist_ok=mode.overwrite or mode.append)
+            cls.prep_file(path, exist_ok=mode.overwrite or mode.append)
         if mode.gzipped:
-            yield gzip.open(path, mode.internal, compresslevel=COMPRESS_LEVEL)
+            yield gzip.open(path, mode.internal, compresslevel=COMPRESS_LEVEL, encoding="utf8")
         elif mode.binary:
-            yield open(path, mode.internal)
+            yield open(path, mode.internal, encoding="utf8")
         else:
-            yield open(path, mode.internal, encoding=ENCODING)
+            yield open(path, mode.internal, encoding="utf8")
 
     @classmethod
     def write_lines(cls, iterable: Iterable[Any], path: PathLike, mode: str = "w") -> int:
@@ -436,13 +628,8 @@ class FilesysTools(BaseTools):
             FileExistsError: If the path exists and append is False
             PathIsNotFileError: If append is True, and the path exists but is not a file
         """
-        path = Path(path)
-        mode = OpenMode(mode)
-        if not mode.overwrite or mode.binary:
-            raise ContradictoryRequestError(f"Wrong mode for writing a text file: {mode}")
         if not cls.is_true_iterable(iterable):
             raise TypeError("Not a true iterable")  # TODO include iterable if small
-        PathTools.prep_file(path, exist_ok=mode.overwrite or mode.append)
         n = 0
         with cls.open_file(path, mode) as f:
             for x in iterable:
@@ -488,7 +675,8 @@ class FilesysTools(BaseTools):
         cls, path: Optional[PathLike] = None, *, spooled: bool = False, **kwargs
     ) -> Generator[Writeable, None, None]:
         """
-        Simple wrapper around tempfile.TemporaryFile, tempfile.NamedTemporaryFile, and tempfile.SpooledTemporaryFile.
+        Simple wrapper around tempfile functions.
+        Wraps ``TemporaryFile``, ``NamedTemporaryFile``, and ``SpooledTemporaryFile``.
         """
         if spooled:
             with tempfile.SpooledTemporaryFile(**kwargs) as x:
@@ -505,5 +693,14 @@ class FilesysTools(BaseTools):
         with tempfile.TemporaryDirectory(**kwargs) as x:
             yield Path(x)
 
+    @classmethod
+    def __stat_raw(cls, path: Path) -> Optional[os.stat_result]:
+        try:
+            return path.lstat()
+        except OSError as e:
+            if hasattr(pathlib, "_ignore_error") and not pathlib._ignore_error(e):
+                raise
+        return None
 
-__all__ = ["FilesysTools"]
+
+__all__ = ["FilesysTools", "PathInfo"]

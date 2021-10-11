@@ -10,7 +10,7 @@ raises = pytest.raises
 
 class TestPathTools:
     def test_sanitize_path_node_root(self):
-        x = PathTools.sanitize_path_node
+        x = PathTools.sanitize_node
         for file in [None, False]:
             for root in [None, True]:
                 assert x("C:", is_file=file, is_root_or_drive=root) == "C:\\"
@@ -18,7 +18,7 @@ class TestPathTools:
                 assert x("/", is_file=file, is_root_or_drive=root) == "/"
 
     def test_sanitize_path_node_nonroot(self):
-        x = PathTools.sanitize_path_node
+        x = PathTools.sanitize_node
         assert x("C:", is_root_or_drive=False) == "C_"
         assert x(" C: ", is_root_or_drive=False) == "C_"
         assert x("C:\\", is_root_or_drive=False) == "C__"
@@ -28,7 +28,7 @@ class TestPathTools:
 
     def test_sanitize_path_abs(self):
         def z(s, **kwargs):
-            return str(PathTools.sanitize_path(s, **kwargs, show_warnings=False))
+            return str(PathTools.sanitize_path(s, **kwargs, warn=False))
 
         # weird case. drive letters in Linux
         if os.name == "posix":
@@ -44,7 +44,7 @@ class TestPathTools:
 
     def test_sanitize_path(self):
         def x(s, **kwargs):
-            return str(PathTools.sanitize_path(s, **kwargs, show_warnings=False)).replace("\\", "/")
+            return str(PathTools.sanitize_path(s, **kwargs, warn=False)).replace("\\", "/")
 
         assert x("abc\\./22") == "abc/22"
         assert x("/abc\\./22") == "/abc/22"
