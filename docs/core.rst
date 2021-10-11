@@ -13,7 +13,12 @@ functions using ``TrivialExtendedDataFrame``.
 
    from datetime import datetime
    from pocketutils.core import LazyWrap
-   def fetch_datetime(): return datetime.now()
+
+
+   def fetch_datetime():
+       return datetime.now()
+
+
    RemoteTime = LazyWrap.new_type("RemoteTime", fetch_datetime)
    now = RemoteTime()
    # nothing happens until now:
@@ -29,7 +34,7 @@ recover from them, but granularity in exception types and relevant
 values are needed. For example, if we couldn’t load a “resource” file,
 what was the path? If something was wrong with a database record, what
 was its ID? Examples of exceptions defined here are ``LockedError``,
-``IncompatibleDataError``, ``HashValidationFailedError``,
+``IncompatibleDataError``, ````HashValidationError``,
 ``MissingEnvVarError``, ``MultipleMatchesError``, ``AlreadyUsedError``,
 and ``IllegalPathError``.
 
@@ -37,11 +42,16 @@ and ``IllegalPathError``.
 
    import time
    from pocketutils.core.exceptions import *
+
    resource = Path("resources/mydata.dat")
+
+
    def update_resource():
        if resource.with_suffix(".lockfile").exists():
            raise LockedError("Resource is locked and may be in use.", key=resource)
        # ... do stuff
+
+
    try:
        update_resource()
    except LockedError as e:

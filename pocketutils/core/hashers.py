@@ -8,7 +8,7 @@ from typing import Any, Callable, Optional, Union
 
 from pocketutils.core.exceptions import (
     FileDoesNotExistError,
-    HashValidationFailedError,
+    HashValidationError,
     IllegalStateError,
 )
 
@@ -157,7 +157,7 @@ class PrePostHashedFile(HashableFile):
 
     def match_or_raise(self) -> str:
         if not self.matches:
-            raise HashValidationFailedError(
+            raise HashValidationError(
                 f"Hash for file {self.file_path} does not match",
                 key=self.file_path,
                 expected=self.expected,

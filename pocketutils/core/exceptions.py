@@ -304,11 +304,8 @@ class MissingEnvVarError(ResourceError):
 
 
 @ErrorUtils.args(expected=str, actual=str)
-class HashValidationFailedError(ResourceError):
+class HashValidationError(ResourceError):
     """A checksum did not validate."""
-
-
-HashValidationError = HashValidationFailedError
 
 
 class IncompatibleDataError(ResourceError):
@@ -325,6 +322,14 @@ class MissingResourceError(ResourceError):
 
 class LookupFailedError(MissingResourceError):
     """Could not find a resource by name."""
+
+
+class InjectionError(LookupFailedError):
+    """Could not find a class or method name for dependency injection."""
+
+
+class DbLookupError(LookupFailedError):
+    """Could not find an entry in an external database."""
 
 
 class RequestError(Error):
@@ -505,6 +510,12 @@ class CacheSaveError(_LoadSaveError):
 
 class DownloadError(_LoadSaveError):
     """Failed to download a file."""
+
+
+class DownloadTimeoutError(DownloadError, TimeoutError):
+    """
+    User-supplied files.
+    """
 
 
 class UploadError(_LoadSaveError):

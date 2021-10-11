@@ -3,6 +3,8 @@ import math
 from typing import Optional, SupportsFloat, Tuple, Union
 
 import regex
+from pint import Quantity, UnitRegistry
+from pint.errors import PintTypeError
 
 from pocketutils.core._internal import nicesize
 from pocketutils.core.exceptions import OutOfRangeError, StringPatternError
@@ -10,6 +12,7 @@ from pocketutils.tools.base_tools import BaseTools
 from pocketutils.tools.string_tools import StringTools
 
 logger = logging.getLogger("pocketutils")
+_UNIT_REG = UnitRegistry()
 
 
 class UnitTools(BaseTools):
@@ -224,6 +227,28 @@ class UnitTools(BaseTools):
             "pM": 1e-6,
             "fM": 1e-9,
         }[units]
+
+    @classmethod
+    def canonicalize_quantity(cls, s: str, dimensionality: str) -> Quantity:
+        """
+        Returns a quantity in reduced units from a magnitude with units.
+
+        Args:
+            s: The string to parse; e.g. ``"1 m/s^2"``.
+               Unit names and symbols permitted, and spaces may be omitted.
+            dimensionality: The resulting Quantity is check against this;
+                            e.g. ``"[length]/[meter]^2"``
+
+        Returns:
+            a pint ``Quantity``
+
+        Raise:
+            PintTypeError: If the dimensionality is inconsistent
+        """
+        q = _UNIT_REG.Quantity(s).to_reduced_units()
+        if not q.is_compatible_with(dimensionality):
+            raise PintTypeError(f"{s} not of dimensionality {dimensionality}")
+        return q
 
 
 __all__ = ["UnitTools"]

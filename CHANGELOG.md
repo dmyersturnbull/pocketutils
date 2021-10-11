@@ -3,6 +3,29 @@
 Adheres to [Semantic Versioning 2.0](https://semver.org/spec/v2.0.0.html) and
 [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [0.7.1] - 2021-10-10
+
+### Added
+
+- `ReflectionTools`
+- `resources`
+- `typer_utils`
+- methods to `FancyLoguruExtras`
+
+### Changed
+
+- `FancyLoguru` adds methods to the logger by default
+
+### Removed
+
+- `HashValidationFailedError` (use `HashValidationError`)
+
+### Fixed
+
+- Re-added `LoopTools` to `AllTools`
+- `FancyLoguruDefaults` format names
+- `FancyLoguru.config_levels` default args
+
 ## [0.7.0] - 2021-10-06
 
 ### Added

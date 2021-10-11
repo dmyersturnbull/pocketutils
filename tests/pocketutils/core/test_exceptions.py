@@ -3,7 +3,7 @@ import pytest
 from pocketutils.core.exceptions import *
 
 raises = pytest.raises
-E = HashValidationFailedError
+E = HashValidationError
 
 
 class TestExceptions:
@@ -20,10 +20,7 @@ class TestExceptions:
         assert str(E("asdf", key=5)) == "asdf"
 
     def test_info(self):
-        assert (
-            E("abc", key=5).info()
-            == "HashValidationFailedError:abc(actual=None,expected=None,key=5)"
-        )
+        assert E("abc", key=5).info() == "HashValidationError:abc(actual=None,expected=None,key=5)"
 
     def test_equality(self):
         assert E() == E()

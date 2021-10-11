@@ -12,18 +12,34 @@ Loguru logging extension that, configurably:
 """
 from __future__ import annotations
 
+import abc
 import logging
 import os
 import sys
 from dataclasses import dataclass
 from inspect import cleandoc
 from pathlib import Path
-from typing import AbstractSet, Any, Callable, Generic, Mapping, Optional, TextIO, TypeVar, Union
+from typing import (
+    AbstractSet,
+    Any,
+    Callable,
+    Generic,
+    Mapping,
+    Optional,
+    TextIO,
+    TypeVar,
+    Union,
+    Type,
+    Sequence,
+)
 
 # noinspection PyProtectedMember
-import loguru._defaults as _defaults
 import regex
 from loguru import logger
+import loguru._defaults as _defaults
+
+# noinspection PyProtectedMember
+from loguru._logger import Logger
 
 # noinspection PyProtectedMember
 from loguru._logger import Logger
@@ -72,6 +88,8 @@ class _SENTINEL:
 
 
 T = TypeVar("T", covariant=True, bound=Logger)
+Z = TypeVar("Z", covariant=True, bound=Logger)
+
 
 _LOGGER_ARG_PATTERN = regex.compile(r"(?:([a-zA-Z]+):)?(.*)", flags=regex.V1)
 log_compressions = {
@@ -162,7 +180,9 @@ class FancyLoguruDefaults:
 
     level: str = "INFO"
 
-    fmt = FormatFactory.with_extras()
+    fmt_simplified = FormatFactory.with_extras()
+    fmt_built_in = FormatFactory.plain()
+    fmt_built_in_raw = _defaults.LOGURU_FORMAT
 
     aliases = dict(NONE=None, NO=None, OFF=None, VERBOSE="INFO", QUIET="ERROR")
 
@@ -231,12 +251,16 @@ class InterceptHandler(logging.Handler):
 
 
 class FancyLoguru(Generic[T]):
-    def __init__(self, log: T):
+    def __init__(self, log: T = logger):
         self._levels = dict(FancyLoguruDefaults.levels_built_in)
         self._logger = log
         self._main = None
         self._paths = {}
         self._aliases = dict(FancyLoguruDefaults.aliases)
+
+    @staticmethod
+    def new(t: Type[Z]) -> FancyLoguru[Z]:
+        return FancyLoguru[Z](logger)
 
     @property
     def logger(self) -> T:
@@ -271,13 +295,20 @@ class FancyLoguru(Generic[T]):
         colors: Mapping[str, str] = _SENTINEL,
         icons: Mapping[str, str] = _SENTINEL,
         aliases: Mapping[str, str] = _SENTINEL,
+        add_methods: bool = True,
     ) -> __qualname__:
         levels = FancyLoguruDefaults.levels_extended if levels is _SENTINEL else levels
         colors = FancyLoguruDefaults.colors_extended if colors is _SENTINEL else colors
         icons = FancyLoguruDefaults.icons_extended if icons is _SENTINEL else icons
         aliases = FancyLoguruDefaults.aliases if aliases is _SENTINEL else aliases
         for k, v in levels.items():
-            self.config_level(k, v, color=colors.get(k, _SENTINEL), icon=icons.get(k, _SENTINEL))
+            self.config_level(
+                k,
+                v,
+                color=colors.get(k, _SENTINEL),
+                icon=icons.get(k, _SENTINEL),
+                add_methods=add_methods,
+            )
         self._aliases = dict(aliases)
         return self
 
@@ -286,7 +317,7 @@ class FancyLoguru(Generic[T]):
         *,
         level: str = FancyLoguruDefaults.level,
         sink=sys.stderr,
-        fmt: Formatter = FancyLoguruDefaults.fmt,
+        fmt: Formatter = FancyLoguruDefaults.fmt_built_in,
         intercept: bool = True,
     ) -> __qualname__:
         """
@@ -306,6 +337,7 @@ class FancyLoguru(Generic[T]):
         *,
         color: Union[None, str, _SENTINEL] = _SENTINEL,
         icon: Union[None, str, _SENTINEL] = _SENTINEL,
+        add_methods: bool = True,
         replace: bool = True,
     ) -> __qualname__:
         try:
@@ -327,6 +359,19 @@ class FancyLoguru(Generic[T]):
                 color=data.color if color is _SENTINEL else color,
                 icon=data.icon if icon is _SENTINEL else icon,
             )
+        if add_methods:
+            self._set_logger_levels([name])
+        return self
+
+    def _set_logger_levels(self, levels: Sequence[str]) -> __qualname__:
+        for level in levels:
+
+            def _x(__message: str, *args, **kwargs):
+                logger.log(level, __message, *args, **kwargs)
+
+            _x.__name__ = level.lower()
+            if not hasattr(self._logger, level.lower()):
+                setattr(self._logger, level.lower(), _x)
         return self
 
     def config_main(
@@ -346,7 +391,7 @@ class FancyLoguru(Generic[T]):
                 hid=-1,
                 sink=sys.stderr,
                 level=self._levels[FancyLoguruDefaults.level],
-                fmt=FancyLoguruDefaults.fmt,
+                fmt=FancyLoguruDefaults.fmt_built_in,
             )
         else:
             try:
@@ -373,7 +418,7 @@ class FancyLoguru(Generic[T]):
         path: Path,
         level: str = FancyLoguruDefaults.level,
         *,
-        fmt: str = FancyLoguruDefaults.fmt,
+        fmt: str = FancyLoguruDefaults.fmt_built_in,
     ) -> __qualname__:
         level = level.upper()
         ell = self._levels[level]
@@ -427,13 +472,88 @@ class FancyLoguru(Generic[T]):
     __call__ = from_cli
 
 
+class LoggerWithNotice(Logger, metaclass=abc.ABCMeta):
+    """
+    A wrapper that has fake methods to trick static analysis.
+    """
+
+    def notice(self, __message: str, *args, **kwargs):
+        raise NotImplementedError()  # not real
+
+
+class LoggerWithCaution(Logger, metaclass=abc.ABCMeta):
+    def caution(self, __message: str, *args, **kwargs):
+        raise NotImplementedError()  # not real
+
+
+class LoggerWithCautionAndNotice(LoggerWithNotice, LoggerWithCaution, metaclass=abc.ABCMeta):
+    """
+    A wrapper that has fake methods to trick static analysis.
+    """
+
+
 class FancyLoguruExtras:
     @classmethod
-    def force_streams_to_utf8(cls) -> None:
+    def rewire_streams_to_utf8(cls) -> None:
         # we warn the user about this in the docs!
         sys.stderr.reconfigure(encoding="utf-8")
         sys.stdout.reconfigure(encoding="utf-8")
         sys.stdin.reconfigure(encoding="utf-8")
 
+    @classmethod
+    def built_in(
+        cls,
+        *,
+        level: str = FancyLoguruDefaults.level,
+        rewire: bool = False,
+    ) -> FancyLoguru[Logger]:
+        if rewire:
+            cls.rewire_streams_to_utf8()
+        return FancyLoguru.new(Logger).config_levels().init(level=level)
 
-__all__ = ["FancyLoguruDefaults", "FancyLoguru", "FancyLoguruExtras", "HandlerInfo"]
+    @classmethod
+    def extended(
+        cls,
+        *,
+        level: str = FancyLoguruDefaults.level,
+        simplify_fmt: bool = True,
+        red_green_safe: bool = True,
+        rewire: bool = False,
+    ) -> FancyLoguru[LoggerWithCautionAndNotice]:
+        if rewire:
+            cls.rewire_streams_to_utf8()
+        return (
+            FancyLoguru.new(LoggerWithCautionAndNotice)
+            .config_levels(
+                levels=FancyLoguruDefaults.levels_extended,
+                colors=(
+                    FancyLoguruDefaults.colors_red_green_safe
+                    if red_green_safe
+                    else FancyLoguruDefaults.colors_extended
+                ),
+                icons=FancyLoguruDefaults.icons_extended,
+            )
+            .init(
+                level=level,
+                fmt=(
+                    FancyLoguruDefaults.fmt_simplified
+                    if simplify_fmt
+                    else FancyLoguruDefaults.fmt_built_in
+                ),
+            )
+        )
+
+
+if __name__ == "__main__":
+    _logger = FancyLoguruExtras.extended().logger
+    _logger.caution("hello")
+
+
+__all__ = [
+    "FancyLoguruDefaults",
+    "FancyLoguru",
+    "FancyLoguruExtras",
+    "HandlerInfo",
+    "Logger",
+    "LoggerWithCautionAndNotice",
+]
