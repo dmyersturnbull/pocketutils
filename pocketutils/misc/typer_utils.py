@@ -2,46 +2,42 @@ from __future__ import annotations
 
 import inspect
 from inspect import cleandoc
-from typing import Optional, TypeVar, Mapping
+from typing import Generic, Mapping, Optional, Type, TypeVar
 
 import typer
-from typer.models import CommandInfo, ParameterInfo, OptionInfo
+from typer.models import ArgumentInfo, CommandInfo, OptionInfo, ParameterInfo
 
 T = TypeVar("T", covariant=True)
+A = TypeVar("A", bound=ParameterInfo)
 
 
-class _Args:
-    @classmethod
-    def _arg(
-        cls,
+class _Arg(Generic[A]):
+    def __init__(self, a: Type[A]):
+        self.__a = a
+
+    def __arg(
+        self,
         doc: str,
-        *names,
+        *names: str,
         default: Optional[T] = None,
-        pos: bool = False,
         **kwargs,
     ):
-        kwargs = dict(
-            help=cleandoc(doc),
-            **kwargs,
-            allow_dash=True,
-        )
-        if pos:
-            return typer.Argument(default, **kwargs)
+        args = dict(allow_dash=True, help=cleandoc(doc), **kwargs)
+        if self.__a is OptionInfo:
+            return typer.Option(default, *names, **args)
         else:
-            return typer.Option(default, *names, **kwargs)
+            return typer.Argument(default, **args)
 
-    @classmethod
-    def _path(
-        cls,
+    def __path(
+        self,
         doc: str,
         *names,
         default: Optional[str],
         f: bool,
         d: bool,
         out: bool,
-        pos: bool,
         **kwargs,
-    ):
+    ) -> A:
         kwargs = {
             **dict(
                 exists=not out,
@@ -52,109 +48,53 @@ class _Args:
             ),
             **kwargs,
         }
-        return _Args._arg(doc, *names, default=default, pos=pos, **kwargs)
+        return self.__arg(doc, *names, default=default, **kwargs)
 
+    def out_file(self, doc: str, *names, default: Optional[str] = None, **kwargs) -> A:
+        return self.__path(doc, *names, default=default, f=True, d=False, out=True, **kwargs)
 
-class Arg(_Args):
-    @classmethod
-    def _arg(cls, doc: str, *, default: Optional[T] = None, **kwargs):
-        super()._arg(doc, default=default, pos=True, **kwargs)
+    def out_dir(self, doc: str, *names, default: Optional[str] = None, **kwargs) -> A:
+        return self.__path(doc, *names, default=default, f=True, d=True, out=True, **kwargs)
 
-    @classmethod
-    def _path(cls, doc: str, *, default: Optional[str], f: bool, d: bool, out: bool, **kwargs):
-        super()._path(doc, defualt=default, f=f, d=d, out=out, pos=True, **kwargs)
-
-    @classmethod
-    def out_file(cls, doc: str, *, default: Optional[str] = None, **kwargs):
-        return cls._path(doc, default=default, f=True, d=False, out=True, **kwargs)
-
-    @classmethod
-    def out_dir(cls, doc: str, *, default: Optional[str] = None, **kwargs):
-        return cls._path(doc, default=default, f=True, d=True, out=True, **kwargs)
-
-    @classmethod
-    def out_path(cls, doc: str, *, default: Optional[str] = None, **kwargs):
-        return cls._path(doc, default=default, f=True, d=True, out=False, **kwargs)
-
-    @classmethod
-    def in_file(cls, doc: str, *, default: Optional[str] = None, **kwargs):
-        return cls._path(doc, default=default, f=True, d=False, out=False, **kwargs)
-
-    @classmethod
-    def in_dir(cls, doc: str, *, default: Optional[str] = None, **kwargs):
-        return cls._path(doc, default=default, f=False, d=True, out=False, **kwargs)
-
-    @classmethod
-    def in_path(cls, doc: str, *, default: Optional[str] = None, **kwargs):
-        return cls._path(doc, default=default, f=True, d=True, out=False, **kwargs)
-
-    @classmethod
-    def val(cls, doc: str, *, default: Optional[T] = None, **kwargs):
-        return cls._arg(doc, default=default, **kwargs)
-
-
-class Opt(_Args):
-    @classmethod
-    def _arg(cls, doc: str, *names: str, default: Optional[T] = None, **kwargs):
-        super()._arg(doc, default=default, **kwargs)
-
-    @classmethod
-    def _path(
-        cls, doc: str, *names: str, default: Optional[str], f: bool, d: bool, out: bool, **kwargs
-    ):
-        super()._path(doc, defualt=default, f=f, d=d, out=out, **kwargs)
-
-    @classmethod
-    def out_file(cls, doc: str, *names, default: Optional[str] = None, **kwargs):
-        return _Args._path(doc, *names, default=default, f=True, d=False, out=True, **kwargs)
-
-    @classmethod
-    def out_dir(cls, doc: str, *names, default: Optional[str] = None, **kwargs):
-        return _Args._path(doc, *names, default=default, f=True, d=True, out=True, **kwargs)
-
-    @classmethod
-    def out_path(cls, doc: str, *names, default: Optional[str] = None, **kwargs):
-        return _Args._path(
+    def out_path(self, doc: str, *names, default: Optional[str] = None, **kwargs) -> A:
+        return self.__path(
             doc,
             *names,
             default=default,
             f=True,
             d=True,
             out=False,
-            pos=False,
             exists=False,
             **kwargs,
         )
 
-    @classmethod
-    def in_file(cls, doc: str, *names, default: Optional[str] = None, **kwargs):
-        return _Args._path(doc, *names, default=default, f=True, d=False, out=False, **kwargs)
+    def in_file(self, doc: str, *names, default: Optional[str] = None, **kwargs) -> A:
+        return self.__path(doc, *names, default=default, f=True, d=False, out=False, **kwargs)
 
-    @classmethod
-    def in_dir(cls, doc: str, *names, default: Optional[str] = None, **kwargs):
-        return _Args._path(doc, *names, default=default, f=False, d=True, out=False, **kwargs)
+    def in_dir(self, doc: str, *names, default: Optional[str] = None, **kwargs) -> A:
+        return self.__path(doc, *names, default=default, f=False, d=True, out=False, **kwargs)
 
-    @classmethod
-    def in_path(cls, doc: str, *names, default: Optional[str] = None, **kwargs):
-        return _Args._path(
+    def in_path(self, doc: str, *names, default: Optional[str] = None, **kwargs) -> A:
+        return self.__path(
             doc,
             *names,
             default=default,
             f=True,
             d=True,
             out=False,
-            pos=False,
             exists=False,
             **kwargs,
         )
 
-    @classmethod
-    def val(cls, doc: str, *names, default: Optional[T] = None, **kwargs):
-        return _Args._arg(doc, *names, default=default, **kwargs)
+    def val(self, doc: str, *names, default: Optional[T] = None, **kwargs) -> A:
+        return self.__arg(doc, *names, default=default, **kwargs)
 
-    @classmethod
-    def flag(cls, doc: str, *names, **kwargs):
-        return _Args._arg(doc, *names, default=False, **kwargs)
+    def flag(self, doc: str, *names, **kwargs) -> A:
+        return self.__arg(doc, *names, default=False, **kwargs)
+
+
+Arg: _Arg[ArgumentInfo] = _Arg(ArgumentInfo)
+Opt: _Arg[OptionInfo] = _Arg(OptionInfo)
 
 
 class TyperUtils:
