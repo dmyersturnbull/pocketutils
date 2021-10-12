@@ -26,21 +26,20 @@ from typing import (
     Generic,
     Mapping,
     Optional,
+    Sequence,
     TextIO,
+    Type,
     TypeVar,
     Union,
-    Type,
-    Sequence,
 )
+
+import loguru._defaults as _defaults
 
 # noinspection PyProtectedMember
 import regex
 from loguru import logger
-import loguru._defaults as _defaults
 
 # noinspection PyProtectedMember
-from loguru._logger import Logger
-
 # noinspection PyProtectedMember
 from loguru._logger import Logger
 
@@ -78,7 +77,7 @@ class FormatFactory:
     @classmethod
     def plain(cls, *, fmt: str = _FMT) -> Callable[[Mapping[str, Any]], str]:
         def FMT(record: Mapping[str, Any]) -> str:
-            return fmt.replace("[EXTRA]", "")
+            return fmt.replace("[EXTRA]", "") + os.linesep
 
         return FMT
 
@@ -254,7 +253,7 @@ class FancyLoguru(Generic[T]):
     def __init__(self, log: T = logger):
         self._levels = dict(FancyLoguruDefaults.levels_built_in)
         self._logger = log
-        self._main = None
+        self._main: _HandlerInfo = None
         self._paths = {}
         self._aliases = dict(FancyLoguruDefaults.aliases)
 
@@ -326,7 +325,7 @@ class FancyLoguru(Generic[T]):
         if intercept:
             # noinspection PyArgumentList
             logging.basicConfig(handlers=[InterceptHandler()], level=0, encoding="utf-8")
-        self.logger.remove(None)  # get rid of the built-in handler
+        logger.remove(None)  # get rid of the built-in handler
         self.config_main(level=level, sink=sink, fmt=fmt)
         return self
 
@@ -416,14 +415,24 @@ class FancyLoguru(Generic[T]):
     def add_path(
         self,
         path: Path,
-        level: str = FancyLoguruDefaults.level,
+        level: str = _SENTINEL,
         *,
-        fmt: str = FancyLoguruDefaults.fmt_built_in,
+        fmt: str = _SENTINEL,
     ) -> __qualname__:
+        if level is _SENTINEL and self._main is None:
+            level = FancyLoguruDefaults.level
+        elif level is _SENTINEL:
+            level = self._main.level
         level = level.upper()
+        if fmt is _SENTINEL and self._main is None:
+            fmt = FancyLoguruDefaults.fmt_built_in
+        elif fmt is _SENTINEL:
+            fmt = self._main.fmt
+        if isinstance(fmt, str):
+            fmt = FormatFactory.with_extras(fmt=fmt)
         ell = self._levels[level]
         info = LogSinkInfo.guess(path)
-        x = logger.add(
+        x = self._logger.add(
             str(info.base),
             format=fmt,
             level=level,
@@ -465,8 +474,8 @@ class FancyLoguru(Generic[T]):
             path_level = "DEBUG" if match.group(1) is None else match.group(1)
             path = Path(match.group(2))
             self.add_path(path, path_level)
-            self.logger.info(f"Added logger to {path} at level {path_level}")
-        self.logger.info(f"Set main log level to {main}")
+            logger.info(f"Added logger to {path} at level {path_level}")
+        logger.info(f"Set main log level to {main}")
         return self
 
     __call__ = from_cli
@@ -495,7 +504,6 @@ class LoggerWithCautionAndNotice(LoggerWithNotice, LoggerWithCaution, metaclass=
 class FancyLoguruExtras:
     @classmethod
     def rewire_streams_to_utf8(cls) -> None:
-        # we warn the user about this in the docs!
         sys.stderr.reconfigure(encoding="utf-8")
         sys.stdout.reconfigure(encoding="utf-8")
         sys.stdin.reconfigure(encoding="utf-8")

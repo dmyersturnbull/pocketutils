@@ -4,33 +4,33 @@ import importlib.metadata
 import locale
 import logging
 import os
+import pathlib
 import platform
 import shutil
 import socket
+import stat
 import struct
 import sys
-import stat
 import tempfile
 from contextlib import contextmanager
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from getpass import getuser
 from pathlib import Path, PurePath
-import pathlib
 from typing import Any, Generator, Iterable, Mapping, Optional, Sequence, SupportsBytes, Type, Union
 
-from defusedxml import ElementTree
 import numpy as np
 import orjson
 import pandas as pd
 import regex
+from defusedxml import ElementTree
 
 from pocketutils.core.exceptions import (
     AlreadyUsedError,
     ContradictoryRequestError,
+    DirDoesNotExistError,
     FileDoesNotExistError,
     ParsingError,
-    DirDoesNotExistError,
 )
 from pocketutils.core.input_output import OpenMode, PathLike, Writeable
 from pocketutils.core.web_resource import *
