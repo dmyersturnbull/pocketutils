@@ -26,20 +26,22 @@ from typing import (
     Generic,
     Mapping,
     Optional,
-    Sequence,
     TextIO,
-    Type,
     TypeVar,
     Union,
+    Type,
+    Sequence,
+    MutableMapping,
 )
-
-import loguru._defaults as _defaults
 
 # noinspection PyProtectedMember
 import regex
 from loguru import logger
+import loguru._defaults as _defaults
 
 # noinspection PyProtectedMember
+from loguru._logger import Logger
+
 # noinspection PyProtectedMember
 from loguru._logger import Logger
 
@@ -254,7 +256,7 @@ class FancyLoguru(Generic[T]):
         self._levels = dict(FancyLoguruDefaults.levels_built_in)
         self._logger = log
         self._main: _HandlerInfo = None
-        self._paths = {}
+        self._paths: MutableMapping[int, _HandlerInfo] = {}
         self._aliases = dict(FancyLoguruDefaults.aliases)
 
     @staticmethod
@@ -403,9 +405,17 @@ class FancyLoguru(Generic[T]):
         self._main.hid = logger.add(self._main.sink, level=self._main.level, format=self._main.fmt)
         return self
 
+    def remove_paths(self) -> __qualname__:
+        for k, h in self._paths.items():
+            h.level = None
+            try:
+                logger.remove(k)
+            except ValueError:
+                logger.error(f"Cannot remove handler {k} to {h.sink}")
+
     def remove_path(self, path: Path) -> __qualname__:
         for k, h in self._paths.items():
-            if h.path.resolve() == path.resolve():
+            if h.sink.resolve() == path.resolve():
                 h.level = None
                 try:
                     logger.remove(k)
@@ -450,18 +460,24 @@ class FancyLoguru(Generic[T]):
         self,
         path: Union[None, str, Path] = None,
         main: Optional[str] = FancyLoguruDefaults.level,
+        quiet: bool = False,
     ) -> __qualname__:
         """
         This function controls logging set via command-line.
+        Deletes any existing path handlers.
 
         Args:
             main: The level for stderr
             path: If set, the path to a file. Can be prefixed with ``:level:`` to set the level
                   (e.g. ``:INFO:mandos-run.log.gz``). Can serialize to JSON if .json is used
                   instead of .log or .txt.
+            quiet: Log with debug about logging changes instead of info
         """
-        if main is None:
+        lvl = "INFO" if quiet else "DEBUG"
+        if main is None and self._main is None:
             main = FancyLoguruDefaults.level
+        elif main is None:
+            main = self._main.level
         main = self._aliases.get(main.upper(), main.upper())
         if main not in FancyLoguruDefaults.levels_extended:
             _permitted = ", ".join(
@@ -469,13 +485,14 @@ class FancyLoguru(Generic[T]):
             )
             raise XValueError(f"{main.lower()} not a permitted log level (allowed: {_permitted}")
         self.config_main(level=main)
+        self.remove_paths()
         if path is not None or len(str(path)) == 0:
             match = _LOGGER_ARG_PATTERN.match(str(path))
             path_level = "DEBUG" if match.group(1) is None else match.group(1)
             path = Path(match.group(2))
             self.add_path(path, path_level)
-            logger.info(f"Added logger to {path} at level {path_level}")
-        logger.info(f"Set main log level to {main}")
+            logger.log(lvl, f"Added path handler {path} (level {path_level})")
+        logger.log(lvl, f"Set main log level to {main}")
         return self
 
     __call__ = from_cli
