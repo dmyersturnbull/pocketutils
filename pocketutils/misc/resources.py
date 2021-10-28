@@ -2,7 +2,7 @@ import logging
 import typing
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import MutableMapping, Optional, Union
+from typing import MutableMapping, Optional, Tuple, Union
 
 import orjson
 
@@ -50,8 +50,7 @@ class Resources:
 
         Raises:
             MissingResourceError: If the path is not found
-            PathExistsError: If the path is not a file or symlink to a file,
-                             or is not readable
+            PathExistsError: If the path is not a file or symlink to a file or is not readable
         """
         path = self.path(*nodes, suffix=suffix)
         info = FilesysTools.get_info(path)
@@ -112,28 +111,89 @@ class Resources:
         return data
 
     def check_expired(
-        self, path: PathLike, max_sec: Union[timedelta, float], *, what: Optional[str] = None
-    ) -> bool:
+        self,
+        path: PathLike,
+        max_sec: Union[timedelta, float],
+        *,
+        warn_expired_fmt: str = "{path_rel} is {delta} out of date [{mod_rel}]",
+        warn_unknown_fmt: str = "{path_rel} mod date is unknown [created: {create_rel}]",
+    ) -> Optional[bool]:
         """
         Warns and returns True if ``path`` mod date is more than ``max_sec`` in the past.
+        Returns None if it could not be determined.
+
+        The formatting strings can refer to any of these (will be empty if unknown):
+        - path: Full path
+        - name: File/dir name
+        - path_rel: Path relative to ``self._dir``, or full path if not under
+        - now: formatted current datetime
+        - [mod/create]_dt: Formatted mod/creation datetime
+        - [mod/create]_rel: Mod/create datetime in terms of offset from now
+        - [mod/create]_delta: Formatted timedelta from now
+        - [mod/create]_delta_sec: Number of seconds from now (negative if now < mod/create dt)
 
         Args:
             path: A specific path to check
             max_sec: Max seconds, or a timedelta
-            what: Substitute the path with this string in logging
+            warn_expired_fmt: Formatting string in terms of the variables listed above
+            warn_unknown_fmt: Formatting string in terms of the variables listed above
+
+        Returns:
+            Whether it is expired, or None if it could not be determined
         """
         path = Path(path)
-        what = str(path) if what is None else what
         limit = max_sec if isinstance(max_sec, timedelta) else timedelta(seconds=max_sec)
         now = datetime.now().astimezone()
-        then = FilesysTools.get_info(path).mod_or_create_dt
-        delta = now - then
-        if delta > limit:
-            delta_str = UnitTools.delta_time_to_str(delta, space=Chars.narrownbsp)
-            then_str = UnitTools.approx_time_wrt(now, then)
-            self._logger.warning(f"{what} may be {delta_str} out of date. [{then_str}]")
+        info = FilesysTools.get_info(path)
+        if not info.mod_dt and now - info.mod_dt > limit:
+            self._warn_expired(now, info.mod_dt, info.create_dt, path, warn_expired_fmt)
             return True
+        elif not info.mod_dt and (not info.create_dt or (now - info.create_dt) > limit):
+            self._warn_expired(now, info.mod_dt, info.create_dt, path, warn_unknown_fmt)
+            return None
         return False
+
+    def _warn_expired(
+        self,
+        now: datetime,
+        mod: Optional[datetime],
+        created: Optional[datetime],
+        path: Path,
+        fmt: Optional[str],
+    ):
+        if isinstance(fmt, str):
+            fmt = fmt.format
+        if path.is_relative_to(self._dir):
+            path_rel = str(path.relative_to(self._dir))
+        else:
+            path_rel = str(path)
+        now_str, mod_str, mod_rel, mod_delta, mod_delta_sec = self._pretty(now, mod)
+        _, create_str, create_rel, create_delta, create_delta_sec = self._pretty(now, created)
+        msg = fmt(
+            path=path,
+            path_rel=path_rel,
+            name=path.name,
+            now=now_str,
+            mod_dt=mod_str,
+            mod_rel=mod_rel,
+            mod_delta=mod_delta,
+            mod_sec=mod_delta_sec,
+            create_dt=create_str,
+            create_rel=create_rel,
+            create_delta=create_delta,
+            create_sec=create_delta_sec,
+        )
+        self._logger.warning(msg)
+
+    def _pretty(self, now: datetime, then: Optional[datetime]) -> Tuple[str, str, str, str, str]:
+        now_str = now.strftime("%Y-%m-%d %H:%M:%S")
+        delta = now - then
+        if then is None:
+            return now_str, "", "", "", ""
+        then_str = then.strftime("%Y-%m-%d %H:%M:%S")
+        then_rel = UnitTools.approx_time_wrt(now, then)
+        delta_str = UnitTools.delta_time_to_str(delta, space=Chars.narrownbsp)
+        return now_str, then_str, then_rel, delta_str, str(delta.total_seconds())
 
 
 __all__ = ["Resources"]

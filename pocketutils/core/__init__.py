@@ -3,6 +3,7 @@ from __future__ import annotations
 import abc
 import enum
 import logging
+from collections import UserDict
 from typing import Any, Callable, Generic, Iterable, Sequence, Type, TypeVar
 
 # noinspection PyProtectedMember
@@ -122,6 +123,22 @@ class LazyWrap:
 
         X.__name__ = superclass.__name__ + dtype
         return X
+
+
+class DictNamespace(UserDict):
+    """
+    Behaves like a dict and a ``SimpleNamespace``.
+    This means it has a length, can be iterated over, etc., and can be accessed via ``.``.
+    """
+
+    def __init__(self, /, **kwargs):
+        super().__init__(**kwargs)
+        self.__dict__.update(kwargs)
+
+    def __eq__(self, other):
+        if isinstance(self, DictNamespace) and isinstance(other, DictNamespace):
+            return self.__dict__ == other.__dict__
+        return NotImplemented
 
 
 class SmartEnum(enum.Enum):
@@ -250,4 +267,5 @@ __all__ = [
     "PathLikeUtils",
     "OptRow",
     "LazyWrap",
+    "DictNamespace",
 ]
