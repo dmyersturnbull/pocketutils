@@ -4,6 +4,8 @@ import pandas as pd
 import regex
 from IPython.display import HTML, Markdown, display
 
+from pocketutils.core.exceptions import XValueError
+
 _color_pattern = regex.compile("#?[A-Z0-9a-z]{6}", flags=regex.V1)
 
 
@@ -103,7 +105,7 @@ class J:
     @classmethod
     def _color(cls, color: str) -> str:
         if _color_pattern.fullmatch(color) is None:
-            raise ValueError(f"Invalid hex color {color}")
+            raise XValueError(f"Invalid hex color {color}", value=color)
         return color if color.startswith("#") else "#" + color
 
 

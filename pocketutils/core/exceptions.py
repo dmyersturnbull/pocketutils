@@ -392,7 +392,7 @@ class XTypeError(Error, TypeError):
     """A TypeError containing the expected and actual types."""
 
 
-@ErrorUtils.args(value=KeyLike)
+@ErrorUtils.args(value=Any)
 class XValueError(Error, ValueError):
     """A ValueError containing the value."""
 

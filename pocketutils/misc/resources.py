@@ -98,17 +98,32 @@ class Resources:
         except LookupError:
             raise MissingResourceError(f"Resource {path} missing") from None
 
+    def a_toml_file(
+        self, *nodes: PathLike, suffixes: Optional[typing.Set[str]] = None
+    ) -> NestedDotDict:
+        path = self.a_file(*nodes, suffixes=suffixes)
+        return NestedDotDict.read_toml(path)
+
+    def a_json_file(
+        self, *nodes: PathLike, suffixes: Optional[typing.Set[str]] = None
+    ) -> NestedDotDict:
+        path = self.a_file(*nodes, suffixes=suffixes)
+        return NestedDotDict.read_json(path)
+
+    def toml(self, *nodes: PathLike, suffix: Optional[str] = None) -> NestedDotDict:
+        """Reads a TOML file under ``resources/``."""
+        path = self.path(*nodes, suffix=suffix)
+        return NestedDotDict.read_toml(path)
+
     def json(self, *nodes: PathLike, suffix: Optional[str] = None) -> NestedDotDict:
         """Reads a JSON file under ``resources/``."""
         path = self.path(*nodes, suffix=suffix)
-        data = orjson.loads(Path(path).read_text(encoding="utf8", errors="strict"))
-        return NestedDotDict(data)
+        return NestedDotDict.read_json(path)
 
     def json_dict(self, *nodes: PathLike, suffix: Optional[str] = None) -> MutableMapping:
         """Reads a JSON file under ``resources/``."""
         path = self.path(*nodes, suffix=suffix)
-        data = orjson.loads(Path(path).read_text(encoding="utf8", errors="strict"))
-        return data
+        return orjson.loads(Path(path).read_text(encoding="utf8"))
 
     def check_expired(
         self,
@@ -145,7 +160,7 @@ class Resources:
         limit = max_sec if isinstance(max_sec, timedelta) else timedelta(seconds=max_sec)
         now = datetime.now().astimezone()
         info = FilesysTools.get_info(path)
-        if not info.mod_dt and now - info.mod_dt > limit:
+        if info.mod_dt and now - info.mod_dt > limit:
             self._warn_expired(now, info.mod_dt, info.create_dt, path, warn_expired_fmt)
             return True
         elif not info.mod_dt and (not info.create_dt or (now - info.create_dt) > limit):
@@ -187,9 +202,9 @@ class Resources:
 
     def _pretty(self, now: datetime, then: Optional[datetime]) -> Tuple[str, str, str, str, str]:
         now_str = now.strftime("%Y-%m-%d %H:%M:%S")
-        delta = now - then
         if then is None:
             return now_str, "", "", "", ""
+        delta = now - then
         then_str = then.strftime("%Y-%m-%d %H:%M:%S")
         then_rel = UnitTools.approx_time_wrt(now, then)
         delta_str = UnitTools.delta_time_to_str(delta, space=Chars.narrownbsp)

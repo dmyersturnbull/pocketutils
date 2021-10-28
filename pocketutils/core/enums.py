@@ -167,7 +167,7 @@ class CleverEnum(DisjointEnum):
             unknown = cls._unmatched_type()
             logger.error(f"Value {s} not found. Using {unknown}")
             if unknown is None:
-                raise XValueError(f"Value {s} not found and unmatched_type is None")
+                raise XValueError(f"Value {s} not found and unmatched_type is None", value=s)
             return unknown
 
     @classmethod

@@ -199,7 +199,7 @@ class FigureSaver:
             elif use_labels and figure.get_label() is not None:
                 yield figure.get_label(), figure
             elif use_labels:
-                raise ValueError("use_labels=True, but no names given and a figure has no label")
+                raise XValueError("use_labels=True, but no names given and a figure has no label")
             else:
                 yield str(i), figure
 
@@ -232,7 +232,9 @@ class FigureSaver:
                     f"Filename {path} is not valid (could be: {new_path})", path=path
                 )
         if self._save_under is not None and Path(path).is_absolute():
-            raise XValueError(f"_save_under is {self._save_under} but path {path} is absolute")
+            raise XValueError(
+                f"_save_under is {self._save_under} but path {path} is absolute", value=str(path)
+            )
         elif self._save_under is not None:
             path = self._save_under / path
         ext_valid = any((str(path).endswith("." + s) for s in KNOWN_EXTENSIONS))

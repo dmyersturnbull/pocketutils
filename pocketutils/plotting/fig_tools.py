@@ -278,7 +278,9 @@ class FigureTools:
         corner = corner.lower().replace(" ", "").replace("-", "").replace("_", "")
         valid = {"topleft", "topright", "bottomleft", "bottomright"}
         if corner not in valid:
-            raise XValueError(f"Corner {corner} not in {valid} (_, ' ', and - ignored)")
+            raise XValueError(
+                f"Corner {corner} not in {valid} (_, ' ', and - ignored)", value=str(corner)
+            )
         left = corner.endswith("left")
         top = corner.startswith("top")
         return dict(

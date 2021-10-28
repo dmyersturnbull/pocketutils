@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import gzip
 import json
 import pickle
 from copy import copy
@@ -11,6 +12,10 @@ from typing import Type, TypeVar, Union
 
 import orjson
 import toml
+
+from pocketutils.core import PathLike
+from pocketutils.core._internal import read_txt_or_gz, write_txt_or_gz
+from pocketutils.core.exceptions import XKeyError, XTypeError, XValueError
 
 PICKLE_PROTOCOL = 5
 T = TypeVar("T")
@@ -33,22 +38,18 @@ class NestedDotDict(Mapping):
 
     """
 
-    def to_json(self, indent: bool = False) -> str:
-        kwargs = dict(option=orjson.OPT_INDENT_2) if indent else {}
-        encoded = orjson.dumps(dict(self), default=_json_encode_default, **kwargs)
-        return encoded.decode(encoding="utf8")
-
     @classmethod
-    def read_toml(cls, path: Union[PurePath, str]) -> NestedDotDict:
-        return NestedDotDict(toml.loads(Path(path).read_text(encoding="utf8")))
+    def read_toml(cls, path: PathLike) -> NestedDotDict:
+        return NestedDotDict(toml.loads(read_txt_or_gz(path)))
 
     @classmethod
     def read_json(cls, path: Union[PurePath, str]) -> NestedDotDict:
         """
         Reads JSON from a file, into a NestedDotDict.
         If the JSON data is a list type, converts into a dict with the key ``data``.
+        Can read .json or .json.gz.
         """
-        data = orjson.loads(Path(path).read_text(encoding="utf8"))
+        data = orjson.loads(read_txt_or_gz(path))
         if isinstance(data, list):
             data = {"data": data}
         return cls(data)
@@ -90,26 +91,38 @@ class NestedDotDict(Mapping):
         Constructor.
 
         Raises:
-            ValueError: If a key (in this dict or a sub-dict) is not a str or contains a dot
+            XValueError: If a key (in this dict or a sub-dict) is not a str or contains a dot
         """
         if not (hasattr(x, "items") and hasattr(x, "keys") and hasattr(x, "values")):
-            raise TypeError(f"Type {type(x)} for value {x} appears not to be dict-like")
+            raise XTypeError(
+                f"Type {type(x)} for value {x} appears not to be dict-like", actual=str(type(x))
+            )
         bad = [k for k in x if not isinstance(k, str)]
         if len(bad) > 0:
-            raise ValueError(f"Keys were not strings for these values: {bad}")
+            raise XValueError(f"Keys were not strings for these values: {bad}", value=bad)
         bad = [k for k in x if "." in k]
         if len(bad) > 0:
-            raise ValueError(f"Keys contained dots (.) for these values: {bad}")
+            raise XValueError(f"Keys contained dots (.) for these values: {bad}", value=bad)
         self._x = x
         # Let's make sure this constructor gets called on subdicts:
         self.leaves()
 
-    def write_json(self, path: Union[PurePath, str], indent: bool = False) -> None:
-        kwargs = dict(option=orjson.OPT_INDENT_2) if indent else {}
-        Path(path).write_bytes(orjson.dumps(dict(self), default=_json_encode_default, **kwargs))
+    def write_json(self, path: PathLike, *, indent: bool = False) -> None:
+        write_txt_or_gz(self.to_json(indent=indent), path)
 
-    def write_pickle(self, path: Union[PurePath, str]) -> None:
+    def write_toml(self, path: PathLike) -> None:
+        write_txt_or_gz(self.to_toml(), path)
+
+    def write_pickle(self, path: PathLike) -> None:
         Path(path).write_bytes(pickle.dumps(self._x, protocol=PICKLE_PROTOCOL))
+
+    def to_json(self, *, indent: bool = False) -> str:
+        kwargs = dict(option=orjson.OPT_INDENT_2) if indent else {}
+        encoded = orjson.dumps(self._x, default=_json_encode_default, **kwargs)
+        return encoded.decode(encoding="utf8")
+
+    def to_toml(self) -> str:
+        return toml.dumps(self._x)
 
     def leaves(self) -> Mapping[str, Any]:
         """
@@ -121,7 +134,7 @@ class NestedDotDict(Mapping):
         mp = {}
         for key, value in self._x.items():
             if len(key) == 0:
-                raise AssertionError(f"Key is empty (value=${value})")
+                raise AssertionError(f"Key is empty (value={value})")
             if isinstance(value, dict):
                 mp.update({key + "." + k: v for k, v in NestedDotDict(value).leaves().items()})
             else:
@@ -149,7 +162,11 @@ class NestedDotDict(Mapping):
         """
         z = self[items]
         if not isinstance(z, astype):
-            raise TypeError(f"Value {z} from {items} is a {type(z)}, not {astype}")
+            raise XTypeError(
+                f"Value {z} from {items} is a {type(z)}, not {astype}",
+                actual=str(type(z)),
+                expected=str(astype),
+            )
         return z
 
     def get_as(
@@ -172,7 +189,7 @@ class NestedDotDict(Mapping):
             The value of found key in this dot-dict, or ``default``.
 
         Raises:
-            ValueError: Likely exception raised if calling ``astype`` fails
+            XValueError: Likely exception raised if calling ``astype`` fails
         """
         x = self.get(items)
         if x is None:
@@ -200,8 +217,8 @@ class NestedDotDict(Mapping):
             The value of found key in this dot-dict.
 
         Raises:
-            KeyError: If the key is not found (at any level).
-            ValueError: Likely exception raised if calling ``astype`` fails
+            XKeyError: If the key is not found (at any level).
+            XValueError: Likely exception raised if calling ``astype`` fails
         """
         x = self[items]
         return astype(x)
@@ -223,14 +240,14 @@ class NestedDotDict(Mapping):
             ``[astype(v) for v in self[items]]``, or ``default`` if ``items`` was not found.
 
         Raises:
-            ValueError: Likely exception raised if calling ``astype`` fails
-            TypeError: If the found value is not a (non-``str``) ``Sequence``
+            XValueError: Likely exception raised if calling ``astype`` fails
+            XTypeError: If the found value is not a (non-``str``) ``Sequence``
         """
         x = self.get(items)
         if x is None:
             return default
         if not isinstance(x, Sequence) or isinstance(x, str):
-            raise TypeError(f"Value {x} is not a list for lookup {items}")
+            raise XTypeError(f"Value {x} is not a list for lookup {items}", actual=str(type(x)))
         return [astype(y) for y in x]
 
     def req_list_as(self, items: str, astype: Optional[Callable[[Any], T]]) -> Sequence[T]:
@@ -247,13 +264,13 @@ class NestedDotDict(Mapping):
             ``[astype(v) for v in self[items]]``
 
         Raises:
-            ValueError: Likely exception raised if calling ``astype`` fails
-            TypeError: If the found value is not a (non-``str``) ``Sequence``
-            KeyError: If the key was not found (at any level)
+            XValueError: Likely exception raised if calling ``astype`` fails
+            XTypeError: If the found value is not a (non-``str``) ``Sequence``
+            XKeyError: If the key was not found (at any level)
         """
         x = self[items]
         if not isinstance(x, Sequence) or isinstance(x, str):
-            raise TypeError(f"Value {x} is not a list for lookup {items}")
+            raise XTypeError(f"Value {x} is not a list for lookup {items}", actual=str(type(x)))
         return [astype(y) for y in x]
 
     def get(self, items: str, default: Any = None) -> Any:
@@ -280,7 +297,7 @@ class NestedDotDict(Mapping):
         at = self._x
         for item in items.split("."):
             if item not in at:
-                raise KeyError(f"{items} not found: {item} does not exist")
+                raise XKeyError(f"{items} not found: {item} does not exist")
             at = at[item]
         return NestedDotDict(at) if isinstance(at, dict) else copy(at)
 
@@ -298,7 +315,7 @@ class NestedDotDict(Mapping):
         Pretty-prints the leaves of this dict using ``json.dumps``.
 
         Returns:
-            A multi-lined string
+            A multi-line string
         """
         return json.dumps(
             self.leaves(),
@@ -330,25 +347,27 @@ class NestedDotDict(Mapping):
     def __eq__(self, other):
         return str(self) == str(other)
 
-    def _to_date(self, s):
+    def _to_date(self, s) -> date:
         if isinstance(s, date):
             return s
         elif isinstance(s, str):
             # This is MUCH faster than tomlkit's
             return date.fromisoformat(s)
         else:
-            raise TypeError(f"Invalid type ${type(s)} for {s}")
+            raise XTypeError(f"Invalid type {type(s)} for {s}", actual=str(type(s)))
 
-    def _to_datetime(self, s):
+    def _to_datetime(self, s) -> datetime:
         if isinstance(s, datetime):
             return s
         elif isinstance(s, str):
             # This is MUCH faster than tomlkit's
             if s.count(":") < 2:
-                raise ValueError(f"Datetime {s} does not contain hours, minutes, and seconds")
+                raise XValueError(
+                    f"Datetime {s} does not contain hours, minutes, and seconds", value=s
+                )
             return datetime.fromisoformat(s.upper().replace("Z", "+00:00"))
         else:
-            raise TypeError(f"Invalid type ${type(s)} for {s}")
+            raise XTypeError(f"Invalid type {type(s)} for {s}", actual=str(type(s)))
 
 
 __all__ = ["NestedDotDict"]

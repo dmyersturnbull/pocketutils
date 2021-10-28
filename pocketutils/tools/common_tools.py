@@ -19,7 +19,7 @@ import numpy as np
 import pandas as pd
 
 from pocketutils.core._internal import nicesize
-from pocketutils.core.exceptions import RefusingRequestError
+from pocketutils.core.exceptions import RefusingRequestError, XKeyError, XValueError
 from pocketutils.core.input_output import DevNull
 from pocketutils.tools.base_tools import BaseTools
 
@@ -234,7 +234,7 @@ class CommonTools(BaseTools):
         for item in sequence:
             v = CommonTools.look(item, key_attr)
             if not skip_none and v is None:
-                raise KeyError(f"No {key_attr} in {item}")
+                raise XKeyError(f"No {key_attr} in {item}", key=key_attr)
             if v is not None:
                 dct[v].append(item)
         return dct
@@ -277,7 +277,7 @@ class CommonTools(BaseTools):
             return False
         if s.lower() == "true":
             return True
-        raise ValueError(f"{s} is not true/false")
+        raise XValueError(f"{s} is not true/false", value=s)
 
     @classmethod
     def parse_bool_flex(cls, s: str) -> bool:
@@ -289,7 +289,7 @@ class CommonTools(BaseTools):
             - "false", "f", "no", "n", "0", "-"
 
         Raises:
-            ValueError: If neither true nor false
+            XValueError: If neither true nor false
         """
         mp = {
             **{v: True for v in {"true", "t", "yes", "y", "1", "+"}},
@@ -297,7 +297,7 @@ class CommonTools(BaseTools):
         }
         v = mp.get(s.lower())
         if v is None:
-            raise ValueError(f"{s.lower()} is not in {','.join(mp.keys())}")
+            raise XValueError(f"{s.lower()} is not in {','.join(mp.keys())}", value=s)
         return v
 
 

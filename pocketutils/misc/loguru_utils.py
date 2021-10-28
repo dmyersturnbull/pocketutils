@@ -683,7 +683,9 @@ class FancyLoguru(Generic[T]):
             _permitted = ", ".join(
                 [*self._defaults.levels_extended, *self._defaults.aliases.keys()]
             )
-            raise XValueError(f"{main.lower()} not a permitted log level (allowed: {_permitted}")
+            raise XValueError(
+                f"{main.lower()} not a permitted log level (allowed: {_permitted}", value=main
+            )
         self.config_main(level=main)
         self.remove_paths()
         if path is not None and len(str(path)) > 0:
@@ -718,7 +720,8 @@ class FancyLoguru(Generic[T]):
                 base, compression = path.name[: -len(c)], c
         if not [base.endswith(s) for s in [".json", ".log", ".txt"]]:
             raise XValueError(
-                f"Log filename {path.name} is not .json, .log, .txt, or a compressed variant"
+                f"Log filename {path.name} is not .json, .log, .txt, or a compressed variant",
+                value=path.name,
             )
         return LogSinkInfo(
             path=path,

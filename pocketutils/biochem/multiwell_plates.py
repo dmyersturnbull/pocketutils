@@ -5,7 +5,7 @@ from typing import Iterator, Sequence, Type
 
 import regex
 
-from pocketutils.core.exceptions import OutOfRangeError, StringPatternError
+from pocketutils.core.exceptions import OutOfRangeError, StringPatternError, XValueError
 
 
 @total_ordering
@@ -208,7 +208,7 @@ class ParsingWB(_WB, metaclass=ABCMeta):
         elif x in {"...", "…"}:
             return self.traversal_range(a, b)
         else:
-            raise ValueError(f"Failed on to parse {x}")
+            raise XValueError(f"Failed on to parse {x}", value=x)
 
 
 class WB1(_WB):

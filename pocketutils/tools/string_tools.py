@@ -8,7 +8,7 @@ import orjson
 import regex
 
 from pocketutils.core.chars import *
-from pocketutils.core.exceptions import OutOfRangeError
+from pocketutils.core.exceptions import OutOfRangeError, XTypeError, XValueError
 from pocketutils.tools.base_tools import BaseTools
 
 T = TypeVar("T")
@@ -117,9 +117,11 @@ class StringTools(BaseTools):
         try:
             value = sum((int(num) for num in roman))
         except (ValueError, StopIteration):
-            raise ValueError(f"Cannot parse roman numerals '{roman}'")
-        if min_val is not None and value < min_val or min_val is not None and roman > max_val:
-            raise ValueError(f"Value {roman} (int={value}) is out of range ({min_val}, {max_val})")
+            raise XValueError(f"Cannot parse roman numerals '{roman}'", value=roman)
+        if min_val is not None and value < min_val or max_val is not None and value > max_val:
+            raise XValueError(
+                f"Value {roman} (int={value}) is out of range ({min_val}, {max_val})", value=roman
+            )
         return value
 
     @classmethod
@@ -244,7 +246,9 @@ class StringTools(BaseTools):
         See ``Tools.strip_off`` for more info.
         """
         if not isinstance(pre, str):
-            raise TypeError(f"{pre} is not a string")
+            raise XTypeError(
+                f"{pre} is not a string", actual=str(type(pre)), expected=str(type(str))
+            )
         if s.startswith(pre):
             s = s[len(pre) :]
         return s
@@ -387,7 +391,10 @@ class StringTools(BaseTools):
         Also see ``strip_brackets``
         """
         if any([a for a in pieces if len(a) != 2]):
-            raise ValueError(f"Each item must be a string of length 2: (stard, end); got {pieces}")
+            raise XValueError(
+                f"Each item must be a string of length 2: (stard, end); got {pieces}",
+                value=str(pieces),
+            )
         text = str(text)
         while len(text) > 0:
             yes = False

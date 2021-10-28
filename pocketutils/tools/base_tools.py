@@ -15,7 +15,12 @@ from typing import (
 )
 
 from pocketutils.core._internal import look as _look
-from pocketutils.core.exceptions import LengthError, LengthMismatchError, MultipleMatchesError
+from pocketutils.core.exceptions import (
+    LengthError,
+    LengthMismatchError,
+    MultipleMatchesError,
+    XTypeError,
+)
 
 logger = logging.getLogger("pocketutils")
 Y = TypeVar("Y")
@@ -268,7 +273,7 @@ class BaseTools:
         elif hasattr(log, "write") and getattr(log, "write"):
             return getattr(log, "write")
         else:
-            raise TypeError(f"Log type {type(log)} not known")
+            raise XTypeError(f"Log type {type(log)} not known", actual=str(type(log)))
 
     def __repr__(self):
         return self.__class__.__name__

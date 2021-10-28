@@ -1,10 +1,11 @@
 from __future__ import annotations
 
+import gzip
 import logging
 import operator
 import os
 import sys
-from pathlib import PurePath
+from pathlib import Path, PurePath
 from typing import Any, Callable, Iterable, Optional, TypeVar, Union
 
 T = TypeVar("T", covariant=True)
@@ -112,8 +113,33 @@ def look(obj: Y, attrs: Union[str, Iterable[str], Callable[[Y], Z]]) -> Optional
         return None
 
 
+def read_txt_or_gz(path: PathLike) -> str:
+    path = Path(path)
+    if path.name.endswith(".gz") or path.name.endswith(".gzip"):
+        return gzip.decompress(path.read_bytes()).decode(encoding="utf8")
+    return Path(path).read_text(encoding="utf8")
+
+
+def write_txt_or_gz(txt: str, path: PathLike) -> None:
+    path = Path(path)
+    if path.name.endswith(".gz") or path.name.endswith(".gzip"):
+        data = gzip.compress(txt.encode(encoding="utf8"))
+        path.write_bytes(data)
+    else:
+        path.write_text(txt)
+
+
 def null_context():
     yield
 
 
-__all__ = ["nicesize", "look", "logger", "Pretty", "PathLike", "PathLikeUtils"]
+__all__ = [
+    "nicesize",
+    "look",
+    "logger",
+    "Pretty",
+    "PathLike",
+    "PathLikeUtils",
+    "read_txt_or_gz",
+    "write_txt_or_gz",
+]
