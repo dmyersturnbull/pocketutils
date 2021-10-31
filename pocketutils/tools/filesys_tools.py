@@ -14,16 +14,31 @@ import sys
 import tempfile
 from contextlib import contextmanager
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from getpass import getuser
 from pathlib import Path, PurePath
-from typing import Any, Generator, Iterable, Mapping, Optional, Sequence, SupportsBytes, Type, Union
+from typing import (
+    Any,
+    Generator,
+    Iterable,
+    Mapping,
+    Optional,
+    Sequence,
+    SupportsBytes,
+    Type,
+    Union,
+    Tuple,
+    Callable,
+)
 
 import numpy as np
 import orjson
 import pandas as pd
 import regex
 from defusedxml import ElementTree
+from pocketutils.core.chars import Chars
+
+from pocketutils.tools.unit_tools import UnitTools
 
 from pocketutils.core.exceptions import (
     AlreadyUsedError,
@@ -32,6 +47,7 @@ from pocketutils.core.exceptions import (
     FileDoesNotExistError,
     ParsingError,
 )
+from pocketutils.core._internal import read_txt_or_gz, write_txt_or_gz
 from pocketutils.core.input_output import OpenMode, PathLike, Writeable
 from pocketutils.core.web_resource import *
 from pocketutils.tools.base_tools import BaseTools
@@ -184,6 +200,22 @@ class FilesysTools(BaseTools):
     .. caution::
         Some functions may be insecure.
     """
+
+    @classmethod
+    def read_compressed_text(cls, path: PathLike) -> str:
+        """
+        Reads text from a text file, optionally gzipped or bz2-ed.
+        Recognized suffixes for compression are ``.gz``, ``.gzip``, ``.bz2``, and ``.bzip2``.
+        """
+        return read_txt_or_gz(path)
+
+    @classmethod
+    def write_compressed_text(cls, txt: str, path: PathLike, *, mkdirs: bool = False) -> None:
+        """
+        Writes text to a text file, optionally gzipped or bz2-ed.
+        Recognized suffixes for compression are ``.gz``, ``.gzip``, ``.bz2``, and ``.bzip2``.
+        """
+        write_txt_or_gz(txt, path, mkdirs=mkdirs)
 
     @classmethod
     def new_webresource(
@@ -692,6 +724,106 @@ class FilesysTools(BaseTools):
     def tmpdir(cls, **kwargs) -> Generator[Path, None, None]:
         with tempfile.TemporaryDirectory(**kwargs) as x:
             yield Path(x)
+
+    @classmethod
+    def check_expired(
+        cls,
+        path: PathLike,
+        max_sec: Union[timedelta, float],
+        *,
+        parent: Optional[PathLike] = None,
+        warn_expired_fmt: str = "{path_rel} is {delta} out of date [{mod_rel}]",
+        warn_unknown_fmt: str = "{path_rel} mod date is unknown [created: {create_rel}]",
+        log: Optional[Callable[[str], Any]] = logger.warning,
+    ) -> Optional[bool]:
+        """
+        Warns and returns True if ``path`` mod date is more than ``max_sec`` in the past.
+        Returns None if it could not be determined.
+
+        The formatting strings can refer to any of these (will be empty if unknown):
+        - path: Full path
+        - name: File/dir name
+        - path_rel: Path relative to ``self._dir``, or full path if not under
+        - now: formatted current datetime
+        - [mod/create]_dt: Formatted mod/creation datetime
+        - [mod/create]_rel: Mod/create datetime in terms of offset from now
+        - [mod/create]_delta: Formatted timedelta from now
+        - [mod/create]_delta_sec: Number of seconds from now (negative if now < mod/create dt)
+
+        Args:
+            path: A specific path to check
+            max_sec: Max seconds, or a timedelta
+            parent: If provided, path_rel is relative to this directory (to simplify warnings)
+            warn_expired_fmt: Formatting string in terms of the variables listed above
+            warn_unknown_fmt: Formatting string in terms of the variables listed above
+            log: Log about problems
+
+        Returns:
+            Whether it is expired, or None if it could not be determined
+        """
+        path = Path(path)
+        if log is None:
+            log = lambda _: None
+        limit = max_sec if isinstance(max_sec, timedelta) else timedelta(seconds=max_sec)
+        now = datetime.now().astimezone()
+        info = FilesysTools.get_info(path)
+        if info.mod_dt and now - info.mod_dt > limit:
+            cls._warn_expired(now, info.mod_dt, info.create_dt, path, parent, warn_expired_fmt, log)
+            return True
+        elif not info.mod_dt and (not info.create_dt or (now - info.create_dt) > limit):
+            cls._warn_expired(now, info.mod_dt, info.create_dt, path, parent, warn_unknown_fmt, log)
+            return None
+        return False
+
+    @classmethod
+    def _warn_expired(
+        cls,
+        now: datetime,
+        mod: Optional[datetime],
+        created: Optional[datetime],
+        path: Path,
+        parent: Optional[Path],
+        fmt: Optional[str],
+        log: Callable[[str], Any],
+    ):
+        if isinstance(fmt, str):
+            fmt = fmt.format
+        if parent is not None and path.is_relative_to(parent):
+            path_rel = str(path.relative_to(parent))
+        else:
+            path_rel = str(path)
+        now_str, mod_str, mod_rel, mod_delta, mod_delta_sec = cls._expire_warning_info(now, mod)
+        _, create_str, create_rel, create_delta, create_delta_sec = cls._expire_warning_info(
+            now, created
+        )
+        msg = fmt(
+            path=path,
+            path_rel=path_rel,
+            name=path.name,
+            now=now_str,
+            mod_dt=mod_str,
+            mod_rel=mod_rel,
+            mod_delta=mod_delta,
+            mod_sec=mod_delta_sec,
+            create_dt=create_str,
+            create_rel=create_rel,
+            create_delta=create_delta,
+            create_sec=create_delta_sec,
+        )
+        log(msg)
+
+    @classmethod
+    def _expire_warning_info(
+        cls, now: datetime, then: Optional[datetime]
+    ) -> Tuple[str, str, str, str, str]:
+        now_str = now.strftime("%Y-%m-%d %H:%M:%S")
+        if then is None:
+            return now_str, "", "", "", ""
+        delta = now - then
+        then_str = then.strftime("%Y-%m-%d %H:%M:%S")
+        then_rel = UnitTools.approx_time_wrt(now, then)
+        delta_str = UnitTools.delta_time_to_str(delta, space=Chars.narrownbsp)
+        return now_str, then_str, then_rel, delta_str, str(delta.total_seconds())
 
     @classmethod
     def __stat_raw(cls, path: Path) -> Optional[os.stat_result]:

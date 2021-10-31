@@ -15,7 +15,6 @@ from typing import (
     Union,
 )
 
-import numpy as np
 import pandas as pd
 
 from pocketutils.core._internal import nicesize
@@ -34,6 +33,17 @@ class CommonTools(BaseTools):
     def limit(cls, items: Iterable[Q], n: int) -> Generator[Q, None, None]:
         for i, x in zip(range(n), items):
             yield x
+
+    @classmethod
+    def is_float(cls, s: Any) -> bool:
+        """
+        Returns whether ``float(s)`` succeeds.
+        """
+        try:
+            float(s)
+            return True
+        except ValueError:
+            return False
 
     @classmethod
     def try_none(

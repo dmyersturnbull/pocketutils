@@ -531,6 +531,10 @@ class IllegalPathError(PathError, ValueError):
     """Not a valid path (e.g. not ok on the filesystem)."""
 
 
+class InvalidFileType(PathError):
+    """Not a valid file type."""
+
+
 class FileDoesNotExistError(PathError):
     """A file is expected, but the path does not exist."""
 

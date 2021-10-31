@@ -14,6 +14,8 @@ from typing import (
     Union,
 )
 
+from pocketutils.core.input_output import Writeable
+
 from pocketutils.core._internal import look as _look
 from pocketutils.core.exceptions import (
     LengthError,
@@ -240,6 +242,25 @@ class BaseTools:
         return _look(obj, attrs)
 
     @classmethod
+    def make_writer(cls, writer: Union[Writeable, Callable[[str], Any]]):
+        if Writeable.isinstance(writer):
+            return writer
+        elif callable(writer):
+
+            class W_(Writeable):
+                def write(self, msg):
+                    writer(msg)
+
+                def flush(self):
+                    pass
+
+                def close(self):
+                    pass
+
+            return W_()
+        raise XTypeError(f"{type(writer)} cannot be wrapped into a Writeable")
+
+    @classmethod
     def get_log_function(
         cls, log: Union[None, str, Callable[[str], None], Any]
     ) -> Callable[[str], None]:
@@ -272,6 +293,8 @@ class BaseTools:
             return log
         elif hasattr(log, "write") and getattr(log, "write"):
             return getattr(log, "write")
+        elif hasattr(log, "write"):
+            return log.write
         else:
             raise XTypeError(f"Log type {type(log)} not known", actual=str(type(log)))
 

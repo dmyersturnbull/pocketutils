@@ -31,15 +31,14 @@ class GitDescription:
 
 class ProgramTools(BaseTools):
     """
+    Tools for external programs.
 
-    Security concerns
-    -----------------
-
-    Please note that these tools execute external code
-    through the ``subprocess`` module.
-    These calls are additionally made on partial executable paths,
-    such as ``git`` rather than ``/usr/bin/git``.
-    This is an additional security consideration.
+    .. caution::
+        Please note that these tools execute external code
+        through the ``subprocess`` module.
+        These calls are additionally made on partial executable paths,
+        such as ``git`` rather than ``/usr/bin/git``.
+        This is an additional security consideration.
     """
 
     @classmethod

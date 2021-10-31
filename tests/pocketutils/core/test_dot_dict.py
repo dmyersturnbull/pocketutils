@@ -127,7 +127,7 @@ class TestDotDict:
         assert len(lines) == 5
         assert lines[0] == "{"
         assert lines[-1] == "}"
-        assert lines[1] == '    "a.b": 1,'
+        assert lines[1] == '  "a.b": 1,'
 
     def test_as_exactly(self):
         t = NestedDotDict({"zoo": {"animals": "jackets"}, "what": 0.1})

@@ -1,6 +1,5 @@
 import re
 import warnings
-from copy import copy
 from typing import Any, Callable, Iterable, Mapping, Optional, Sequence, Tuple, TypeVar, Union
 
 import numpy as np
@@ -583,16 +582,14 @@ class StringTools(BaseTools):
     @classmethod
     def greek_to_name(cls) -> Mapping[str, str]:
         """
-        Returns a dict from Greek lowercase+uppercase Unicode chars to their full names
-        @return A defensive copy
+        Returns a dict from Greek lowercase+uppercase Unicode chars to their full names.
         """
-        return copy(StringTools._greek_alphabet)
+        return dict(StringTools._greek_alphabet)
 
     @classmethod
     def name_to_greek(cls) -> Mapping[str, str]:
         """
-        Returns a dict from Greek lowercase+uppercase letter names to their Unicode chars
-        @return A defensive copy
+        Returns a dict from Greek lowercase+uppercase letter names to their Unicode chars.
         """
         return {v: k for k, v in StringTools._greek_alphabet.items()}
 
@@ -651,6 +648,18 @@ class StringTools(BaseTools):
             return sep.join([prefix + str(s) + suffix for s in seq])
         else:
             return sep.join([prefix + str(getattr(s, attr)) + suffix for s in seq])
+
+    @classmethod
+    def join_kv_neat(cls, seq: Mapping[T, V], *, eq: str = "=", sep: str = ", ") -> str:
+        return cls.join_kv(seq, sep=sep, eq=eq)
+
+    @classmethod
+    def join_kv_spaced(cls, seq: Mapping[T, V], *, eq: str = ": ", sep: str = "; ") -> str:
+        return cls.join_kv(seq, sep=sep, eq=eq)
+
+    @classmethod
+    def join_kv_quoted(cls, seq: Mapping[T, V], *, eq: str = ": ", sep: str = "; ") -> str:
+        return cls.join_kv(seq, sep=sep, eq=eq, prefix="'", suffix="'")
 
     @classmethod
     def join_kv(

@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-import gzip
-import json
 import pickle
 from copy import copy
 from datetime import date, datetime
@@ -35,7 +33,6 @@ class NestedDotDict(Mapping):
     Keys must be strings that do not contain a dot (.).
     A dot is reserved for splitting values to traverse the tree.
     For example, ``dotdict["pet.species.name"]``.
-
     """
 
     @classmethod
@@ -43,15 +40,15 @@ class NestedDotDict(Mapping):
         return NestedDotDict(toml.loads(read_txt_or_gz(path)))
 
     @classmethod
-    def read_json(cls, path: Union[PurePath, str]) -> NestedDotDict:
+    def read_json(cls, path: PathLike) -> NestedDotDict:
         """
         Reads JSON from a file, into a NestedDotDict.
-        If the JSON data is a list type, converts into a dict with the key ``data``.
+        If the JSON data is a list type, converts into a dict with keys ``"1", "2", ...`` .
         Can read .json or .json.gz.
         """
         data = orjson.loads(read_txt_or_gz(path))
         if isinstance(data, list):
-            data = {"data": data}
+            data = dict(enumerate(data))
         return cls(data)
 
     @classmethod
@@ -75,9 +72,9 @@ class NestedDotDict(Mapping):
         Parses JSON from a string, into a NestedDotDict.
         If the JSON data is a list type, converts into a dict with the key ``data``.
         """
-        data = json.loads(data)
+        data = orjson.loads(data.encode(encoding="utf8"))
         if isinstance(data, list):
-            data = {"data": data}
+            data = dict(enumerate(data))
         return cls(data)
 
     @classmethod
@@ -104,24 +101,45 @@ class NestedDotDict(Mapping):
         if len(bad) > 0:
             raise XValueError(f"Keys contained dots (.) for these values: {bad}", value=bad)
         self._x = x
-        # Let's make sure this constructor gets called on subdicts:
+        # Let's make sure this constructor gets called on sub-dicts:
         self.leaves()
 
-    def write_json(self, path: PathLike, *, indent: bool = False) -> None:
-        write_txt_or_gz(self.to_json(indent=indent), path)
+    def write_json(self, path: PathLike, *, indent: bool = False, mkdirs: bool = False) -> str:
+        """
+        Writes to a json or .json.gz file.
 
-    def write_toml(self, path: PathLike) -> None:
-        write_txt_or_gz(self.to_toml(), path)
+        Returns:
+            The JSON text
+        """
+        return write_txt_or_gz(self.to_json(indent=indent), path, mkdirs=mkdirs)
+
+    def write_toml(self, path: PathLike, mkdirs: bool = False) -> str:
+        """
+        Writes to a toml or .toml.gz file.
+
+        Returns:
+            The JSON text
+        """
+        return write_txt_or_gz(self.to_toml(), path, mkdirs=mkdirs)
 
     def write_pickle(self, path: PathLike) -> None:
+        """
+        Writes to a pickle file.
+        """
         Path(path).write_bytes(pickle.dumps(self._x, protocol=PICKLE_PROTOCOL))
 
     def to_json(self, *, indent: bool = False) -> str:
+        """
+        Returns JSON text.
+        """
         kwargs = dict(option=orjson.OPT_INDENT_2) if indent else {}
         encoded = orjson.dumps(self._x, default=_json_encode_default, **kwargs)
         return encoded.decode(encoding="utf8")
 
     def to_toml(self) -> str:
+        """
+        Returns TOML text.
+        """
         return toml.dumps(self._x)
 
     def leaves(self) -> Mapping[str, Any]:
@@ -142,13 +160,29 @@ class NestedDotDict(Mapping):
         return mp
 
     def sub(self, items: str) -> NestedDotDict:
+        """
+        Returns the dictionary under (dotted) keys ``items``.
+
+        See Also:
+            :meth:`sub_opt`
+        """
         return NestedDotDict(self[items])
+
+    def sub_opt(self, items: str) -> NestedDotDict:
+        """
+        Returns the dictionary under (dotted) keys ``items``, or empty if a key is not found.
+
+        See Also:
+            :meth:`sub`
+        """
+        try:
+            return NestedDotDict(self[items])
+        except XKeyError:
+            return NestedDotDict({})
 
     def exactly(self, items: str, astype: Type[T]) -> T:
         """
         Gets the key ``items`` from the dict if it has type ``astype``.
-        Calling ``dotdict.exactly(k, t) is equivalent to calling ``t(dotdict[k])``,
-        but a raised ``TypeError`` will note the key, making this a useful shorthand for the above within a try-except.
 
         Args:
             items: The key hierarchy, with a dot (.) as a separator
@@ -158,7 +192,7 @@ class NestedDotDict(Mapping):
             The value in the required type
 
         Raises:
-            TypeError: If not ``isinstance(value, astype)``
+            XTypeError: If not ``isinstance(value, astype)``
         """
         z = self[items]
         if not isinstance(z, astype):
@@ -174,7 +208,11 @@ class NestedDotDict(Mapping):
     ) -> Optional[T]:
         """
         Gets the value of an *optional* key, or ``default`` if it doesn't exist.
-        Also see ``req_as``.
+        Calls ``astype(value)`` on the value before returning.
+
+        See Also:
+            :meth:`req_as`
+            :meth:`exactly`
 
         Args:
             items: The key hierarchy, with a dot (.) as a separator.
@@ -203,7 +241,11 @@ class NestedDotDict(Mapping):
     def req_as(self, items: str, astype: Optional[Callable[[Any], T]]) -> T:
         """
         Gets the value of a *required* key.
-        Also see ``get_as`` and ``exactly``.
+        Calls ``astype(value)`` on the value before returning.
+
+        See Also:
+            :meth:`req_as`
+            :meth:`exactly`
 
         Args:
             items: The key hierarchy, with a dot (.) as a separator.
@@ -317,12 +359,9 @@ class NestedDotDict(Mapping):
         Returns:
             A multi-line string
         """
-        return json.dumps(
-            self.leaves(),
-            sort_keys=True,
-            indent=4,
-            ensure_ascii=False,
-        )
+        return orjson.dumps(
+            self.leaves(), option=orjson.OPT_SORT_KEYS | orjson.OPT_INDENT_2 | orjson.OPT_UTC_Z
+        ).decode(encoding="utf8")
 
     def __len__(self) -> int:
         """
@@ -330,6 +369,9 @@ class NestedDotDict(Mapping):
         Does **NOT** include nested values.
         """
         return len(self._x)
+
+    def is_empty(self) -> bool:
+        return len(self._x) == 0
 
     def __iter__(self):
         """

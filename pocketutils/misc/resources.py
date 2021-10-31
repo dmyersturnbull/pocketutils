@@ -1,12 +1,12 @@
 import logging
-import typing
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import MutableMapping, Optional, Tuple, Union
+from typing import AbstractSet, MutableMapping, Optional, Tuple, Union, Any
 
 import orjson
 
 from pocketutils.core import PathLike
+from pocketutils.core._internal import read_txt_or_gz, JSON_SUFFIXES, TOML_SUFFIXES, GZ_BZ2_SUFFIXES
 from pocketutils.core.chars import Chars
 from pocketutils.core.dot_dict import NestedDotDict
 from pocketutils.core.exceptions import (
@@ -26,25 +26,48 @@ class Resources:
     def __init__(self, path: PathLike, *, logger=_logger):
         self._dir = Path(path)
         self._logger = logger
+        self._in_memory: MutableMapping[str, Any] = {}
 
-    def contains(self, *nodes: PathLike, suffix: Optional[str] = None) -> bool:
+    @property
+    def home(self) -> Path:
+        return self._dir
+
+    def to_memory(self, key: str, data: Any):
+        self._in_memory[key] = data
+
+    def from_memory(self, key: str) -> Any:
+        return self._in_memory[key]
+
+    def contains(self, *nodes: PathLike) -> bool:
         """Returns whether a resource file (or dir) exists."""
-        return self.path(*nodes, suffix=suffix).exists()
+        return self.path(*nodes).exists()
 
-    def path(self, *nodes: PathLike, suffix: Optional[str] = None, exists: bool = False) -> Path:
+    def contains_a_file(
+        self, *nodes: PathLike, suffixes: Optional[AbstractSet[str]] = None
+    ) -> bool:
+        try:
+            self.a_file(*nodes, suffixes=suffixes)
+            return True
+        except MissingResourceError:
+            return False
+
+    def path(self, *nodes: PathLike, exists: bool = False) -> Path:
         """
         Gets a path of a test resource file under ``resources/``.
 
         Raises:
             MissingResourceError: If the path is not found
         """
-        path = Path(self._dir, "resources", *nodes)
-        path = path.with_suffix(path.suffix if suffix is None else suffix)
+        if len(nodes) == 1 and isinstance(nodes[0], Path) and nodes[0].is_absolute():
+            path = nodes[0]
+        else:
+            path = Path(self._dir, *nodes)
+            path = path.with_suffix(path.suffix)
         if exists and not path.exists():
             raise MissingResourceError(f"Resource {path} missing")
         return path
 
-    def file(self, *nodes: PathLike, suffix: Optional[str] = None) -> Path:
+    def file(self, *nodes: PathLike) -> Path:
         """
         Gets a path of a test resource file under ``resources/``.
 
@@ -52,7 +75,7 @@ class Resources:
             MissingResourceError: If the path is not found
             PathExistsError: If the path is not a file or symlink to a file or is not readable
         """
-        path = self.path(*nodes, suffix=suffix)
+        path = self.path(*nodes)
         info = FilesysTools.get_info(path)
         if not info.is_file:
             raise PathExistsError(f"Resource {path} is not a file!")
@@ -79,15 +102,17 @@ class Resources:
             raise FileDoesNotExistError(f"Resource {path} is not readable")
         return path
 
-    def a_file(self, *nodes: PathLike, suffixes: Optional[typing.Set[str]] = None) -> Path:
+    def a_file(self, *nodes: PathLike, suffixes: Optional[AbstractSet[str]] = None) -> Path:
         """
         Gets a path of a test resource file under ``resources/``, ignoring suffix.
 
         Args:
             nodes: Path nodes under ``resources/``
-            suffixes: Set of acceptable suffixes; if None, all are accepted
+            suffixes: Set of acceptable suffixes; if None, only the exact file is accepted
         """
-        path = Path(self._dir, "resources", *nodes)
+        path = self.path(*nodes)
+        if path.is_file():
+            return path
         options = [
             p
             for p in path.parent.glob(path.stem + "*")
@@ -98,117 +123,20 @@ class Resources:
         except LookupError:
             raise MissingResourceError(f"Resource {path} missing") from None
 
-    def a_toml_file(
-        self, *nodes: PathLike, suffixes: Optional[typing.Set[str]] = None
-    ) -> NestedDotDict:
-        path = self.a_file(*nodes, suffixes=suffixes)
-        return NestedDotDict.read_toml(path)
-
-    def a_json_file(
-        self, *nodes: PathLike, suffixes: Optional[typing.Set[str]] = None
-    ) -> NestedDotDict:
-        path = self.a_file(*nodes, suffixes=suffixes)
-        return NestedDotDict.read_json(path)
-
-    def toml(self, *nodes: PathLike, suffix: Optional[str] = None) -> NestedDotDict:
+    def toml(self, *nodes: PathLike) -> NestedDotDict:
         """Reads a TOML file under ``resources/``."""
-        path = self.path(*nodes, suffix=suffix)
+        path = self.a_file(*nodes, suffixes=GZ_BZ2_SUFFIXES)
         return NestedDotDict.read_toml(path)
 
-    def json(self, *nodes: PathLike, suffix: Optional[str] = None) -> NestedDotDict:
+    def json(self, *nodes: PathLike) -> NestedDotDict:
         """Reads a JSON file under ``resources/``."""
-        path = self.path(*nodes, suffix=suffix)
+        path = self.a_file(*nodes, suffixes=GZ_BZ2_SUFFIXES)
         return NestedDotDict.read_json(path)
 
-    def json_dict(self, *nodes: PathLike, suffix: Optional[str] = None) -> MutableMapping:
+    def json_dict(self, *nodes: PathLike) -> MutableMapping:
         """Reads a JSON file under ``resources/``."""
-        path = self.path(*nodes, suffix=suffix)
-        return orjson.loads(Path(path).read_text(encoding="utf8"))
-
-    def check_expired(
-        self,
-        path: PathLike,
-        max_sec: Union[timedelta, float],
-        *,
-        warn_expired_fmt: str = "{path_rel} is {delta} out of date [{mod_rel}]",
-        warn_unknown_fmt: str = "{path_rel} mod date is unknown [created: {create_rel}]",
-    ) -> Optional[bool]:
-        """
-        Warns and returns True if ``path`` mod date is more than ``max_sec`` in the past.
-        Returns None if it could not be determined.
-
-        The formatting strings can refer to any of these (will be empty if unknown):
-        - path: Full path
-        - name: File/dir name
-        - path_rel: Path relative to ``self._dir``, or full path if not under
-        - now: formatted current datetime
-        - [mod/create]_dt: Formatted mod/creation datetime
-        - [mod/create]_rel: Mod/create datetime in terms of offset from now
-        - [mod/create]_delta: Formatted timedelta from now
-        - [mod/create]_delta_sec: Number of seconds from now (negative if now < mod/create dt)
-
-        Args:
-            path: A specific path to check
-            max_sec: Max seconds, or a timedelta
-            warn_expired_fmt: Formatting string in terms of the variables listed above
-            warn_unknown_fmt: Formatting string in terms of the variables listed above
-
-        Returns:
-            Whether it is expired, or None if it could not be determined
-        """
-        path = Path(path)
-        limit = max_sec if isinstance(max_sec, timedelta) else timedelta(seconds=max_sec)
-        now = datetime.now().astimezone()
-        info = FilesysTools.get_info(path)
-        if info.mod_dt and now - info.mod_dt > limit:
-            self._warn_expired(now, info.mod_dt, info.create_dt, path, warn_expired_fmt)
-            return True
-        elif not info.mod_dt and (not info.create_dt or (now - info.create_dt) > limit):
-            self._warn_expired(now, info.mod_dt, info.create_dt, path, warn_unknown_fmt)
-            return None
-        return False
-
-    def _warn_expired(
-        self,
-        now: datetime,
-        mod: Optional[datetime],
-        created: Optional[datetime],
-        path: Path,
-        fmt: Optional[str],
-    ):
-        if isinstance(fmt, str):
-            fmt = fmt.format
-        if path.is_relative_to(self._dir):
-            path_rel = str(path.relative_to(self._dir))
-        else:
-            path_rel = str(path)
-        now_str, mod_str, mod_rel, mod_delta, mod_delta_sec = self._pretty(now, mod)
-        _, create_str, create_rel, create_delta, create_delta_sec = self._pretty(now, created)
-        msg = fmt(
-            path=path,
-            path_rel=path_rel,
-            name=path.name,
-            now=now_str,
-            mod_dt=mod_str,
-            mod_rel=mod_rel,
-            mod_delta=mod_delta,
-            mod_sec=mod_delta_sec,
-            create_dt=create_str,
-            create_rel=create_rel,
-            create_delta=create_delta,
-            create_sec=create_delta_sec,
-        )
-        self._logger.warning(msg)
-
-    def _pretty(self, now: datetime, then: Optional[datetime]) -> Tuple[str, str, str, str, str]:
-        now_str = now.strftime("%Y-%m-%d %H:%M:%S")
-        if then is None:
-            return now_str, "", "", "", ""
-        delta = now - then
-        then_str = then.strftime("%Y-%m-%d %H:%M:%S")
-        then_rel = UnitTools.approx_time_wrt(now, then)
-        delta_str = UnitTools.delta_time_to_str(delta, space=Chars.narrownbsp)
-        return now_str, then_str, then_rel, delta_str, str(delta.total_seconds())
+        path = self.a_file(*nodes, suffixes=GZ_BZ2_SUFFIXES)
+        return orjson.loads(read_txt_or_gz(path))
 
 
 __all__ = ["Resources"]
