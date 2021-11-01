@@ -12,6 +12,7 @@ from typing import (
     Tuple,
     TypeVar,
     Union,
+    ByteString,
 )
 
 from pocketutils.core.input_output import Writeable
@@ -187,13 +188,18 @@ class BaseTools:
     def is_true_iterable(cls, s: Any) -> bool:
         """
         Returns whether ``s`` is a probably "proper" iterable.
-        In other words, iterable but not a string or bytes
+        In other words, iterable but not a string or bytes.
+
+        .. caution::
+            This is not fully reliable.
+            Types that do not define ``__iter__`` but are iterable
+            via ``__getitem__`` will not be included.
         """
         return (
             s is not None
             and isinstance(s, Iterable)
             and not isinstance(s, str)
-            and not isinstance(s, bytes)
+            and not isinstance(s, ByteString)
         )
 
     @classmethod

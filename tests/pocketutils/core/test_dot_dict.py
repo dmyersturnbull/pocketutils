@@ -129,6 +129,18 @@ class TestDotDict:
         assert lines[-1] == "}"
         assert lines[1] == '  "a.b": 1,'
 
+    def test_size(self):
+        t = NestedDotDict(dict(a=dict(b=1), b=2, c=dict(a=dict(a=3))))
+        assert t.n_elements_total() == 3
+        t = NestedDotDict(dict(a=dict(b=1), b=[1, 2, 3], c=dict(a=dict(a=3))))
+        assert t.n_elements_total() == 5
+
+    def test_bytes(self):
+        t = NestedDotDict(dict(a=dict(b=1), b=2, c=dict(a=dict(a=3))))
+        assert t.n_bytes_total() == 84
+        t = NestedDotDict(dict(a=dict(b=1), b=[1, 2, 3], c=dict(a=dict(a=3))))
+        assert t.n_bytes_total() == 140
+
     def test_as_exactly(self):
         t = NestedDotDict({"zoo": {"animals": "jackets"}, "what": 0.1})
         assert t.exactly("zoo.animals", str) == "jackets"
