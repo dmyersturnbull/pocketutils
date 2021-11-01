@@ -52,6 +52,8 @@ Tools.is_lambda(lambda: None)  # True
 Tools.longest(["a", "a+b"])  # "a+b"  # anything with len
 Tools.only([1, 2])  # error -- multiple items
 Tools.first(iter([]))  # None <-- better than try: next(iter(x)) except:...
+Tools.trace_signals(sink=sys.stderr)  # log traceback on all signals
+Tools.trace_exit(sink=sys.stderr)  # log traceback on exit
 # lots of others
 ```
 

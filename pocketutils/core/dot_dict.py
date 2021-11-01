@@ -1,10 +1,11 @@
 from __future__ import annotations
 
 import pickle
+import sys
 from copy import copy
 from datetime import date, datetime
 from pathlib import Path, PurePath
-from typing import Any, ByteString, Callable, Mapping, Optional, Sequence
+from typing import Any, ByteString, Callable, Mapping, Optional, Sequence, Iterable, Collection
 from typing import Tuple as Tup
 from typing import Type, TypeVar, Union
 
@@ -142,6 +143,28 @@ class NestedDotDict(Mapping):
         """
         return toml.dumps(self._x)
 
+    def n_elements_total(self) -> int:
+        return len(self._all_elements())
+
+    def n_bytes_total(self) -> int:
+        return sum([sys.getsizeof(x) for x in self._all_elements()])
+
+    def _all_elements(self) -> Sequence[Any]:
+        i = []
+        for key, value in self._x.items():
+            if value is not None and isinstance(value, Mapping):
+                i += NestedDotDict(value)._all_elements()
+            elif (
+                value is not None
+                and isinstance(value, Collection)
+                and not isinstance(value, str)
+                and not isinstance(value, ByteString)
+            ):
+                i += list(value)
+            else:
+                i.append(value)
+        return i
+
     def leaves(self) -> Mapping[str, Any]:
         """
         Gets the leaves in this tree.
@@ -151,9 +174,7 @@ class NestedDotDict(Mapping):
         """
         mp = {}
         for key, value in self._x.items():
-            if len(key) == 0:
-                raise AssertionError(f"Key is empty (value={value})")
-            if isinstance(value, dict):
+            if value is not None and isinstance(value, Mapping):
                 mp.update({key + "." + k: v for k, v in NestedDotDict(value).leaves().items()})
             else:
                 mp[key] = value

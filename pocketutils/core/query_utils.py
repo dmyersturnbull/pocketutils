@@ -1,12 +1,20 @@
 import random
 import time
-from typing import Callable, Mapping, Optional
+from dataclasses import dataclass
+from typing import Callable, Mapping, Optional, ByteString
 from urllib import request
+from datetime import timedelta
 
 
 def download_urllib(req: request.Request) -> bytes:
     with request.urlopen(req) as q:
         return q.read()
+
+
+@dataclass(frozen=True, repr=True, order=True)
+class TimeTaken:
+    query: timedelta
+    wait: timedelta
 
 
 class QueryExecutor:
@@ -19,7 +27,7 @@ class QueryExecutor:
         sec_delay_min: float = 0.25,
         sec_delay_max: float = 0.25,
         encoding: Optional[str] = "utf-8",
-        querier: Optional[Callable[[request.Request], bytes]] = None,
+        querier: Optional[Callable[[request.Request], ByteString]] = None,
     ):
         self._min = sec_delay_min
         self._max = sec_delay_max
@@ -27,6 +35,11 @@ class QueryExecutor:
         self._encoding = encoding
         self._next_at = 0
         self._querier = download_urllib if querier is None else querier
+        self._time_taken = None
+
+    @property
+    def last_time_taken(self) -> TimeTaken:
+        return self._time_taken
 
     def __call__(
         self,
@@ -39,16 +52,20 @@ class QueryExecutor:
         headers = {} if headers is None else headers
         encoding = self._encoding if encoding == "-1" else encoding
         now = time.monotonic()
+        wait_secs = self._next_at - now
         if now < self._next_at:
-            time.sleep(self._next_at - now)
+            time.sleep(wait_secs)
+        now = time.monotonic()
         req = request.Request(url=url, method=method, headers=headers)
         content = self._querier(req)
         if encoding is None:
             data = content.decode(errors=errors)
         else:
             data = content.decode(encoding=encoding, errors=errors)
-        self._next_at = time.monotonic() + self._rand.uniform(self._min, self._max)
+        now_ = time.monotonic()
+        self._time_taken = TimeTaken(timedelta(seconds=wait_secs), timedelta(seconds=now_ - now))
+        self._next_at = now_ + self._rand.uniform(self._min, self._max)
         return data
 
 
-__all__ = ["QueryExecutor"]
+__all__ = ["QueryExecutor", "TimeTaken"]

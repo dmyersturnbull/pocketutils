@@ -9,6 +9,7 @@ from pocketutils.tools.program_tools import ProgramTools
 from pocketutils.tools.reflection_tools import ReflectionTools
 from pocketutils.tools.string_tools import StringTools
 from pocketutils.tools.unit_tools import UnitTools
+from pocketutils.tools.sys_tools import SystemTools
 
 
 class Tools(
@@ -23,6 +24,7 @@ class Tools(
     UnitTools,
     LoopTools,
     ReflectionTools,
+    SystemTools,
 ):
     """
     A collection of utility static functions.

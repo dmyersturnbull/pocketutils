@@ -16,10 +16,9 @@ import abc
 import logging
 import os
 import sys
-import traceback
+import traceback as _traceback
 from collections import deque
 from dataclasses import dataclass
-from functools import partialmethod
 from inspect import cleandoc
 from pathlib import Path
 from typing import (
@@ -62,7 +61,7 @@ DEFAULT_FMT_STRING = cleandoc(
     <cyan>({thread.id}){name}</cyan><bold>:</bold>
     <cyan>{function}</cyan><bold>:</bold>
     <cyan>{line}</cyan><bold> — </bold>
-    <level>{message}{{EXTRA}}</level>
+    <level>{message}{{EXTRA}}{{TRACEBACK}}</level>
     {exception}
     """
 ).replace("\n", "")
@@ -76,10 +75,10 @@ T = TypeVar("T", covariant=True, bound=Logger)
 Z = TypeVar("Z", covariant=True, bound=Logger)
 
 
-def _add_traceback(record):
+def log_traceback(record):
     extra = record["extra"]
     if extra.get("traceback", False):
-        extra["traceback"] = "\n" + "".join(traceback.format_stack())
+        extra["traceback"] = "\n" + "".join(_traceback.format_stack())
     else:
         extra["traceback"] = ""
 
@@ -112,10 +111,19 @@ class _Defaults:
         eq_sign: str = " ",
     ) -> Callable[[Mapping[str, Any]], str]:
         def FMT(record: Mapping[str, Any]) -> str:
-            extra = sep.join([e + eq_sign + "{extra[" + e + "]}" for e in record["extra"].keys()])
+            extra = [e for e in record["extra"] if e != "traceback"]
             if len(extra) > 0:
+                extra = sep.join([e + eq_sign + "{extra[" + e + "]}" for e in extra])
                 extra = f" [ {extra} ]"
-            return fmt.replace("{{EXTRA}}", extra) + os.linesep
+            else:
+                extra = ""
+            f = fmt.replace("{{EXTRA}}", extra)
+            tb = record["extra"].get("traceback", False)
+            if tb:
+                f = f.replace("{{TRACEBACK}}", "{extra[traceback]}")
+            else:
+                f = f.replace("{{TRACEBACK}}", "")
+            return f + os.linesep
 
         return FMT
 
@@ -203,11 +211,11 @@ class _Defaults:
 
     @property
     def fmt_simplified(self):
-        return self.wrap_plain_fmt()
+        return self.wrap_extended_fmt()
 
     @property
     def fmt_built_in(self):
-        return self.wrap_extended_fmt()
+        return self.wrap_plain_fmt()
 
     @property
     def fmt_built_in_raw(self):
@@ -333,7 +341,7 @@ class FancyLoguru(Generic[T]):
 
     @staticmethod
     def new(t: Type[Z]) -> FancyLoguru[Z]:
-        ell = _logger.patch(_add_traceback)
+        ell = _logger.patch(log_traceback)
         logger = t(ell._core, *ell._options)
         return FancyLoguru[Z](logger)
 
@@ -515,6 +523,7 @@ class FancyLoguru(Generic[T]):
         logging.basicConfig(handlers=[InterceptHandler()], level=0, encoding="utf-8")
         if warnings:
             logging.captureWarnings(True)
+        return self
 
     def config_main(
         self,
@@ -567,7 +576,9 @@ class FancyLoguru(Generic[T]):
         extant = self.recent_messages
         self._rememberer = Rememberer(n_messages)
         self._rememberer.hid = self._logger.add(
-            self._rememberer, level="TRACE", format=self._main.fmt
+            self._rememberer,
+            level="TRACE",
+            format=self._defaults.fmt_simplified if self._main is None else self._main.fmt,
         )
         for msg in extant:
             self._rememberer(msg)
@@ -670,23 +681,18 @@ class FancyLoguru(Generic[T]):
         _msg_level = self._aliases.get(_msg_level.upper(), _msg_level.upper())
         if not self._control_enabled:
             if self._main is not None:
-                self._main.level = _msg_level
+                self._main.level = _msg_level  # just set
             return self
-        if main is _SENTINEL:
-            main = None
-        if main is None and self._main is None:
-            main = self._defaults.level
-        elif main is None:
-            main = self._main.level
-        main = self._aliases.get(main.upper(), main.upper())
-        if main not in self._defaults.levels_extended:
-            _permitted = ", ".join(
-                [*self._defaults.levels_extended, *self._defaults.aliases.keys()]
-            )
-            raise XValueError(
-                f"{main.lower()} not a permitted log level (allowed: {_permitted}", value=main
-            )
-        self.config_main(level=main)
+        if main is not None and main is not _SENTINEL:
+            main = self._aliases.get(main.upper(), main.upper())
+            if main not in self._defaults.levels_extended:
+                _permitted = ", ".join(
+                    [*self._defaults.levels_extended, *self._defaults.aliases.keys()]
+                )
+                raise XValueError(
+                    f"{main.lower()} not a permitted log level (allowed: {_permitted}", value=main
+                )
+            self.config_main(level=main)
         self.remove_paths()
         if path is not None and len(str(path)) > 0:
             match = _LOGGER_ARG_PATTERN.match(str(path))
@@ -811,6 +817,22 @@ class FancyLoguru(Generic[T]):
 
 
 FANCY_LOGURU_DEFAULTS = _Defaults()
+
+
+if __name__ == "__main__":
+    _logger.remove(None)
+    lg = (
+        FancyLoguru.new(LoggerWithCautionAndNotice)
+        .set_control(False)
+        .set_control(True)
+        .config_main(fmt=FANCY_LOGURU_DEFAULTS.fmt_simplified)
+        .intercept_std()
+    )
+    lg.from_cli(path="nope.log.tmp")
+
+    with lg.logger.contextualize(omg="why"):
+        lg.logger.info("hello", traceback=True)
+    print(lg.recent_messages)
 
 
 __all__ = [
