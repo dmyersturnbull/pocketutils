@@ -46,20 +46,6 @@ class TestFilesysTools:
         assert not info.is_file
         assert info.mod_or_create_dt is not None
 
-    def test_get_env_info(self):
-        data = FilesysTools.get_env_info(include_insecure=True)
-        assert len(data) > 20
-        assert "pid" in data
-        assert "disk_used" in data
-        assert "hostname" in data
-        assert "locale" in data
-
-    def test_list_imports(self):
-        data = FilesysTools.list_package_versions()
-        assert len(data) > 5
-        assert "orjson" in data
-        assert data["orjson"].startswith("3.")  # change when updated
-
 
 if __name__ == "__main__":
     pytest.main()

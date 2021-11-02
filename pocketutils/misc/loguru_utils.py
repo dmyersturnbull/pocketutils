@@ -27,7 +27,6 @@ from typing import (
     Callable,
     Deque,
     Generic,
-    Iterable,
     Mapping,
     MutableMapping,
     Optional,
@@ -58,9 +57,9 @@ DEFAULT_FMT_STRING = cleandoc(
     r"""
     <bold>{time:YYYY-MM-DD HH:mm:ss.SSS} | </bold>
     <level>{level: <7}</level><bold> | </bold>
-    <cyan>({thread.id}){name}</cyan><bold>:</bold>
-    <cyan>{function}</cyan><bold>:</bold>
-    <cyan>{line}</cyan><bold> — </bold>
+    ({thread.id}){name}<bold>:</bold>
+    {function}<bold>:</bold>
+    {line}<bold> — </bold>
     <level>{message}{{EXTRA}}{{TRACEBACK}}</level>
     {exception}
     """
@@ -187,14 +186,14 @@ class _Defaults:
     def colors_red_green_safe(self) -> Mapping[str, str]:
         return dict(
             TRACE="<dim>",
-            DEBUG="<dim>",
-            INFO="<bold>",
+            DEBUG="<bold>",
+            INFO="<cyan>",
             CAUTION="<yellow>",
             SUCCESS="<blue>",
-            WARNING="<yellow>",
-            NOTICE="<blue>",
+            WARNING="<bold><yellow>",
+            NOTICE="<bold><blue>",
             ERROR="<red>",
-            CRITICAL="<red>",
+            CRITICAL="<bold><red>",
         )
 
     @property
@@ -261,6 +260,7 @@ class _HandlerInfo:
     sink: Any
     level: Optional[int]
     fmt: Formatter
+    filter: Any
 
     @property
     def to_friendly(self):
@@ -355,6 +355,13 @@ class FancyLoguru(Generic[T]):
         Returns the stored logger.
         """
         return self._logger
+
+    @property
+    def only_path(self) -> Optional[Path]:
+        try:
+            return next(iter(self._paths.keys()))
+        except StopIteration:
+            return None
 
     @property
     def levels(self) -> Mapping[str, int]:
@@ -531,6 +538,7 @@ class FancyLoguru(Generic[T]):
         sink: TextIO = _SENTINEL,
         level: Optional[str] = _SENTINEL,
         fmt: Formatter = _SENTINEL,
+        filter=_SENTINEL,
     ) -> __qualname__:
         """
         Sets the logging level for the main handler (normally stderr).
@@ -540,6 +548,7 @@ class FancyLoguru(Generic[T]):
                 self._main.level = self._main.level if level is _SENTINEL else level
                 self._main.sink = self._main.sink if sink is _SENTINEL else sink
                 self._main.fmt = self._main.fmt if fmt is _SENTINEL else fmt
+                self._main.filter = self._main.filter if filter is _SENTINEL else filter
             return self
         if level is not None and level is not _SENTINEL:
             level = level.upper()
@@ -549,6 +558,7 @@ class FancyLoguru(Generic[T]):
                 sink=sys.stderr,
                 level=self.levels[self._defaults.level],
                 fmt=self._defaults.fmt_built_in,
+                filter=None,
             )
         else:
             try:
@@ -558,8 +568,12 @@ class FancyLoguru(Generic[T]):
         self._main.level = self._main.level if level is _SENTINEL else level
         self._main.sink = self._main.sink if sink is _SENTINEL else sink
         self._main.fmt = self._main.fmt if fmt is _SENTINEL else fmt
+        self._main.filter = self._main.filter if fmt is _SENTINEL else filter
         self._main.hid = self._logger.add(
-            self._main.sink, level=self._main.level, format=self._main.fmt
+            self._main.sink,
+            level=self._main.level,
+            format=self._main.fmt,
+            filter=self._main.filter,
         )
         return self
 
@@ -590,7 +604,7 @@ class FancyLoguru(Generic[T]):
         level: str = _SENTINEL,
         *,
         fmt: str = _SENTINEL,
-        filter=None,
+        filter=_SENTINEL,
     ) -> __qualname__:
         """
         Adds a handler to a file.
@@ -611,7 +625,7 @@ class FancyLoguru(Generic[T]):
         if not self._control_enabled:
             return self
         path = Path(path).resolve()
-        level, ell, fmt = self._get_info(level, fmt)
+        level, ell, fmt, filter = self._get_info(level, fmt, filter)
         info = self.guess_file_sink_info(path)
         hid = self._logger.add(
             str(info.base),
@@ -625,7 +639,7 @@ class FancyLoguru(Generic[T]):
             filter=filter,
             encoding="utf-8",
         )
-        self._paths[path] = _HandlerInfo(hid=hid, sink=info.base, level=ell, fmt=fmt)
+        self._paths[path] = _HandlerInfo(hid=hid, sink=info.base, level=ell, fmt=fmt, filter=filter)
         return self
 
     def remove_paths(self) -> __qualname__:
@@ -737,12 +751,16 @@ class FancyLoguru(Generic[T]):
             compression=compression,
         )
 
-    def _get_info(self, level: str = _SENTINEL, fmt: str = _SENTINEL) -> Tuple[str, int, Formatter]:
+    def _get_info(self, level: str, fmt: str, filter) -> Tuple[str, int, Formatter, Any]:
         if level is _SENTINEL and self._main is None:
             level = self._defaults.level
         elif level is _SENTINEL:
             level = self._main.level
-        level = level.upper()
+        if filter is _SENTINEL and self._main is None:
+            filter = None
+        elif filter is _SENTINEL:
+            filter = self._main.filter
+        level = level.upper()  # now it's a string
         if fmt is _SENTINEL and self._main is None:
             fmt = self._defaults.fmt_built_in
         elif fmt is _SENTINEL:
@@ -750,7 +768,7 @@ class FancyLoguru(Generic[T]):
         if isinstance(fmt, str):
             fmt = self._defaults.wrap_extended_fmt(fmt=fmt)
         ell = self.levels[level]
-        return level, ell, fmt
+        return level, ell, fmt, filter
 
     @classmethod
     def built_in(

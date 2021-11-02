@@ -12,6 +12,7 @@ import stat
 import struct
 import sys
 import tempfile
+import traceback
 from contextlib import contextmanager
 from dataclasses import dataclass
 from datetime import datetime, timezone, timedelta
@@ -36,6 +37,8 @@ import orjson
 import pandas as pd
 import regex
 from defusedxml import ElementTree
+from pocketutils.tools.sys_tools import SystemTools
+
 from pocketutils.core.chars import Chars
 
 from pocketutils.tools.unit_tools import UnitTools
@@ -310,114 +313,38 @@ class FilesysTools(BaseTools):
         Path(path.parent).mkdir(parents=True, exist_ok=exist_ok)
 
     @classmethod
-    def get_env_info(cls, *, include_insecure: bool = False) -> Mapping[str, str]:
+    def dump_error(
+        cls, e: Optional[BaseException], path: Union[None, PathLike, datetime] = None
+    ) -> Path:
         """
-        Get a dictionary of some system and environment information.
-        Includes os_release, hostname, username, mem + disk, shell, etc.
-
-        Args:
-            include_insecure: Include data like hostname and username
-
-        .. caution ::
-            Even with ``include_insecure=False``, avoid exposing this data to untrusted
-            sources. For example, this includes the specific OS release, which could
-            be used in attack.
+        Writes a .json file containing the error message, stack trace, and sys info.
+        System info is from :meth:`get_env_info`.
         """
-        try:
-            import psutil
-        except ImportError:
-            psutil = None
-            logger.warning("psutil is not installed, so cannot get extended env info")
-
-        now = datetime.now(timezone.utc).astimezone().isoformat()
-        uname = platform.uname()
-        language_code, encoding = locale.getlocale()
-        # build up this dict:
-        data = {}
-
-        def _try(os_fn, k: str, *args):
-            if any((a is None for a in args)):
-                return None
-            try:
-                v = os_fn(*args)
-                data[k] = v
-                return v
-            except (OSError, ImportError):
-                return None
-
-        data.update(
-            dict(
-                platform=platform.platform(),
-                python=".".join(str(i) for i in sys.version_info),
-                os=uname.system,
-                os_release=uname.release,
-                os_version=uname.version,
-                machine=uname.machine,
-                byte_order=sys.byteorder,
-                processor=uname.processor,
-                build=sys.version,
-                python_bits=8 * struct.calcsize("P"),
-                environment_info_capture_datetime=now,
-                encoding=encoding,
-                locale=locale,
-                recursion_limit=sys.getrecursionlimit(),
-                float_info=sys.float_info,
-                int_info=sys.int_info,
-                flags=sys.flags,
-                hash_info=sys.hash_info,
-                implementation=sys.implementation,
-                switch_interval=sys.getswitchinterval(),
-                filesystem_encoding=sys.getfilesystemencoding(),
-            )
-        )
-        if "LANG" in os.environ:
-            data["lang"] = os.environ["LANG"]
-        if "SHELL" in os.environ:
-            data["shell"] = os.environ["SHELL"]
-        if "LC_ALL" in os.environ:
-            data["lc_all"] = os.environ["LC_ALL"]
-        if hasattr(sys, "winver"):
-            data["win_ver"] = sys.getwindowsversion()
-        if hasattr(sys, "mac_ver"):
-            data["mac_ver"] = sys.mac_ver()
-        if hasattr(sys, "linux_distribution"):
-            data["linux_distribution"] = sys.linux_distribution()
-        if include_insecure:
-            _try(getuser, "username")
-            _try(os.getlogin, "login")
-            _try(socket.gethostname, "hostname")
-            _try(os.getcwd, "cwd")
-            pid = _try(os.getpid, "pid")
-            ppid = _try(os.getppid, "parent_pid")
-            if hasattr(os, "getpriority"):
-                _try(os.getpriority, "priority", os.PRIO_PROCESS, pid)
-                _try(os.getpriority, "parent_priority", os.PRIO_PROCESS, ppid)
-        if psutil is not None:
-            data.update(
-                dict(
-                    disk_used=psutil.disk_usage(".").used,
-                    disk_free=psutil.disk_usage(".").free,
-                    memory_used=psutil.virtual_memory().used,
-                    memory_available=psutil.virtual_memory().available,
-                )
-            )
-        return {k: str(v) for k, v in dict(data).items()}
+        if path is None:
+            path = f"err-dump-{cls.dt_for_filesys()}.json"
+        elif isinstance(path, datetime):
+            path = f"err-dump-{cls.dt_for_filesys(path)}.json"
+        path = Path(path)
+        data = cls.dump_error_as_dict(e)
+        data = orjson.dumps(data, option=orjson.OPT_INDENT_2)
+        path.write_bytes(data)
+        return path
 
     @classmethod
-    def list_package_versions(cls) -> Mapping[str, str]:
-        """
-        Returns installed packages and their version numbers.
-        Reliable; uses importlib (Python 3.8+).
-        """
-        # calling .metadata reads the metadata file
-        # and .version is an alias to .metadata["version"]
-        # so make sure to only read once
-        # TODO: get installed extras?
-        dct = {}
-        for d in importlib.metadata.distributions():
-            meta = d.metadata
-            dct[meta["name"]] = meta["version"]
-        return dct
+    def dump_error_as_dict(cls, e: Optional[BaseException]) -> Mapping[str, Any]:
+        try:
+            system = SystemTools.get_env_info()
+        except BaseException as e2:
+            system = f"UNKNOWN << {e2} >>"
+        msg, tb = SystemTools.serialize_exception(e)
+        tb = [t.as_dict() for t in tb]
+        return dict(message=msg, stacktrace=tb, system=system)
+
+    @classmethod
+    def dt_for_filesys(cls, dt: Optional[datetime] = None) -> str:
+        if dt is None:
+            dt = datetime.now()
+        return dt.strftime("%Y-%m-%d_%H-%M-%S")
 
     @classmethod
     def delete_surefire(cls, path: PathLike) -> Optional[Exception]:
