@@ -49,10 +49,10 @@ class SignalHandler:
     sink: Union[Writeable, Callable[[str], Any]]
 
     def __call__(self):
-        sys.stderr.write(f"~~{self.name}[{self.code}] ({self.desc})~~")
-        traceback.print_stack(file=sys.stderr)
+        self.sink.write(f"~~{self.name}[{self.code}] ({self.desc})~~")
+        traceback.print_stack(file=self.sink)
         for line in traceback.format_stack():
-            sys.stderr.write(line)
+            self.sink.write(line)
 
 
 @dataclass(frozen=True, repr=True)
@@ -61,7 +61,7 @@ class ExitHandler:
 
     def __call__(self):
         self.sink.write(f"~~EXIT~~")
-        traceback.print_stack(file=sys.stderr)
+        traceback.print_stack(file=self.sink)
         for line in traceback.format_stack():
             self.sink.write(line)
 
@@ -89,7 +89,7 @@ class SystemTools(BaseTools):
 
         now = datetime.now(timezone.utc).astimezone().isoformat()
         uname = platform.uname()
-        language_code, encoding = locale.getlocale()
+        lang_code, encoding = locale.getlocale()
         # build up this dict:
         data = {}
 
@@ -117,7 +117,7 @@ class SystemTools(BaseTools):
                 python_bits=8 * struct.calcsize("P"),
                 environment_info_capture_datetime=now,
                 encoding=encoding,
-                lang_code=language_code,
+                lang_code=lang_code,
                 recursion_limit=sys.getrecursionlimit(),
                 float_info=sys.float_info,
                 int_info=sys.int_info,

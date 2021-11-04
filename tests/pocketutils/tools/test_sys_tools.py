@@ -13,7 +13,7 @@ class TestSysTools:
         assert "pid" in data
         assert "disk_used" in data
         assert "hostname" in data
-        assert "locale" in data
+        assert "lang_code" in data
 
     def test_list_imports(self):
         data = SystemTools.list_package_versions()
