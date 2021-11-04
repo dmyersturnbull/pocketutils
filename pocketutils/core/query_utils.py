@@ -1,9 +1,13 @@
+import logging
 import random
 import time
 from dataclasses import dataclass
-from typing import Callable, Mapping, Optional, ByteString
+from typing import Callable, Mapping, Optional, ByteString, Any
 from urllib import request
 from datetime import timedelta
+
+
+logger = logging.getLogger("pocketutils")
 
 
 def download_urllib(req: request.Request) -> bytes:
@@ -68,4 +72,18 @@ class QueryExecutor:
         return data
 
 
-__all__ = ["QueryExecutor", "TimeTaken"]
+class QueryMixin:
+    @property
+    def executor(self) -> QueryExecutor:
+        raise NotImplementedError()
+
+    def _query(self, url: str, *, sink: Callable[[str], Any] = logger.debug) -> str:
+        data = self.executor(url)
+        tt = self.executor.last_time_taken
+        wt, qt = tt.wait.total_seconds(), tt.query.total_seconds()
+        bts = int(len(data) * 8 / 1024)
+        sink(f"Queried {bts} kb from {url} in {qt:.1} s with {wt:.1} s of wait")
+        return data
+
+
+__all__ = ["QueryExecutor", "TimeTaken", "QueryMixin"]

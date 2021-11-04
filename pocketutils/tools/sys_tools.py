@@ -49,10 +49,10 @@ class SignalHandler:
     sink: Union[Writeable, Callable[[str], Any]]
 
     def __call__(self):
-        sys.stderr.write(f"~~{self.name}[{self.code}] ({self.desc})~~")
-        traceback.print_stack(file=sys.stderr)
+        self.sink.write(f"~~{self.name}[{self.code}] ({self.desc})~~")
+        traceback.print_stack(file=self.sink)
         for line in traceback.format_stack():
-            sys.stderr.write(line)
+            self.sink.write(line)
 
 
 @dataclass(frozen=True, repr=True)
@@ -61,7 +61,7 @@ class ExitHandler:
 
     def __call__(self):
         self.sink.write(f"~~EXIT~~")
-        traceback.print_stack(file=sys.stderr)
+        traceback.print_stack(file=self.sink)
         for line in traceback.format_stack():
             self.sink.write(line)
 
