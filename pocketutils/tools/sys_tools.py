@@ -12,12 +12,12 @@ import signal
 import struct
 import sys
 import traceback
-from collections import Callable
 from dataclasses import dataclass, asdict
 from datetime import timezone, datetime
 from getpass import getuser
-from typing import Any, Union, Sequence, Mapping, Optional, NamedTuple
+from typing import Any, Callable, Union, Sequence, Mapping, Optional, NamedTuple
 
+from pocketutils.tools.common_tools import CommonTools
 from pocketutils.core.input_output import Writeable
 from pocketutils.tools.base_tools import BaseTools
 
@@ -232,6 +232,14 @@ class SystemTools(BaseTools):
         Registers an exit handler via ``atexit.register`` that logs the traceback.
         """
         atexit.register(ExitHandler(sink))
+
+    @classmethod
+    def env_var_flag(cls, name: str) -> bool:
+        """
+        Returns the boolean-parsed value of an environment variable (False if missing).
+        Uses :meth:`pocketutils.tools.common_tools.CommonTools.parse_bool_flex`.
+        """
+        return CommonTools.parse_bool_flex(os.environ.get(name, "false"))
 
 
 __all__ = ["SignalHandler", "ExitHandler", "SystemTools"]

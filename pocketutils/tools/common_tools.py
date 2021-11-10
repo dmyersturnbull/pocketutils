@@ -295,15 +295,15 @@ class CommonTools(BaseTools):
         Parses a 'true'/'false'/'yes'/'no'/... string to a bool, ignoring case.
 
         Allowed:
-            - "true", "t", "yes", "y", "1", "+"
-            - "false", "f", "no", "n", "0", "-"
+            - "true", "t", "yes", "y", "1"
+            - "false", "f", "no", "n", "0"
 
         Raises:
             XValueError: If neither true nor false
         """
         mp = {
-            **{v: True for v in {"true", "t", "yes", "y", "1", "+"}},
-            **{v: False for v in {"false", "f", "no", "n", "0", "-"}},
+            **{v: True for v in {"true", "t", "yes", "y", "1"}},
+            **{v: False for v in {"false", "f", "no", "n", "0"}},
         }
         v = mp.get(s.lower())
         if v is None:
