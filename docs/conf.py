@@ -17,7 +17,7 @@ def find(key: str) -> str:
     return toml["tool"]["poetry"][key]
 
 
-language = None
+language = "en"
 project = str(find("name"))
 version = str(find("version"))
 release = str(find("version"))

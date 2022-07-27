@@ -1,5 +1,6 @@
 """
-Loguru logging extension that, configurably:
+Loguru logging extension that provides some additional features.
+Specifically:
 - redirects built-in logging to your loguru logger
 - remembers the handlers added
 - auto-detects compression and serialization from filenames
@@ -326,7 +327,7 @@ class LoggerWithCautionAndNotice(Logger, metaclass=abc.ABCMeta):
 
 class FancyLoguru(Generic[T]):
     """
-    See :module:`pocketutils.misc.fancy_loguru`.
+    Refer to module documentation instead.
     """
 
     def __init__(self, logger: T = _logger):
@@ -810,6 +811,7 @@ class FancyLoguru(Generic[T]):
     ) -> FancyLoguru[LoggerWithCautionAndNotice]:
         """
         Creates a new FancyLoguru with extra levels "caution" and "notice".
+        These are::
         - *CAUTION*: Bad, but between levels *INFO* and *SUCCESS*
         - *NOTICE*: Good/neutral, but between levels *WARNING* and *ERROR*
 
