@@ -87,9 +87,9 @@ class TestUnitTools:
         assert f(55, "µM") == 55
         assert f(55, "nM") * 1e3 == 55
         assert f(-55, "nM") * 1e3 == -55
-        assert pytest.approx(f(-55, "nM") * 1e3, -55)
-        assert pytest.approx(f(55, "pM") * 1e6, 55)
-        assert pytest.approx(f(55, "fM") * 1e9, 55)
+        assert f(-55, "nM") * 1e3 == pytest.approx(-55)
+        assert f(55, "pM") * 1e6 == pytest.approx(55)
+        assert f(55, "fM") * 1e9 == pytest.approx(55)
 
     def test_extract_dose(self):
         f = UnitTools.extract_micromolar
