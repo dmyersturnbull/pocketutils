@@ -47,7 +47,7 @@ class FigureSaver:
         save_under: Optional[PathLike] = None,
         *,
         clear: Union[bool, Callable[[Figure], Any]] = False,
-        as_type: Optional[str] = None,
+        as_type: Optional[str] = "",
         check_paths: bool = True,
         sanitize_paths: bool = True,
         log: Optional[Callable[[str], None]] = None,
@@ -210,6 +210,7 @@ class FigureSaver:
             pass
             figure.clear()
             figure.clf()
+            plt.close("all")
         elif callable(self._clear):
             self._clear(figure)
 
@@ -224,7 +225,7 @@ class FigureSaver:
         """
         path = Path(path)
         if self._check_paths or self._sanitize_paths:
-            new_path = PathTools.sanitize_path(path, show_warnings=False)
+            new_path = PathTools.sanitize_path(path, warn=False)
             if new_path != path and self._sanitize_paths:
                 self._log(f"Sanitized filename {path} → {new_path}")
             elif new_path != path:
