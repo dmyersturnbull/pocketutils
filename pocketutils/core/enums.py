@@ -138,7 +138,7 @@ class TrueFalseUnknown(DisjointEnum):
 
     @classmethod
     def _fix_lookup(cls, s: str) -> str:
-        s = s.lower().strip()
+        s = s.upper().strip()
         return dict(t="true", false="false").get(s, s)
 
 
@@ -176,7 +176,7 @@ class CleverEnum(DisjointEnum):
 
     @classmethod
     def _fix_lookup(cls, s: str) -> str:
-        return s.strip().replace(" ", "_").replace(".", "_").replace("-", "_").lower()
+        return s.strip().replace(" ", "_").replace(".", "_").replace("-", "_").upper()
 
 
 __all__ = ["TrueFalseUnknown", "DisjointEnum", "FlagEnum", "CleverEnum"]
