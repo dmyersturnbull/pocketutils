@@ -179,7 +179,7 @@ class StringTools(BaseTools):
     def truncate(
         cls,
         s: Optional[str],
-        n: Optional[int] = 40,
+        n: int = 40,
         *,
         null: Optional[str] = None,
     ) -> Optional[str]:

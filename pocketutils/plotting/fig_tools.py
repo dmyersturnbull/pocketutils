@@ -19,7 +19,7 @@ from matplotlib.axes import Axes
 from matplotlib.figure import Figure
 
 from pocketutils.core.exceptions import XValueError
-#from pocketutils.plotting._bound_ticks import AxisTicks, TickBounder
+from pocketutils.plotting._bound_ticks import TickBounder
 from pocketutils.tools.common_tools import CommonTools
 
 logger = logging.getLogger("pocketutils")

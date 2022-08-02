@@ -26,7 +26,9 @@ logger = logging.getLogger("pocketutils")
 
 class FigureSaver:
     """
-    Offers some small, specific extensions over matplotlib's ``figure.savefig``:
+    Offers some small, specific extensions over matplotlib's ``figure.savefig``.
+
+    Specifically::
     - can remove the figure from memory each iteration
     - creates directories as needed
     - can save a multi-figure PDF
@@ -35,7 +37,7 @@ class FigureSaver:
     - the ``FigureSaver.save`` function handles iterators of different types
 
     See ``FigureSaver.save`` for more info.
-    ``clear`` defines the behavior after saving a single figure:
+    ``clear`` defines the behavior after saving a single figure::
         - False    ==> do nothing
         - True     ==> clear it
         - callable ==> call it with the Figure instance
