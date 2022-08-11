@@ -3,6 +3,17 @@
 Adheres to [Semantic Versioning 2.0](https://semver.org/spec/v2.0.0.html) and
 [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [0.9.0] - 2022-08-11
+
+### Removed
+
+- Deprecated methods
+
+### Fixed
+
+- `FigSaver` `as_type` constructor arg
+-
+
 ## [0.8.0] - 2021-10-11
 
 ### Added

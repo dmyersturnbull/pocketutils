@@ -110,7 +110,7 @@ class FlagEnum(enum.Flag):
         if isinstance(s, cls):
             return s
         if isinstance(s, str):
-            return cls[cls._fix_lookup_(s)]
+            return cls[cls._fix_lookup(s)]
         z = cls[0]
         for m in s:
             z |= cls.of(m)
@@ -138,7 +138,7 @@ class TrueFalseUnknown(DisjointEnum):
 
     @classmethod
     def _fix_lookup(cls, s: str) -> str:
-        s = s.upper().strip()
+        s = s.lower().strip()
         return dict(t="true", false="false").get(s, s)
 
 
@@ -176,7 +176,7 @@ class CleverEnum(DisjointEnum):
 
     @classmethod
     def _fix_lookup(cls, s: str) -> str:
-        return s.strip().replace(" ", "_").replace(".", "_").replace("-", "_").upper()
+        return s.strip().replace(" ", "_").replace(".", "_").replace("-", "_").lower()
 
 
 __all__ = ["TrueFalseUnknown", "DisjointEnum", "FlagEnum", "CleverEnum"]

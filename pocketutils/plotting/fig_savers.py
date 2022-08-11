@@ -49,7 +49,7 @@ class FigureSaver:
         save_under: Optional[PathLike] = None,
         *,
         clear: Union[bool, Callable[[Figure], Any]] = False,
-        as_type: Optional[str] = "",
+        as_type: Optional[str] = None,
         check_paths: bool = True,
         sanitize_paths: bool = True,
         log: Optional[Callable[[str], None]] = None,
@@ -73,7 +73,7 @@ class FigureSaver:
             raise TypeError(type(clear))
         self._clear = clear
         self._log = lambda _: None if log is None else log
-        self._as_type = "." + as_type.lstrip(".")
+        self._as_type = None if as_type is None else "." + as_type.lstrip(".")
         self._check_paths = check_paths
         self._sanitize_paths = sanitize_paths
         self._kwargs = {} if kwargs is None else kwargs
@@ -212,7 +212,7 @@ class FigureSaver:
             pass
             figure.clear()
             figure.clf()
-            plt.close("all")
+            plt.close(figure)
         elif callable(self._clear):
             self._clear(figure)
 
