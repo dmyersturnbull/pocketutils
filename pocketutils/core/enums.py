@@ -156,7 +156,6 @@ class CleverEnum(DisjointEnum):
     An enum with a ``.of`` method that finds values with limited string/value fixing.
     Replaces ``" "``, ``"-"``, and ``"."`` with ``_`` and ignores case in :meth:`of`.
     May support an "unmatched" type -- a fallback value when there is no match.
-    This is similar to the simpler :class:`pocketutils.core.SmartEnum`.
     """
 
     @classmethod

@@ -1,4 +1,4 @@
-from pocketutils.core import OptRow, SmartEnum, frozenlist
+from pocketutils.core import OptRow, frozenlist
 from pocketutils.core.chars import *
 from pocketutils.core.exceptions import *
 from pocketutils.core.input_output import *
