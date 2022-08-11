@@ -48,7 +48,3 @@ repos:
       - id: prettier
         stages: [commit]
         exclude: ^recipes/.*
-  - repo: https://github.com/nbQA-dev/nbQA
-    rev: 1.4.0
-    hooks:
-      - id: nbqa-black

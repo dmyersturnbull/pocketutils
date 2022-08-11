@@ -3,14 +3,8 @@ Metadata for this project.
 """
 
 import logging
-
-try:
-    from importlib.metadata import PackageNotFoundError
-    from importlib.metadata import metadata as __load
-except ImportError:  # pragma: no cover
-    from importlib_metadata import PackageNotFoundError
-    from importlib_metadata import metadata as __load
-
+from importlib.metadata import PackageNotFoundError
+from importlib.metadata import metadata as __load
 from pathlib import Path
 
 pkg = Path(__file__).absolute().parent.name
