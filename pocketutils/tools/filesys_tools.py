@@ -41,7 +41,6 @@ from pocketutils.core.exceptions import (
     ParsingError,
 )
 from pocketutils.core.input_output import OpenMode, PathLike, Writeable
-from pocketutils.core.web_resource import WebResource
 from pocketutils.tools.base_tools import BaseTools
 from pocketutils.tools.path_tools import PathTools
 from pocketutils.tools.sys_tools import SystemTools
@@ -210,12 +209,6 @@ class FilesysTools(BaseTools):
         Recognized suffixes for compression are ``.gz``, ``.gzip``, ``.bz2``, and ``.bzip2``.
         """
         write_txt_or_gz(txt, path, mkdirs=mkdirs)
-
-    @classmethod
-    def new_webresource(
-        cls, url: str, archive_member: Optional[str], local_path: PathLike
-    ) -> WebResource:
-        return WebResource(url, archive_member, local_path)
 
     @classmethod
     def is_linux(cls) -> bool:
