@@ -2,8 +2,6 @@ import pytest
 
 from pocketutils.core.chars import Chars
 
-raises = pytest.raises
-
 
 class TestChars:
     def test_range(self):

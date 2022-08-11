@@ -7,19 +7,19 @@ import locale
 import logging
 import os
 import platform
-import socket
 import signal
+import socket
 import struct
 import sys
 import traceback
-from dataclasses import dataclass, asdict
-from datetime import timezone, datetime
+from dataclasses import asdict, dataclass
+from datetime import datetime, timezone
 from getpass import getuser
-from typing import Any, Callable, Union, Sequence, Mapping, Optional, NamedTuple
+from typing import Any, Callable, Mapping, NamedTuple, Optional, Sequence, Union
 
-from pocketutils.tools.common_tools import CommonTools
 from pocketutils.core.input_output import Writeable
 from pocketutils.tools.base_tools import BaseTools
+from pocketutils.tools.common_tools import CommonTools
 
 logger = logging.getLogger("pocketutils")
 
@@ -60,7 +60,7 @@ class ExitHandler:
     sink: Writeable
 
     def __call__(self):
-        self.sink.write(f"~~EXIT~~")
+        self.sink.write("~~EXIT~~")
         traceback.print_stack(file=self.sink)
         for line in traceback.format_stack():
             self.sink.write(line)

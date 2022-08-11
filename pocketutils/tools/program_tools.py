@@ -1,5 +1,4 @@
 import subprocess  # nosec
-import warnings
 from dataclasses import dataclass
 
 import regex
@@ -9,10 +8,10 @@ from pocketutils.core.exceptions import ParsingError
 from pocketutils.tools.base_tools import BaseTools
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, eq=True)
 class GitDescription:
     """
-    Data collected from running `git describe --long --dirty --broken --abbrev=40 --tags`
+    Data collected from running ``git describe --long --dirty --broken --abbrev=40 --tags``.
     """
 
     text: str
@@ -42,16 +41,6 @@ class ProgramTools(BaseTools):
     """
 
     @classmethod
-    def commit_hash(cls, git_repo_dir: str = ".") -> str:
-        """
-        Gets the hex of the most recent Git commit hash in git_repo_dir.
-        """
-        warnings.warn(
-            "commit_hash will be removed; use git_description instead", DeprecationWarning
-        )
-        return cls.git_description(git_repo_dir).hash
-
-    @classmethod
     def git_description(cls, git_repo_dir: PathLike = ".") -> GitDescription:
         """
         Runs ``git describe`` and parses the output.
@@ -60,7 +49,7 @@ class ProgramTools(BaseTools):
             git_repo_dir: Path to the repository
 
         Returns:
-            A ``GitDescription`` instance, with fields text, tag, commits, hash, is_dirty, and is_broken
+            A :class:`pocketutils.tools.program_tools.GitDescription` instance
 
         Raises:
             CalledProcessError:

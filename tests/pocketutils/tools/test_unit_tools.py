@@ -2,10 +2,8 @@ from datetime import datetime
 
 import pytest
 
-from pocketutils.core.chars import *
-from pocketutils.tools.unit_tools import *
-
-raises = pytest.raises
+from pocketutils.core.chars import Chars
+from pocketutils.tools.unit_tools import UnitTools
 
 
 class TestUnitTools:

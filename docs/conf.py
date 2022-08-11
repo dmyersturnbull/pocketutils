@@ -17,12 +17,12 @@ def find(key: str) -> str:
     return toml["tool"]["poetry"][key]
 
 
-language = "en"
+language = "en-US"
 project = str(find("name"))
 version = str(find("version"))
 release = str(find("version"))
 author = ", ".join(find("authors"))
-copyright = f"2016–2021 {author}"
+copyright = f"2016–2022 {author}"
 
 
 extensions = ["autoapi.extension", "sphinx.ext.napoleon", "sphinx_rtd_theme"]

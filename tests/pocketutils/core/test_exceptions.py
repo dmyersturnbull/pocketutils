@@ -1,8 +1,7 @@
 import pytest
 
-from pocketutils.core.exceptions import *
+from pocketutils.core.exceptions import HashValidationError
 
-raises = pytest.raises
 E = HashValidationError
 
 

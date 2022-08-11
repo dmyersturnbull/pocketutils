@@ -325,9 +325,9 @@ class FigureTools:
         Forces Axes limits to start and/or end at major or minor ticks.
 
         Each argument in the constructor can be:
-        - ``True`` -- set the bound according to the ticks
-        - ``False`` -- do not change the bound
-        - a ``float`` - set to this
+            - ``True`` -- set the bound according to the ticks
+            - ``False`` -- do not change the bound
+            - a ``float`` - set to this
 
         Args:
             ax: The axes, of course

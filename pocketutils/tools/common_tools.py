@@ -31,7 +31,7 @@ Q = TypeVar("Q")
 class CommonTools(BaseTools):
     @classmethod
     def limit(cls, items: Iterable[Q], n: int) -> Generator[Q, None, None]:
-        for i, x in zip(range(n), items):
+        for _i, x in zip(range(n), items):
             yield x
 
     @classmethod
@@ -111,9 +111,11 @@ class CommonTools(BaseTools):
     @classmethod
     def is_null(cls, x: Any) -> bool:
         """
-        Returns True if:
-            - x is ``None``
-            - x is ``float('NaN')``
+        Returns True for None, float, and ``pd.isna``.
+
+        That is, if and only if:
+            - ``x is None``
+            - ``x is float('NaN')``
             - ``pd.isna(x)``
         """
         try:
@@ -126,7 +128,9 @@ class CommonTools(BaseTools):
     @classmethod
     def is_empty(cls, x: Any) -> bool:
         """
-        Returns True iff either:
+        Returns True if x is None, NaN according to Pandas, or contains 0 items.
+
+        That is, if and only if:
             - x is None
             - pd.is_na(x)
             - x is something with 0 length
@@ -154,17 +158,19 @@ class CommonTools(BaseTools):
     @classmethod
     def is_probable_null(cls, x: Any) -> bool:
         """
-        Returns True iff either:
-            - x is None
-            - pd.isna(x)
+        Returns True if ``x`` is None, NaN according to Pandas, 0 length, or a string representation.
+
+        Specifically, returns True if and only if:
+            - ``x is None``
+            - ``pd.isna(x)``
             - x is something with 0 length
             - x is iterable and has 0 elements (will call ``__iter__``)
             - a str(x) is 'nan', 'n/a', 'null', or 'none'; case-insensitive
 
         Things that are **NOT** probable nulls:
-            - "na"
-            - 0
-            - [None]
+            - ``"na"``
+            - ``0``
+            - ``[None]``
 
         Raises:
             TypeError If ``x`` is an Iterator.
@@ -191,7 +197,8 @@ class CommonTools(BaseTools):
         """
         Gets the first element.
 
-        WARNING: Tries to call ``next(x)``, progressing iterators.
+        .. warning::
+            Tries to call ``next(x)``, progressing iterators.
 
         Args:
             collection: Any iterable
@@ -199,9 +206,10 @@ class CommonTools(BaseTools):
                 or None to indicate the elements themselves should be used
 
         Returns:
-            - The attribute of the first element if ``attr`` is defined on an element
-            - None if the the sequence is empty
-            - None if the sequence has no attribute ``attr``
+            Either ``None`` or the value, according to the rules:
+                - The attribute of the first element if ``attr`` is defined on an element
+                - None if the sequence is empty
+                - None if the sequence has no attribute ``attr``
         """
         try:
             # note: calling iter on an iterator creates a view only
@@ -268,8 +276,10 @@ class CommonTools(BaseTools):
         Yields a 'writer' that does nothing.
 
         Example:
-            >>> with CommonTools.devnull() as devnull:
-            >>>     devnull.write('hello')
+            .. code-block::
+
+                with CommonTools.devnull() as devnull:
+                    devnull.write('hello')
         """
         yield DevNull()
 

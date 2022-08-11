@@ -1,15 +1,15 @@
 """
 Loguru logging extension that provides some additional features.
 Specifically:
-- redirects built-in logging to your loguru logger
-- remembers the handlers added
-- auto-detects compression and serialization from filenames
-- includes extras in non-serializing handlers
-- has a few alternative (possibly better) choices for colors, icons, and levels
-- will complain when you do really stupid things
-- has a convenient notation for configuring from a CLI
-  (e.g. ``--stderr debug --log :INFO:run.log.gz``)
-- mandates utf-8
+    - redirects built-in logging to your loguru logger
+    - remembers the handlers added
+    - auto-detects compression and serialization from filenames
+    - includes extras in non-serializing handlers
+    - has a few alternative (possibly better) choices for colors, icons, and levels
+    - will complain when you do really stupid things
+    - has a convenient notation for configuring from a CLI
+      (e.g. ``--stderr debug --log :INFO:run.log.gz``)
+    - mandates utf-8
 """
 from __future__ import annotations
 

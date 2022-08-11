@@ -2,7 +2,7 @@ import enum
 import logging
 from typing import AbstractSet, Optional, Union
 
-from pocketutils.core.exceptions import XValueError
+from pocketutils.core.exceptions import XKeyError, XValueError
 
 logger = logging.getLogger("pocketutils")
 
@@ -57,12 +57,12 @@ class FlagEnum(enum.Flag):
         .. code-block::
 
             class Flavor(FlagEnum):
-                none = ()
-                bitter = ()
-                sweet = ()
-                sour = ()
-                umami = ()
-            bittersweet = Flavor.bitter | Flavor.sweet
+                NONE = ()
+                BITTER = ()
+                SWEET = ()
+                SOUR = ()
+                UMAMI = ()
+            bittersweet = Flavor.BITTER | Flavor.SWEET
             print(bittersweet.value)  # 1 + 2 == 3
             print(bittersweet.name)   # "bitter|sweet"
 
@@ -95,7 +95,9 @@ class FlagEnum(enum.Flag):
     def or_none(cls, s: Union[str, __qualname__]) -> Optional[__qualname__]:
         """
         Returns a choice by name (or returns ``s`` itself).
-        Returns ``None`` if the choice is not found.
+
+        Returns:
+            ``None`` if the choice is not found.
         """
         try:
             return cls.of(s)
@@ -111,7 +113,7 @@ class FlagEnum(enum.Flag):
             return s
         if isinstance(s, str):
             return cls[cls._fix_lookup(s)]
-        z = cls[0]
+        z = cls(0)
         for m in s:
             z |= cls.of(m)
         return z
@@ -123,23 +125,22 @@ class FlagEnum(enum.Flag):
         return self.name
 
 
-class TrueFalseUnknown(DisjointEnum):
+class TrueFalseEither(DisjointEnum):
     """
     A :class:`pocketutils.core.enums.DisjointEnum` of true, false, or unknown.
     """
 
-    true = ()
-    false = ()
-    unknown = ()
+    TRUE = ()
+    FALSE = ()
+    EITHER = ()
 
     @classmethod
-    def _unmatched_type(cls) -> Optional[__qualname__]:
-        return cls.unknown
+    def _if_not_found(cls, s: Union[str, __qualname__]) -> __qualname__:
+        return cls.EITHER
 
     @classmethod
     def _fix_lookup(cls, s: str) -> str:
-        s = s.lower().strip()
-        return dict(t="true", false="false").get(s, s)
+        return s.upper().strip()
 
 
 class MultiTruth(FlagEnum):
@@ -147,15 +148,55 @@ class MultiTruth(FlagEnum):
     A :class:`pocketutils.core.enums.FlagEnum` for true, false, true+false, and neither.
     """
 
-    false = ()
-    true = ()
+    FALSE = ()
+    TRUE = ()
 
 
 class CleverEnum(DisjointEnum):
     """
-    An enum with a ``.of`` method that finds values with limited string/value fixing.
-    Replaces ``" "``, ``"-"``, and ``"."`` with ``_`` and ignores case in :meth:`of`.
-    May support an "unmatched" type -- a fallback value when there is no match.
+    An enum with a :meth:`of` method that finds values with limited string/value fixing.
+    Replaces ``" "`` and ``"-"``` with ``_`` and ignores case in :meth:`of`.
+    May support an "unmatched" type via :meth:`_if_not_found`,
+    which can return a fallback value when there is no match.
+
+    Example:
+        class Thing(CleverEnum):
+            BUILDING = ()
+            OFFICE_SUPPLY = ()
+            POWER_OUTLET = ()
+
+        x = Thing.of("power outlet")
+
+    Example:
+        class Color(CleverEnum):
+            RED = ()
+            GREEN = ()
+            BLUE = ()
+            OTHER = ()
+
+            @classmethod
+            def _if_not_found(cls, s: Union[str, __qualname__]) -> __qualname__:
+                # raise XValueError(f"No member for value '{s}'", value=s) from None
+                #   ^
+                #   the default implementation
+                logger.warning(f"Color {s} unknown; using {cls.OTHER}")
+                return cls.OTHER
+
+    .. important::
+
+        If :meth:`_if_not_found` is overridden, it should return a member value.
+        (In particular, it should never return ``None``.)
+
+    .. important::
+
+        To use with non-uppercase enum values (e.g. ``Color.red`` instead of ``Color.RED``),
+        override :meth:`_fix_lookup` with this::
+
+            @classmethod
+            def _fix_lookup(cls, s: str) -> str:
+                return s.strip().replace(" ", "_").replace("-", "_").lower()
+                #                                                      ^
+                #                                                    changed
     """
 
     @classmethod
@@ -163,19 +204,15 @@ class CleverEnum(DisjointEnum):
         try:
             return super().of(s)
         except KeyError:
-            unknown = cls._unmatched_type()
-            logger.error(f"Value {s} not found. Using {unknown}")
-            if unknown is None:
-                raise XValueError(f"Value {s} not found and unmatched_type is None", value=s)
-            return unknown
+            return cls._if_not_found(s)
 
     @classmethod
-    def _unmatched_type(cls) -> Optional[__qualname__]:
-        return None
+    def _if_not_found(cls, s: Union[str, __qualname__]) -> __qualname__:
+        raise XKeyError(f"No member for value '{s}'", key=s) from None
 
     @classmethod
     def _fix_lookup(cls, s: str) -> str:
-        return s.strip().replace(" ", "_").replace(".", "_").replace("-", "_").lower()
+        return s.strip().replace(" ", "_").replace("-", "_").upper()
 
 
-__all__ = ["TrueFalseUnknown", "DisjointEnum", "FlagEnum", "CleverEnum"]
+__all__ = ["TrueFalseEither", "DisjointEnum", "FlagEnum", "CleverEnum"]

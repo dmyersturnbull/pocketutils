@@ -1,8 +1,7 @@
 import logging
 import sys
 import time
-import warnings
-from typing import Callable, Optional, Union
+from typing import Callable, Union
 
 from pocketutils.tools.base_tools import BaseTools
 from pocketutils.tools.filesys_tools import FilesysTools
@@ -61,6 +60,7 @@ class ConsoleTools(BaseTools):
     ) -> bool:
         """
         Asks for a confirmation from the user using the builtin ``input``.
+
         Consider using ``typer.prompt`` instead.
             msg: If None defaults to 'Confirm? [yes/no]'
             input_fn: Function to get the user input (its argument is always '')
@@ -89,8 +89,10 @@ class ConsoleTools(BaseTools):
         """
         Writes control characters to stdout to delete the previous line and move the cursor up.
         This only works in a shell.
+
+        Args:
             n: The number of lines to erase
-            writer Write here
+            writer: Function to call (passing the string)
         """
         for _ in range(n):
             writer(ConsoleTools.CURSOR_UP_ONE)

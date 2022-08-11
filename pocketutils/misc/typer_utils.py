@@ -128,7 +128,7 @@ class TyperUtils:
                 dtype.startswith("OptionInfo(") or dtype.startswith("ArgumentInfo(")
             ):
                 raise TypeError(
-                    f"'{k}' annotation is {dtype}!" + "You probably meant to pass it as a default"
+                    f"'{k}' annotation is {dtype}! You probably meant to pass it as a default"
                 )
             if dtype is inspect.Parameter.empty and isinstance(v, ParameterInfo):
                 dtype = v.default.__class__.__name__.strip("'\"")

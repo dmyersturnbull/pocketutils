@@ -29,19 +29,14 @@ class FigureSaver:
     Offers some small, specific extensions over matplotlib's ``figure.savefig``.
 
     Specifically::
-    - can remove the figure from memory each iteration
-    - creates directories as needed
-    - can save a multi-figure PDF
-    - complains about issues
-    - can auto-fix some
-    - the ``FigureSaver.save`` function handles iterators of different types
+        - can remove the figure from memory each iteration
+        - creates directories as needed
+        - can save a multi-figure PDF
+        - complains about issues
+        - can auto-fix some
+        - the ``FigureSaver.save`` function handles iterators of different types
 
-    See ``FigureSaver.save`` for more info.
-    ``clear`` defines the behavior after saving a single figure::
-        - False    ==> do nothing
-        - True     ==> clear it
-        - callable ==> call it with the Figure instance
-
+    See :meth:`save` for more info.
     """
 
     def __init__(
@@ -60,10 +55,11 @@ class FigureSaver:
 
         Args:
             save_under: A parent directory assumed for all saved figures
-            clear: Auto-close each figure after saving
+            clear: Auto-close each figure after saving (if a callable, call it)
             as_type: Force a specific filename suffix (e.g. ``as_type=".jpg")``
             check_paths: Check that paths are valid; without ``sanitize_paths``,
-                         raises an error if a path is invalid
+                         raises an error if a path is invalid;
+                         see :meth:`pocketutils.tools.path_tools.PathTools.sanitize_path`
             sanitize_paths: Try to sanitize paths (implies ``check_paths``)
             log: Call this function with a message indicating that a sanitized path differs
             kwargs: Passed to ``savefig``
@@ -80,13 +76,13 @@ class FigureSaver:
 
     def __mod__(self, tup):
         """
-        See: :meth:`save_one`.
+        See :meth:`save_one`.
         """
         self.save_one(*tup)
 
     def __idiv__(self, tup):
         """
-        See: :meth:`save`.
+        See :meth:`save`.
         """
         self.save(*tup)
 
@@ -218,12 +214,15 @@ class FigureSaver:
 
     def _sanitized_file(self, path: PathLike, overwrite: bool) -> Path:
         """
-        Sanitizes a file path:
+        Sanitizes a file path.
+
+        Specifically:
             - prepends self._save_under if needed
             - warns about issues
 
         Args:
             path: The path, including directory, but excluding self._save_under
+            overwrite: Overwrite the file
         """
         path = Path(path)
         if self._check_paths or self._sanitize_paths:

@@ -1,35 +1,28 @@
 import gzip
 import hashlib
-import importlib.metadata
-import locale
 import logging
 import os
 import pathlib
-import platform
 import shutil
-import socket
 import stat
-import struct
 import sys
 import tempfile
-import traceback
 from contextlib import contextmanager
 from dataclasses import dataclass
-from datetime import datetime, timezone, timedelta
-from getpass import getuser
+from datetime import datetime, timedelta
 from pathlib import Path, PurePath
 from typing import (
     Any,
+    Callable,
     Generator,
     Iterable,
     Mapping,
     Optional,
     Sequence,
     SupportsBytes,
+    Tuple,
     Type,
     Union,
-    Tuple,
-    Callable,
 )
 
 import numpy as np
@@ -37,12 +30,9 @@ import orjson
 import pandas as pd
 import regex
 from defusedxml import ElementTree
-from pocketutils.tools.sys_tools import SystemTools
 
+from pocketutils.core._internal import read_txt_or_gz, write_txt_or_gz
 from pocketutils.core.chars import Chars
-
-from pocketutils.tools.unit_tools import UnitTools
-
 from pocketutils.core.exceptions import (
     AlreadyUsedError,
     ContradictoryRequestError,
@@ -50,11 +40,12 @@ from pocketutils.core.exceptions import (
     FileDoesNotExistError,
     ParsingError,
 )
-from pocketutils.core._internal import read_txt_or_gz, write_txt_or_gz
 from pocketutils.core.input_output import OpenMode, PathLike, Writeable
-from pocketutils.core.web_resource import *
+from pocketutils.core.web_resource import WebResource
 from pocketutils.tools.base_tools import BaseTools
 from pocketutils.tools.path_tools import PathTools
+from pocketutils.tools.sys_tools import SystemTools
+from pocketutils.tools.unit_tools import UnitTools
 
 logger = logging.getLogger("pocketutils")
 COMPRESS_LEVEL = 9
@@ -77,7 +68,7 @@ class PathInfo:
         has_read: Path exists and has the 'r' flag set
         has_write: Path exists and has the 'w' flag set
 
-    All of the additional properties refer to the resolved path,
+    All the additional properties refer to the resolved path,
     except for :meth:`is_symlink`, :meth:`is_valid_symlink`,
     and :meth:`is_broken_symlink`.
     """
@@ -284,7 +275,7 @@ class FilesysTools(BaseTools):
     def prep_dir(cls, path: PathLike, *, exist_ok: bool = True) -> bool:
         """
         Prepares a directory by making it if it doesn't exist.
-        If exist_ok is False, calls logger.warning it already exists
+        If exist_ok is False, calls ``logger.warning`` if ``path`` already exists
         """
         path = Path(path)
         exists = path.exists()
@@ -396,7 +387,7 @@ class FilesysTools(BaseTools):
     @classmethod
     def try_cleanup(cls, path: Path, *, bound: Type[Exception] = PermissionError) -> None:
         """
-        Try to delete a file (probably temp file), if it exists, and log any PermissionError.
+        Try to delete a file (probably temp file), if it exists, and log any ``PermissionError``.
         """
         path = Path(path)
         # noinspection PyBroadException
@@ -409,7 +400,7 @@ class FilesysTools(BaseTools):
     def read_lines_file(cls, path: PathLike, *, ignore_comments: bool = False) -> Sequence[str]:
         """
         Returns a list of lines in the file.
-        Optionally skips lines starting with '#' or that only contain whitespace.
+        Optionally skips lines starting with ``#`` or that only contain whitespace.
         """
         lines = []
         with cls.open_file(path, "r") as f:
@@ -575,8 +566,9 @@ class FilesysTools(BaseTools):
 
     @classmethod
     def write_lines(cls, iterable: Iterable[Any], path: PathLike, mode: str = "w") -> int:
-        """
+        r"""
         Just writes an iterable line-by-line to a file, using '\n'.
+
         Makes the parent directory if needed.
         Checks that the iterable is a "true iterable" (not a string or bytes).
 
@@ -608,7 +600,7 @@ class FilesysTools(BaseTools):
     @classmethod
     def replace_in_file(cls, path: PathLike, changes: Mapping[str, str]) -> None:
         """
-        Uses re.sub repeatedly to modify (AND REPLACE) a file's content.
+        Uses ``regex.sub`` repeatedly to modify (AND REPLACE) a file's content.
         """
         path = Path(path)
         data = path.read_text(encoding="utf-8")
@@ -668,14 +660,14 @@ class FilesysTools(BaseTools):
         Returns None if it could not be determined.
 
         The formatting strings can refer to any of these (will be empty if unknown):
-        - path: Full path
-        - name: File/dir name
-        - path_rel: Path relative to ``self._dir``, or full path if not under
-        - now: formatted current datetime
-        - [mod/create]_dt: Formatted mod/creation datetime
-        - [mod/create]_rel: Mod/create datetime in terms of offset from now
-        - [mod/create]_delta: Formatted timedelta from now
-        - [mod/create]_delta_sec: Number of seconds from now (negative if now < mod/create dt)
+            - path: Full path
+            - name: File/dir name
+            - path_rel: Path relative to ``self._dir``, or full path if not under
+            - now: formatted current datetime
+            - [mod/create]_dt: Formatted mod/creation datetime
+            - [mod/create]_rel: Mod/create datetime in terms of offset from now
+            - [mod/create]_delta: Formatted timedelta from now
+            - [mod/create]_delta_sec: Number of seconds from now (negative if now < mod/create dt)
 
         Args:
             path: A specific path to check
@@ -690,7 +682,10 @@ class FilesysTools(BaseTools):
         """
         path = Path(path)
         if log is None:
-            log = lambda _: None
+
+            def log(_):
+                return None
+
         limit = max_sec if isinstance(max_sec, timedelta) else timedelta(seconds=max_sec)
         now = datetime.now().astimezone()
         info = FilesysTools.get_info(path)

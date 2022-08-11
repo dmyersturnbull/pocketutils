@@ -1,12 +1,67 @@
+import logging
+import os
 import sys
-from typing import Callable, Optional, Sequence
+from copy import copy
+from pathlib import Path
+from typing import Any, Callable, Optional, Sequence, Union
 
 import regex
 
-from pocketutils.core.exceptions import *
+from pocketutils.core import PathLike
+from pocketutils.core.exceptions import ContradictoryRequestError, IllegalPathError
 from pocketutils.tools.base_tools import BaseTools
 
 logger = logging.getLogger("pocketutils")
+
+
+_bad_chars = {
+    "<",
+    ">",
+    ":",
+    '"',
+    "|",
+    "?",
+    "*",
+    "\\",
+    "/",
+    *{chr(c) for c in range(128, 128 + 33)},
+    *{chr(c) for c in range(0, 32)},
+    "\t",
+}
+
+# note that we can't call WindowsPath.is_reserved because it can't be instantiated on non-Linux
+# also, these appear to be different from the ones defined there
+
+# don't handle Long UNC paths
+# also cannot be blank or whitespace
+# the $ suffixed ones are for FAT
+# no CLOCK$, even with an ext
+# also no SCREEN$
+_bad_strs = {
+    "CON",
+    "PRN",
+    "AUX",
+    "NUL",
+    "COM1",
+    "COM2",
+    "COM3",
+    "COM4",
+    "COM5",
+    "COM6",
+    "COM7",
+    "COM8",
+    "COM9",
+    "LPT1",
+    "LPT2",
+    "LPT3",
+    "LPT4",
+    "LPT5",
+    "LPT6",
+    "LPT7",
+    "LPT8",
+    "LPT9",
+}
+_bad_strs_fat = {*_bad_strs, *{"$IDLE$", "CONFIG$", "KEYBD$", "SCREEN$", "CLOCK$", "LST"}}
 
 
 class PathTools(BaseTools):
@@ -122,9 +177,10 @@ class PathTools(BaseTools):
         r"""
         Sanitizes a path node such that it will be fine for major OSes and filesystems.
         For example:
-        - 'plums;and/or;apples' becomes 'plums_and_or_apples' (escaped ; and /)
-        - 'null.txt' becomes '_null_.txt' ('null' is forbidden in Windows)
-        - 'abc  ' becomes 'abc' (no trailing spaces)
+            - 'plums;and/or;apples' becomes 'plums_and_or_apples' (escaped ; and /)
+            - 'null.txt' becomes '_null_.txt' ('null' is forbidden in Windows)
+            - 'abc  ' becomes 'abc' (no trailing spaces)
+
         The behavior is platform-independent -- os, sys, and pathlib are not used.
         For ex, calling sanitize_path_node(r'C:\') returns r'C:\' on both Windows and Linux
         If you want to sanitize a whole path, see sanitize_path instead.
@@ -170,59 +226,13 @@ class PathTools(BaseTools):
                 return m.group(1) + "\\"
             if is_root_or_drive is True:
                 raise IllegalPathError(f"Node '{bit}' is not the root or a drive letter")
-        # note that we can't call WindowsPath.is_reserved because it can't be instantiated on non-Linux
-        # also, these appear to be different from the ones defined there
-        bad_chars = {
-            "<",
-            ">",
-            ":",
-            '"',
-            "|",
-            "?",
-            "*",
-            "\\",
-            "/",
-            *{chr(c) for c in range(128, 128 + 33)},
-            *{chr(c) for c in range(0, 32)},
-            "\t",
-        }
-        # don't handle Long UNC paths
-        # also cannot be blank or whitespace
-        # the $ suffixed ones are for FAT
-        # no CLOCK$, even with an ext
-        # also no SCREEN$
-        bad_strs = {
-            "CON",
-            "PRN",
-            "AUX",
-            "NUL",
-            "COM1",
-            "COM2",
-            "COM3",
-            "COM4",
-            "COM5",
-            "COM6",
-            "COM7",
-            "COM8",
-            "COM9",
-            "LPT1",
-            "LPT2",
-            "LPT3",
-            "LPT4",
-            "LPT5",
-            "LPT6",
-            "LPT7",
-            "LPT8",
-            "LPT9",
-        }
-        if fat:
-            bad_strs += {"$IDLE$", "CONFIG$", "KEYBD$", "SCREEN$", "CLOCK$", "LST"}
         # just dots is invalid
         if set(bit.replace(" ", "")) == "." and bit not in ["..", "."]:
             bit = "_" + bit + "_"
             # raise IllegalPathError(f"Node '{source_bit}' is invalid")
-        for q in bad_chars:
+        for q in _bad_chars:
             bit = bit.replace(q, "_")
+        bad_strs = _bad_strs_fat if fat else _bad_strs
         if bit.upper() in bad_strs:
             # arbitrary decision
             bit = "_" + bit + "_"

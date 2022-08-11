@@ -9,11 +9,17 @@ Adheres to [Semantic Versioning 2.0](https://semver.org/spec/v2.0.0.html) and
 
 - Deprecated methods
 - `SmartEnum` (use `CleverEnum` instead)
+- Memory cache class
+
+### Changed
+
+- Moved `WebResource` to `misc` package
+- Renamed `UnitTools.concentration_to_micromolar` to `parse_molarity`
 
 ### Fixed
 
 - `FigSaver` `as_type` constructor arg
--
+- Gene ontology download working with new URLs
 
 ## [0.8.0] - 2021-10-11
 

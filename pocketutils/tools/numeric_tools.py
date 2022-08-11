@@ -35,8 +35,10 @@ class NumericTools(BaseTools):
     @classmethod
     def iceil(cls, f: SupportsFloat) -> int:
         """
-        Fixes np.ceil to return an Python integer rather than a Numpy float.
-            f: A Python or Numpy float, or something else that defines __float__
+        Fixes ``np.ceil`` to return a Python integer rather than a Numpy float.
+
+        Args:
+            f: A Python or Numpy float, or something else that defines ``__float__``
 
         Returns:
             An integer of the ceiling
@@ -47,8 +49,10 @@ class NumericTools(BaseTools):
     @classmethod
     def ifloor(cls, f: SupportsFloat) -> int:
         """
-        Fixes np.floor to return an Python integer rather than a Numpy float.
-            f: A Python or Numpy float, or something else that defines __float__
+        Fixes ``np.floor`` to return a Python integer rather than a Numpy float.
+
+        Args:
+            f: A Python or Numpy float, or something else that defines ``__float__``
 
         Returns:
             An integer of the ceiling

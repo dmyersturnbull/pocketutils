@@ -2,7 +2,7 @@ from datetime import date, datetime, timezone
 
 import pytest
 
-from pocketutils.core.dot_dict import *
+from pocketutils.core.dot_dict import NestedDotDict
 
 
 class TestDotDict:

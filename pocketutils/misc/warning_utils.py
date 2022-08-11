@@ -13,7 +13,8 @@ class WarningsConfig:
     Also provides :meth:`simplify_format`, which sets a less-verbose warning formatter.
 
     Example:
-        Like this::
+        .. code-block::
+
             (
                 GlobalWarningUtils.simplify_format()
                 .filter_common()

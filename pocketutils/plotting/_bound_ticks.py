@@ -31,7 +31,7 @@ class TickBounder:
         major: Use major tick marks rather than minor
 
     Example:
-        This example will bound maximum width and height of the Axes
+        This example will bind maximum width and height of the Axes
         to the smallest tick that fits the data,
         and will set the minimum width and height to 0::
 

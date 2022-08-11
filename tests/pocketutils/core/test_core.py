@@ -2,10 +2,8 @@ from datetime import datetime
 
 import pytest
 
-from pocketutils.core import *
+from pocketutils.core import LazyWrap, PathLikeUtils, frozenlist
 from pocketutils.core.exceptions import ImmutableError
-
-raises = pytest.raises
 
 
 class TestCore:
@@ -28,7 +26,7 @@ class TestCore:
         assert frozenlist([1, 2]) == frozenlist([1, 2])
         assert frozenlist([1, 2])[0] == 1
         assert list(frozenlist([1, 2])) == list([1, 2])
-        with raises(ImmutableError):
+        with pytest.raises(ImmutableError):
             f = frozenlist([1, 2])
             # noinspection PyUnresolvedReferences
             f[0] = 10

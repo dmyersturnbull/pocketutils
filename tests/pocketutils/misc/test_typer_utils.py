@@ -1,7 +1,7 @@
 import pytest
 from typer.models import ArgumentInfo, OptionInfo
 
-from pocketutils.misc.typer_utils import Arg, Opt, TyperUtils
+from pocketutils.misc.typer_utils import Arg, Opt
 
 
 class TestTyperUtils:

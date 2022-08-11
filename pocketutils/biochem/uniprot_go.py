@@ -1,6 +1,8 @@
+import dataclasses
 import logging
 import os
-from typing import Iterable, List, Mapping, Optional, Union
+from dataclasses import dataclass
+from typing import Collection, Iterable, List, Mapping, Optional, Union
 from urllib import request
 
 import pandas as pd
@@ -21,39 +23,37 @@ from pocketutils.core.input_output import silenced
 go_pattern = regex.compile(
     r"GO:(\d+); ([CFP]):([\dA-Za-z- ,()]+); ([A-Z]+):([A-Za-z-_]+)\.", flags=regex.V1
 )
+GO_OBO_URL = "http://current.geneontology.org/ontology/go.obo"  # nosec
+GO_OBO_FILENAME = "go.obo"
 logger = logging.getLogger("pocketutils")
 
 
+@dataclass(frozen=True, repr=True)
 class FlatGoTerm:
     """
     A Gene Ontology term.
     Not to be confused with GOTerm in goatools: obo_parser.GOTerm
 
     Attributes:
-        ID (str); ex: GO:0005737
-        kind (str: 'P'==process, 'C'==component, 'F'==function)
-        description (str)
-        sourceId (str); ex: IDA
-        sourceName (str); ex: UniProtKB
+        - identifier: (str); ex: GO:0005737
+        - kind: (str: 'P'==process, 'C'==component, 'F'==function)
+        - description: (str)
+        - sourceId: (str); ex: IDA
+        - sourceName: (str); ex: UniProtKB
     """
 
-    def __init_(
-        self,
-        identifier: str,
-        kind: str,
-        description: str,
-        source_id: str,
-        source_name: str,
-    ):
-        self.ID = identifier
-        self.kind = kind
-        self.description = description
-        self.sourceId = source_id
-        self.sourceName = source_name
+    identifier: str
+    kind: str
+    description: str
+    source_id: str
+    source_name: str
 
-    def __init__(self, stwing: str):
-        """Builds a GO term from a string from uniprot_obj['go'].
-        Raises a ValueError if the syntax is wrong.
+    @classmethod
+    def parse(cls, stwing: str):
+        """
+        Builds a GO term from a string from uniprot_obj['go'].
+        Raises:
+            ValueError: if the syntax is wrong.
         """
         match = go_pattern.search(stwing)
         if match is None:
@@ -62,14 +62,16 @@ class FlatGoTerm:
                 value=stwing,
                 pattern=go_pattern,
             )
-        self.ID = "GO:" + match.group(1)
-        self.kind = match.group(2)
-        self.description = match.group(3)
-        self.sourceId = match.group(4)
-        self.sourceName = match.group(5)
+        return FlatGoTerm(
+            "GO:" + match.group(1),
+            match.group(2),
+            match.group(3),
+            match.group(4),
+            match.group(5),
+        )
 
     def to_series(self) -> pd.Series:
-        return pd.Series(self.__dict__)
+        return pd.Series(dataclasses.asdict(self))
 
 
 class UniprotGoTerms:
@@ -108,26 +110,27 @@ class UniprotGoTerms:
 class GoTermsAtLevel:
     """
     Gene ontology terms organized by level.
+
     Example:
-        >>> go_term_ancestors_for_uniprot_id_as_df('P42681', 2)
+        .. code-block::
+
+            go_term_ancestors_for_uniprot_id_as_df('P42681', 2)
     """
 
     def __init__(self) -> None:
-        if os.path.exists("gene_ontology.1_2.obo"):
-            self.obo = obo_parser.GODag("gene_ontology.1_2.obo")
+        if os.path.exists(GO_OBO_FILENAME):
+            self.obo = obo_parser.GODag(GO_OBO_FILENAME)
         else:
             logger.info("Downloading Gene Ontology OBO...")
-            request.urlretrieve(
-                "http://www.geneontology.org/ontology/obo_format_1_2/gene_ontology.1_2.obo"
-            )
-            self.obo = obo_parser.GODag(
-                "gene_ontology.1_2.obo"
-            )  # This will be used in query_obo_term
+            request.urlretrieve(GO_OBO_URL)  # nosec
+            # This will be used in query_obo_term
+            self.obo = obo_parser.GODag(GO_OBO_FILENAME)
             logger.info("Done downloading OBO.")
         self.substruct = UniprotGoTerms()
 
     def query_obo_term(self, term_id: str) -> GOTerm:
-        """Queries a term through the global obo.
+        """
+        Queries a term through the global obo.
         This function wraps the call to raise a ValueError if the term is not found;
         otherwise it only logs a warning.
         """
@@ -143,14 +146,15 @@ class GoTermsAtLevel:
         Note that the level is the minimum number of steps to the root.
 
         Args:
+            term_id: The term
             level: starting at 0 (root)
         """
 
-        def traverse_up(term, buildup_set, level):
-            if term.level == level:
+        def traverse_up(term, buildup_set, lvl):
+            if term.level == lvl:
                 buildup_set.add(term)
             if term.has_parent:
-                return [traverse_up(p, buildup_set, level) for p in term.parents]
+                return [traverse_up(p, buildup_set, lvl) for p in term.parents]
             return None
 
         terms = set()
@@ -158,7 +162,7 @@ class GoTermsAtLevel:
         return terms
 
     def go_term_ancestors_for_uniprot_id(
-        self, uniprot_id: str, level: int, kinds_allowed: Optional[List[str]] = None
+        self, uniprot_id: str, level: int, kinds_allowed: Optional[Collection[str]] = None
     ) -> Iterable[GOTerm]:
         """
         Gets the GO terms associated with a UniProt ID and returns a set of their ancestors at the specified level.
@@ -167,6 +171,7 @@ class GoTermsAtLevel:
 
         Args:
             level: starting at 0 (root)
+            uniprot_id: ID
             kinds_allowed: a set containing any combination of 'P', 'F', or 'C'
         """
         if kinds_allowed is None:
@@ -179,16 +184,26 @@ class GoTermsAtLevel:
             if term.kind in kinds_allowed
         ]
         ancestor_terms = set()
-        for term_id in [t.ID for t in terms]:
+        for term_id in [t.identifier for t in terms]:
             ancestor_terms.update(self.get_ancestors_of_go_term(term_id, level))
         return ancestor_terms
 
     def go_term_ancestors_for_uniprot_id_as_df(
-        self, uniprot_id: str, level: int, kinds_allowed: Optional[List[str]] = None
+        self, uniprot_id: str, level: int, kinds_allowed: Optional[Collection[str]] = None
     ) -> pd.DataFrame:
+        """
+        See go_term_ancestors_for_uniprot_id.
+
+        Args:
+            uniprot_id: ID
+            level: Level
+            kinds_allowed: Can include 'P', 'F', and/or 'C'
+
+        Returns:
+             Pandas DataFrame with columns IDand name.
+        """
         if kinds_allowed is None:
             kinds_allowed = ["P", "F", "C"]
-        """See go_term_ancestors_for_uniprot_id. Returns a Pandas DataFrame with columns IDand name."""
         df = pd.DataFrame(columns=["ID", "name"])
         for term in self.go_term_ancestors_for_uniprot_id(uniprot_id, level, kinds_allowed):
             df.loc[len(df)] = pd.Series({"ID": term.id, "name": term.name, "level": term.level})

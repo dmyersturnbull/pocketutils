@@ -2,10 +2,8 @@ import numpy as np
 import pytest
 
 from pocketutils.core.exceptions import LengthMismatchError, MultipleMatchesError
-from pocketutils.core.mocks import *
-from pocketutils.tools.base_tools import *
-
-raises = pytest.raises
+from pocketutils.core.mocks import Mammal, MockCallable, MockWritable, WritableCallable
+from pocketutils.tools.base_tools import BaseTools
 
 
 class TestBaseTools:
@@ -30,27 +28,26 @@ class TestBaseTools:
 
     def test_only(self):
         only = BaseTools.only
-        with raises(TypeError):
+        with pytest.raises(TypeError):
             # noinspection PyTypeChecker
             only(1)
         assert only(["a"]) == "a"
         assert only("a") == "a"
         assert only({"ab"}) == "ab"
-        with raises(MultipleMatchesError):
+        with pytest.raises(MultipleMatchesError):
             only(["a", "b"])
-        with raises(MultipleMatchesError):
+        with pytest.raises(MultipleMatchesError):
             only("ab")
-        with raises(LookupError):
+        with pytest.raises(LookupError):
             only([])
-        with raises(LookupError):
+        with pytest.raises(LookupError):
             only("")
 
     def test_zip_strict(self):
-        return
-        with raises(TypeError):
+        with pytest.raises(TypeError):
             # noinspection PyTypeChecker
             list(BaseTools.zip_strict(1))
-        with raises(TypeError):
+        with pytest.raises(TypeError):
             # noinspection PyTypeChecker
             len(BaseTools.zip_strict([1, 2], [3, 4]))
         assert len(BaseTools.zip_list([1, 2], [3, 4])) == 2
@@ -59,11 +56,11 @@ class TestBaseTools:
             assert list(z([1, 2], [3, 4])) == [(1, 3), (2, 4)]
             assert list(z()) == []
             assert list(z([])) == []
-            with raises(LengthMismatchError):
+            with pytest.raises(LengthMismatchError):
                 list(z([1], [2, 3]))
-            with raises(LengthMismatchError):
+            with pytest.raises(LengthMismatchError):
                 list(z([1, 2], [3]))
-            with raises(LengthMismatchError):
+            with pytest.raises(LengthMismatchError):
                 list(z([1], []))
 
     def test_to_true_iterable(self):
@@ -76,7 +73,7 @@ class TestBaseTools:
 
     def test_look(self):
         f = BaseTools.look
-        with raises(TypeError):
+        with pytest.raises(TypeError):
             # noinspection PyTypeChecker
             f(1, 1)
         assert f(Mammal("cat"), "species") == "cat"

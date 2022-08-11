@@ -5,7 +5,6 @@ import subprocess  # nosec
 import textwrap
 import warnings
 from copy import copy
-from enum import Enum
 from pathlib import PurePath
 from queue import Queue
 from threading import Thread
@@ -40,14 +39,16 @@ class CallTools(BaseTools):
     @classmethod
     def call_cmd(cls, *cmd: str, **kwargs) -> subprocess.CompletedProcess:
         """
-        Calls subprocess.run with capture_output=True.
+        Calls ``subprocess.run`` with capture_output=True.
         Logs a debug statement with the command beforehand.
             cmd: A sequence to call
-            kwargs: Passed to subprocess.run
+            kwargs: Passed to ``subprocess.run``
         """
         warnings.warn("call_cmd will be removed; use subprocess.check_output instead")
         logger.debug("Calling '{}'".format(" ".join(cmd)))
-        return subprocess.run(*[str(c) for c in cmd], capture_output=True, check=True, **kwargs)
+        args = [str(c) for c in cmd]
+        kwargs = dict(capture_output=True, check=True, **kwargs)
+        return subprocess.run(*args, **kwargs)  # nosec
 
     @classmethod
     def call_cmd_utf(
@@ -68,7 +69,7 @@ class CallTools(BaseTools):
         if "cwd" in kwargs and isinstance(kwargs["path"], PurePath):
             kwargs["cwd"] = str(kwargs["cwd"])
         try:
-            x = subprocess.run(
+            calling = dict(
                 *[str(c) for c in cmd],
                 capture_output=True,
                 check=True,
@@ -76,6 +77,7 @@ class CallTools(BaseTools):
                 encoding="utf8",
                 **kwargs,
             )
+            x = subprocess.run(**calling)  # nosec
             log.debug(f"stdout: '{x.stdout}'")
             log.debug(f"stderr: '{x.stderr}'")
             x.stdout = x.stdout.strip()
@@ -138,7 +140,8 @@ class CallTools(BaseTools):
             callback = cls.smart_log
         cmd = [str(p) for p in cmd]
         logger.debug("Streaming '{}'".format(" ".join(cmd)))
-        p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, **kwargs)
+        calling = dict(stdout=subprocess.PIPE, stderr=subprocess.PIPE, **kwargs)
+        p = subprocess.Popen(cmd, **calling)  # nosec
         try:
             q = Queue()
             Thread(target=cls._reader, args=[False, p.stdout, q]).start()

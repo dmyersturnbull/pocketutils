@@ -3,8 +3,6 @@ import pytest
 
 from pocketutils.tools.numeric_tools import NumericTools
 
-raises = pytest.raises
-
 
 class TestPandasTools:
     def test_slice_bounded(self):

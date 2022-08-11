@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import Optional
+
 import regex
 
 from pocketutils.tools.string_tools import StringTools
@@ -11,7 +13,7 @@ class RefDims(dict):
     Reference widths and heights by name.
 
     Example:
-        Ex::
+        .. code-block::
 
             widths[1"]
             widths['1/3 2_col']
@@ -22,10 +24,9 @@ class RefDims(dict):
         For example, (1/3) 2_col will subtract off the appropriate padding for 3 cols (2 spaces shared between 3 columns).
         The size is then rounded to sigfigs after -- normally 6 sigfigs, but overridden with width_sigfigs / height_sigfigs.
         The sum / difference is applied after.
-
     """
 
-    def __init__(self, axis: str, n_sigfigs: int = 6):
+    def __init__(self, axis: str, n_sigfigs: Optional[int] = 6):
         super().__init__()
         self.axis = axis
         self.n_sigfigs = n_sigfigs
@@ -47,7 +48,8 @@ class RefDims(dict):
         # If name is empty or double quote, assume it means inch (ex: '1' is 1 inch; 1/3 is 1/3 inch)
         # And in this case, ignore padding (take the size as-is, except for rounding)
         # For ex, '1/3 "' gets converted to 0.333333 if self.n_sigfigs==6
-        # Whereas if the user defined 'inch', then '1/3 inch' will get padding removed, so it might be, say, round(1/3 - 2*0.1/3)
+        # Whereas if the user defined 'inch', then '1/3 inch' will get padding removed
+        # so it might be, say, round(1/3 - 2*0.1/3)
         item = str(item)
         pat = regex.compile(r'^ *([0-9.]+) *"? *$', flags=regex.V1)
         match = pat.fullmatch(item.lower())
@@ -69,9 +71,10 @@ class RefDims(dict):
         frac = denominator / numerator  # flip for simplicity
         # Note the math here:
         # Subtract off the padding needed
-        # If it's it's 1/3 of some value, we'll need to add 2 pieces of padding shared between the three
+        # If it's 1/3 of some value, we'll need to add 2 pieces of padding shared between the three
         # This is then 2/3*padding per unit ==> so subtract it
-        return UnitTools.round_to_sigfigs(name_val / frac - (frac - 1) * pad / frac, self.n_sigfigs)
+        z = name_val / frac - (frac - 1) * pad / frac
+        return UnitTools.round_to_sigfigs(z, self.n_sigfigs)
 
     def __setitem__(self, key: str, value: float):
         try:

@@ -38,7 +38,7 @@ class UnitTools(BaseTools):
             - ``approx_time_wrt(date(2021, 10, 1), datetime(2021, 10, 1, 11, 0, 0, 2, 22))  # "2021-01-12 00:00:02.000022"``
         """
         delta = now - then if now > then else then - now
-        tot_days = (delta.days) + (delta.seconds / 86400) + (delta.microseconds / 86400 / 10 ** 6)
+        tot_days = (delta.days) + (delta.seconds / 86400) + (delta.microseconds / 86400 / 10**6)
         tot_secs = tot_days * 86400
         _today = "" if skip_today and then.date() == now.date() else "%Y-%m-%d "
         if tot_days > sig * 365.24219:
@@ -84,7 +84,8 @@ class UnitTools(BaseTools):
     @classmethod
     def ms_to_minsec(cls, ms: int, space: str = "") -> str:
         """
-        Converts a number of milliseconds to one of the following formats:
+        Converts a number of milliseconds to one of the following formats.
+        Will be one of these:
             - 10ms         if < 1 sec
             - 10:15        if < 1 hour
             - 10:15:33     if < 1 day
@@ -127,7 +128,7 @@ class UnitTools(BaseTools):
         return nicesize(n_bytes, space=space)
 
     @classmethod
-    def round_to_sigfigs(cls, num: SupportsFloat, sig_figs: int) -> float:
+    def round_to_sigfigs(cls, num: SupportsFloat, sig_figs: Optional[int]) -> float:
         """
         Round to specified number of sigfigs.
 
@@ -138,6 +139,8 @@ class UnitTools(BaseTools):
         Returns:
             A Python integer
         """
+        if sig_figs is None:
+            return float(num)
         if sig_figs < 0:
             raise OutOfRangeError(f"sig_figs {sig_figs} is negative", minimum=0)
         num = float(num)
@@ -167,7 +170,10 @@ class UnitTools(BaseTools):
             adjust_units: If False, will always use micromolar
             use_sigfigs: If True, rounds to a number of significant figures; otherwise round to decimal places
             space: Space char between digits and units;
-                   good choices are empty, ASCII space, Chars.narrownbsp, Chars.thinspace, and Chars.nbsp.
+                   good choices are empty, ASCII space,
+                   :attr:`pocketutils.core.chars.Chars.narrownbsp`,
+                   :attr:`pocketutils.core.chars.Chars.thinspace`,
+                   and :attr:`pocketutils.core.chars.Chars.nbsp`.
 
         Returns:
             The concentration with a suffix of µM, mM, nM, or mM
@@ -216,7 +222,7 @@ class UnitTools(BaseTools):
             - The drug and dose must be separated by at least one non-alphanumeric, non-dot, non-hyphen character.
             - Units must follow the digits, separated by at most whitespace, and are case-sensitive.
         """
-        # note the lazy ops in the first group and in the non-(alphanumeric/dot/dash) separator between the drug and dose
+        # lazy ops in the first group and in the non-(alphanumeric/dot/dash) separator between the drug and dose
         pat = regex.compile(
             r"^\s*(.*?)(?:[^A-Za-z0-9.\-]+?[\s(\[{]*(\d+(?:.\d*)?)\s*([mµunpf]M)\s*[)\]}]*)?\s*$",
             flags=regex.V1,
@@ -257,19 +263,34 @@ class UnitTools(BaseTools):
         return None
 
     @classmethod
-    def concentration_to_micromolar(cls, digits: Union[str, float], units: str) -> float:
+    def concentration_to_micromolar(cls, digits: SupportsFloat, units: str) -> float:
         """
-        Ex: concentration_to_micromolar(53, 'nM')  # returns 0.053
+        Converts a concentration with units to micromolar.
+
+        Args:
+            digits: Float or float-compatible value
+            units: Units that ``digits`` are in
+
+        Example:
+            .. code-block::
+
+                concentration_to_micromolar(53, 'nM')  # returns 0.053
+
+        See Also:
+            :meth:`extract_micromolar`
         """
-        return float(digits) * {
-            "M": 1e6,
-            "mM": 1e3,
-            "µM": 1,
-            "uM": 1,
-            "nM": 1e-3,
-            "pM": 1e-6,
-            "fM": 1e-9,
-        }[units]
+        return (
+            float(digits)
+            * {
+                "M": 1e6,
+                "mM": 1e3,
+                "µM": 1,
+                "uM": 1,
+                "nM": 1e-3,
+                "pM": 1e-6,
+                "fM": 1e-9,
+            }[units]
+        )
 
     @classmethod
     def canonicalize_quantity(cls, s: str, dimensionality: str) -> Quantity:
@@ -279,7 +300,7 @@ class UnitTools(BaseTools):
         Args:
             s: The string to parse; e.g. ``"1 m/s^2"``.
                Unit names and symbols permitted, and spaces may be omitted.
-            dimensionality: The resulting Quantity is check against this;
+            dimensionality: The resulting Quantity is checked against this;
                             e.g. ``"[length]/[meter]^2"``
 
         Returns:

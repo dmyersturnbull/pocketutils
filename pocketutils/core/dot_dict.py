@@ -5,7 +5,7 @@ import sys
 from copy import copy
 from datetime import date, datetime
 from pathlib import Path, PurePath
-from typing import Any, ByteString, Callable, Mapping, Optional, Sequence, Iterable, Collection
+from typing import Any, ByteString, Callable, Collection, Iterable, Mapping, Optional, Sequence
 from typing import Tuple as Tup
 from typing import Type, TypeVar, Union
 

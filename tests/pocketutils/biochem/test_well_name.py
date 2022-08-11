@@ -2,7 +2,7 @@ import pytest
 from hypothesis import given
 from hypothesis.strategies import integers
 
-from pocketutils.biochem.multiwell_plates import *
+from pocketutils.biochem.multiwell_plates import WB0, WB1, ParsingWB1, WbFactory
 
 
 class TestWellBase:

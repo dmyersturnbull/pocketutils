@@ -13,9 +13,9 @@ pkg = Path(__file__).absolute().parent.name
 logger = logging.getLogger(pkg)
 metadata = None
 try:
-    metadata = __load(Path(__file__).absolute().parent.name)
+    metadata = __load(pkg)
     __status__ = "Development"
-    __copyright__ = "Copyright 2016–2021"
+    __copyright__ = "Copyright 2016–2022"
     __date__ = "2020-09-01"
     __uri__ = metadata["home-page"]
     __title__ = metadata["name"]

@@ -1,11 +1,8 @@
 import pytest
-from hypothesis import given, strategies
 
-from pocketutils.core.chars import *
-from pocketutils.core.mocks import *
-from pocketutils.tools.string_tools import *
-
-raises = pytest.raises
+from pocketutils.core.chars import Chars
+from pocketutils.core.mocks import Mammal
+from pocketutils.tools.string_tools import StringTools
 
 
 class TestStringTools:
@@ -27,7 +24,7 @@ class TestStringTools:
         assert f(5.0) == "5"
         assert f(5) == "5"
         assert f(1e-10) == str(1e-10)
-        with raises(TypeError):
+        with pytest.raises(TypeError):
             # noinspection PyTypeChecker
             f([1])
 
@@ -126,7 +123,7 @@ class TestStringTools:
         assert f(-float("Inf")) == Chars.minus + Chars.inf
         assert f(0) == "0"
         assert f(1111111) == "+111100"
-        with raises(ValueError):
+        with pytest.raises(ValueError):
             f(0.0, n_sigfigs=0)
 
     def test_pretty_function(self):

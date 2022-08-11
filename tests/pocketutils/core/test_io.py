@@ -2,8 +2,8 @@ from io import StringIO
 
 import pytest
 
-from pocketutils.core.input_output import *
-from pocketutils.core.mocks import *
+from pocketutils.core.input_output import Capture, DelegatingWriter, OpenMode
+from pocketutils.core.mocks import MockWritable
 
 
 class TestIo:

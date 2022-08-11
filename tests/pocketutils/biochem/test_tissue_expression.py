@@ -4,14 +4,13 @@ from pathlib import Path
 
 import pytest
 
-from pocketutils.biochem.tissue_expression import *
+from pocketutils.biochem.tissue_expression import TissueTable
+from pocketutils.tools.common_tools import CommonTools
 
 logger = logging.getLogger("pocketutils.test")
-run_integration = os.environ.get("POCKETUTILS_RUN_INTEGRATION_TESTS", "").lower() in [
-    "true",
-    "1",
-    "yes",
-]
+run_integration = CommonTools.parse_bool(
+    os.environ.get("POCKETUTILS_RUN_INTEGRATION_TESTS", "false")
+)
 
 
 class TestTissueExpression:

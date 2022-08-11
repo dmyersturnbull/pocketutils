@@ -12,11 +12,11 @@
 [![Maintainability (Code Climate)](https://api.codeclimate.com/v1/badges/eea2b741dbbbb74ad18a/maintainability)](https://codeclimate.com/github/dmyersturnbull/pocketutils/maintainability)
 [![Scrutinizer Code Quality](https://scrutinizer-ci.com/g/dmyersturnbull/pocketutils/badges/quality-score.png?b=main)](https://scrutinizer-ci.com/g/dmyersturnbull/pocketutils/?branch=main)
 
-Adorable little Python functions for you to copy or import.
+Adorable little Python functions for you to copy or import,
+[Apache](https://spdx.org/licenses/Apache-2.0.html)-licensed.
 
 `pip install pocketutils` or
 `pip install pocketutils[all]`
-[Apache](https://spdx.org/licenses/Apache-2.0.html)-licensed.
 
 ### Basic usage – `Tools`
 
@@ -80,5 +80,5 @@ _Even more, albeit more obscure:_
 [browse the code](https://github.com/dmyersturnbull/pocketutils/tree/main/pocketutils).
 [New issues](https://github.com/dmyersturnbull/pocketutils/issues) and pull requests are welcome.
 Please refer to the [contributing guide](https://github.com/dmyersturnbull/pocketutils/blob/main/CONTRIBUTING.md)
-and [security policy](https://github.com/dmyersturnbull/pocketutils/blob/main/SECURITY.md).  
+and [security policy](https://github.com/dmyersturnbull/pocketutils/blob/main/SECURITY.md).
 Generated with tyrannosaurus: `tyrannosaurus new tyrannosaurus`

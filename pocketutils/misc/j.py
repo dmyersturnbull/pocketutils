@@ -33,8 +33,8 @@ class J:
 
     @classmethod
     def full(cls, df: pd.DataFrame) -> None:
-        with pd.option_context("display.max_rows", 10 ** 10):
-            with pd.option_context("display.max_columns", 10 ** 10):
+        with pd.option_context("display.max_rows", 10**10):
+            with pd.option_context("display.max_columns", 10**10):
                 display(df)
 
     @classmethod

@@ -3,6 +3,7 @@ import sys
 from contextlib import contextmanager
 from typing import (
     Any,
+    ByteString,
     Callable,
     Generator,
     Iterable,
@@ -12,18 +13,11 @@ from typing import (
     Tuple,
     TypeVar,
     Union,
-    ByteString,
 )
-
-from pocketutils.core.input_output import Writeable
 
 from pocketutils.core._internal import look as _look
-from pocketutils.core.exceptions import (
-    LengthError,
-    LengthMismatchError,
-    MultipleMatchesError,
-    XTypeError,
-)
+from pocketutils.core.exceptions import LengthMismatchError, MultipleMatchesError, XTypeError
+from pocketutils.core.input_output import Writeable
 
 logger = logging.getLogger("pocketutils")
 Y = TypeVar("Y")
@@ -37,7 +31,8 @@ class BaseTools:
         """
         Returns whether this is a lambda function. Will return False for non-callables.
         """
-        LAMBDA = lambda: 0
+        # noinspection PyPep8Naming
+        LAMBDA = lambda: 0  # noqa: E731
         if not hasattr(function, "__name__"):
             return False  # not a function
         return (
@@ -130,15 +125,17 @@ class BaseTools:
             if len(failures) == 0:
                 yield tuple(values)
             elif len(failures) == 1:
-                raise LengthError(f"Too few elements ({n_elements}) along axis {failures[0]}")
+                raise LengthMismatchError(
+                    f"Too few elements ({n_elements}) along axis {failures[0]}"
+                )
             elif len(failures) < len(iters):
-                raise LengthError(f"Too few elements ({n_elements}) along axes {failures}")
+                raise LengthMismatchError(f"Too few elements ({n_elements}) along axes {failures}")
             n_elements += 1
 
     @classmethod
     def zip_list(cls, *args) -> List[Tuple[Any]]:
         """
-        Same as ``zip_strict``, but more informative.
+        Same as :meth:`zip_strict`, but more informative.
         Converts to a list and can provide a more detailed error message.
         Zips two sequences into a list of tuples and raises an
         IndexError if the lengths don't match.
@@ -208,13 +205,13 @@ class BaseTools:
         """
         Returns an empty context (literally just yields).
         Useful to simplify when a generator needs to be used depending on a switch.
-        Ex:
+        Ex::
             if verbose_flag:
                 do_something()
             else:
                 with Tools.silenced():
                     do_something()
-        Can become:
+        Can become::
             with (Tools.null_context() if verbose else Tools.silenced()):
                 do_something()
         """
@@ -223,13 +220,14 @@ class BaseTools:
     @classmethod
     def look(cls, obj: Y, attrs: Union[str, Iterable[str], Callable[[Y], Z]]) -> Optional[Z]:
         """
+        Follows a dotted syntax for getting an item nested in class attributes.
         Returns the value of a chain of attributes on object ``obj``,
         or None any object in that chain is None or lacks the next attribute.
 
         Example:
             Get a kitten's breed::
 
-            BaseTools.look(kitten), 'breed.name')  # either None or a string
+                BaseTools.look(kitten), 'breed.name')  # either None or a string
 
         Args:
             obj: Any object
@@ -297,8 +295,6 @@ class BaseTools:
             return getattr(logger, log.lower())
         elif callable(log):
             return log
-        elif hasattr(log, "write") and getattr(log, "write"):
-            return getattr(log, "write")
         elif hasattr(log, "write"):
             return log.write
         else:

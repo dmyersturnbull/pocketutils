@@ -1,6 +1,6 @@
 import pytest
 
-from pocketutils.core.iterators import *
+from pocketutils.core.iterators import SeqIterator, TieredIterator
 
 
 class TestIterators:

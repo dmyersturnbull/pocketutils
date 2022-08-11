@@ -6,7 +6,7 @@ import numpy as np
 import orjson
 import regex
 
-from pocketutils.core.chars import *
+from pocketutils.core.chars import Chars
 from pocketutils.core.exceptions import OutOfRangeError, XTypeError, XValueError
 from pocketutils.tools.base_tools import BaseTools
 
@@ -165,6 +165,7 @@ class StringTools(BaseTools):
         Double and single quotes are handled.
         """
         pat = regex.compile(r"""((?:[^\t"']|"[^"]*"|'[^']*')+)""", flags=regex.V1)
+
         # Don't strip double 2x quotes: ex ""55"" should be "55", not 55
         def strip(i: str) -> str:
             if i.endswith('"') or i.endswith("'"):
@@ -184,6 +185,8 @@ class StringTools(BaseTools):
         null: Optional[str] = None,
     ) -> Optional[str]:
         """
+        Truncates a string and adds ellipses, if needed.
+
         Returns a string if it has ``n`` or fewer characters;
         otherwise truncates to length ``n-1`` and appends ``…`` (UTF character).
         If ``s`` is None and ``always_dots`` is True, returns ``n`` copies of ``.`` (as a string).
@@ -226,7 +229,7 @@ class StringTools(BaseTools):
         Returns an element with the highest ``len``.
         """
         mx = ""
-        for i, x in enumerate(parts):
+        for _i, x in enumerate(parts):
             if len(x) > len(mx):
                 mx = x
         return mx
@@ -242,7 +245,7 @@ class StringTools(BaseTools):
     def strip_off_start(cls, s: str, pre: str) -> str:
         """
         Strips the full string ``pre`` from the start of ``str``.
-        See ``Tools.strip_off`` for more info.
+        See :meth:`strip_off` for more info.
         """
         if not isinstance(pre, str):
             raise XTypeError(
@@ -256,7 +259,7 @@ class StringTools(BaseTools):
     def strip_off_end(cls, s: str, suf: str) -> str:
         """
         Strips the full string ``suf`` from the end of ``str``.
-        See `Tools.strip_off` for more info.
+        See :meth:`strip_off` for more info.
         """
         if not isinstance(suf, str):
             raise TypeError(f"{suf} is not a string")
@@ -315,6 +318,7 @@ class StringTools(BaseTools):
     def strip_brackets(cls, text: str) -> str:
         """
         Strips any and all pairs of brackets from start and end of a string, but only if they're paired.
+
         See Also:
              strip_paired
         """
@@ -387,7 +391,8 @@ class StringTools(BaseTools):
             .. code-block::
                 StringTools.strip_paired("[(abc]", [("(", ")"), ("[", "]"))  # returns "(abc"
 
-        Also see ``strip_brackets``
+        See Also:
+            strip_brackets
         """
         if any([a for a in pieces if len(a) != 2]):
             raise XValueError(
@@ -631,10 +636,14 @@ class StringTools(BaseTools):
         """
         Join elements into a str more easily than ''.join. Just simplifies potentially long expressions.
         Won't break with ValueError if the elements aren't strs.
-        Ex:
-            - StringTools.join([1,2,3])  # "1    2    3"
-            - StringTools.join(cars, sep=',', attr='make', prefix="(", suffix=")")`  # "(Ford),(Ford),(BMW)"
 
+        Example:
+            .. code-block::
+
+                - StringTools.join([1,2,3])  # "1    2    3"
+                - StringTools.join(cars, sep=',', attr='make', prefix="(", suffix=")")`  # "(Ford),(Ford),(BMW)"
+
+        Args:
             seq: Sequence of elements
             sep: Delimiter
             attr: Get this attribute from each element (in `seq`), or use the element itself if None

@@ -81,11 +81,11 @@ def nicesize(nbytes: int, space: str = "") -> str:
             Formatted string
     """
     data = {
-        "PiB": 1024 ** 5,
-        "TiB": 1024 ** 4,
-        "GiB": 1024 ** 3,
-        "MiB": 1024 ** 2,
-        "KiB": 1024 ** 1,
+        "PiB": 1024**5,
+        "TiB": 1024**4,
+        "GiB": 1024**3,
+        "MiB": 1024**2,
+        "KiB": 1024**1,
     }
     for suffix, scale in data.items():
         if nbytes >= scale:
@@ -156,6 +156,5 @@ __all__ = [
     "PathLikeUtils",
     "read_txt_or_gz",
     "write_txt_or_gz",
-    "GZ_SUFFIXES",
-    "BZ2_SUFFIXES",
+    "GZ_BZ2_SUFFIXES",
 ]

@@ -9,8 +9,7 @@ from typing import Any, TypeVar, Union
 
 import requests
 
-# noinspection PyUnresolvedReferences
-from pocketutils.core import PathLike, PathLikeUtils
+from pocketutils.core import PathLike
 
 T = TypeVar("T", covariant=True)
 Y = TypeVar("Y")

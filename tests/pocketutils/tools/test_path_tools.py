@@ -3,9 +3,7 @@ import os
 import pytest
 
 from pocketutils.core.exceptions import IllegalPathError
-from pocketutils.tools.path_tools import *
-
-raises = pytest.raises
+from pocketutils.tools.path_tools import PathTools
 
 
 class TestPathTools:
@@ -54,7 +52,7 @@ class TestPathTools:
         assert str(x("..\\5")) == "../5"
         assert str(x("xyz...", is_file=False)) == "xyz"
         assert str(x("abc\\.\\xyz\\n.", is_file=False)) == "abc/xyz/n"
-        with raises(IllegalPathError):
+        with pytest.raises(IllegalPathError):
             x("x" * 255)
         assert str(x("NUL")) == "_NUL_"
         assert str(x("nul")) == "_nul_"

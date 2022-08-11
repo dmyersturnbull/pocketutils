@@ -2,7 +2,7 @@ from datetime import datetime
 
 import pytest
 
-from pocketutils.misc.magic_template import *
+from pocketutils.misc.magic_template import MagicTemplate
 
 
 class TestTemplates:

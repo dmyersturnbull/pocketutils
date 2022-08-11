@@ -1,9 +1,4 @@
-from pathlib import Path
-
-import pandas as pd
 import pytest
-
-from pocketutils.core.web_resource import *
 
 
 class TestWebResource:

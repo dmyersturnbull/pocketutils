@@ -1,9 +1,8 @@
 from __future__ import annotations
 
 import logging
-from collections import Mapping
 from dataclasses import dataclass
-from typing import AbstractSet, Any, Callable, Sequence, Union
+from typing import AbstractSet, Any, Callable, Mapping, Sequence, Union
 
 from notifiers import notify
 from notifiers.core import Response, get_notifier

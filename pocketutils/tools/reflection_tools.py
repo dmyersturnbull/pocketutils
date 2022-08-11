@@ -87,8 +87,8 @@ class ReflectionTools:
         Gets a **class** by its fully-resolved class name.
 
         Args:
-            fully_qualified:
-            clazz:
+            fully_qualified: Dotted syntax
+            clazz: Class
 
         Returns:
             The Type

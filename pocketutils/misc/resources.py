@@ -1,13 +1,11 @@
 import logging
-from datetime import datetime, timedelta
 from pathlib import Path
-from typing import AbstractSet, MutableMapping, Optional, Tuple, Union, Any
+from typing import AbstractSet, Any, MutableMapping, Optional
 
 import orjson
 
 from pocketutils.core import PathLike
-from pocketutils.core._internal import read_txt_or_gz, JSON_SUFFIXES, TOML_SUFFIXES, GZ_BZ2_SUFFIXES
-from pocketutils.core.chars import Chars
+from pocketutils.core._internal import GZ_BZ2_SUFFIXES, read_txt_or_gz
 from pocketutils.core.dot_dict import NestedDotDict
 from pocketutils.core.exceptions import (
     DirDoesNotExistError,
@@ -17,7 +15,6 @@ from pocketutils.core.exceptions import (
 )
 from pocketutils.tools.common_tools import CommonTools
 from pocketutils.tools.filesys_tools import FilesysTools
-from pocketutils.tools.unit_tools import UnitTools
 
 _logger = logging.getLogger("pocketutils")
 

@@ -98,7 +98,7 @@ class FancyColorSchemes:
     @classmethod
     def qualitative_tol_dark_mod_6(cls) -> Sequence[str]:
         """
-        "Dark" color scheme from https://personal.sron.nl/~pault/#sec:qualitative
+        "Dark" color scheme from https://personal.sron.nl/~pault/#sec:qualitative.
         No black and reordered red and yellow.
         """
         return ["#222255", "#225555", "#225522", "#663333", "#666633", "#551144"]
@@ -106,7 +106,7 @@ class FancyColorSchemes:
     @classmethod
     def qualitative_tol_high_contrast_6(cls) -> Sequence[str]:
         """
-        "High-contrast" color scheme from https://personal.sron.nl/~pault/#sec:qualitative
+        "High-contrast" color scheme from https://personal.sron.nl/~pault/#sec:qualitative.
         Reordered. No gray.
         """
         return ["#0077bb", "#ee3377", "#33bbee", "#cc3311", "#009988", "#ee7733"]
@@ -114,7 +114,7 @@ class FancyColorSchemes:
     @classmethod
     def qualitative_tol_vibrant_6(cls) -> Sequence[str]:
         """
-        "Vibrant" color scheme from https://personal.sron.nl/~pault/#sec:qualitative
+        "Vibrant" color scheme from https://personal.sron.nl/~pault/#sec:qualitative.
         Gray was removed.
         """
         return ["#0077BB", "#CC3311", "#009988", "#EE7733", "#33BBEE", "#EE3377"]
@@ -122,11 +122,8 @@ class FancyColorSchemes:
     @classmethod
     def qualitative_tol_muted_9(cls) -> Sequence[str]:
         """
-        "Muted" color scheme from https://personal.sron.nl/~pault/#sec:qualitative
+        "Muted" color scheme from https://personal.sron.nl/~pault/#sec:qualitative.
         Gray was removed.
-
-        Returns:
-
         """
         return [
             "#332288",
@@ -143,7 +140,9 @@ class FancyColorSchemes:
 
 class FancyCmaps:
     """
-    Very useful colormaps. Most importantly:
+    Very useful colormaps.
+
+    Most importantly:
         - white_red
         - white_blue
         - blue_white

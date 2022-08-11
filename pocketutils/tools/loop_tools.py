@@ -2,7 +2,6 @@ import itertools
 import logging
 import multiprocessing
 import time
-import warnings
 from datetime import datetime
 from typing import (
     Any,
@@ -68,7 +67,7 @@ class LoopTools(BaseTools):
         n_cores: int = 2,
         poll_sec: float = 0.4,
     ) -> None:
-        """
+        r"""
         Process items with multiprocessing and a rotating cursor with % complete.
 
         Args:

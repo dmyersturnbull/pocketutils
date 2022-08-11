@@ -6,7 +6,7 @@ import pandas as pd
 
 from pocketutils.core import PathLike
 from pocketutils.core.exceptions import LookupFailedError
-from pocketutils.core.web_resource import WebResource
+from pocketutils.misc.web_resource import WebResource
 
 
 class TissueTable(pd.DataFrame):
@@ -29,10 +29,10 @@ class TissueTable(pd.DataFrame):
         filter_fn: Callable[[pd.DataFrame], pd.DataFrame] = pd.DataFrame.dropna,
     ) -> TissueTable:
         """
-        Gets a DataFrame of Human Protein Atlas tissue expression data,
-        indexed by Gene name and with the 'Gene' and 'Reliability' columns dropped.
+        Gets a DataFrame of Human Protein Atlas tissue expression data.
+        The data are indexed by Gene name and with the 'Gene' and 'Reliability' columns dropped.
         The expression level ('Level') is replaced using this map: {'Not detected': 0, 'Low': 1, 'Medium': 2, 'High': 3}.
-        Downloads the file from http://www.proteinatlas.org/download/normal_tissue.tsv.zip
+        Downloads the file from https://www.proteinatlas.org/download/normal_tissue.tsv.zip
         and reloads from normal_tissue.tsv.gz thereafter.
         """
         if path is None:

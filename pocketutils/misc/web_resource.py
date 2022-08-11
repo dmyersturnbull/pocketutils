@@ -1,4 +1,3 @@
-import enum
 import gzip
 import logging
 import shutil

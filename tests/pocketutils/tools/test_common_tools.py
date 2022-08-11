@@ -2,10 +2,8 @@ import numpy as np
 import pytest
 import regex
 
-from pocketutils.core.mocks import *
+from pocketutils.core.mocks import Mammal
 from pocketutils.tools.common_tools import CommonTools
-
-raises = pytest.raises
 
 
 class TestCommon:
@@ -23,29 +21,29 @@ class TestCommon:
         assert f(lambda: 5) == 5
         assert f(fail, exception=ValueError) is None
         assert f(fail, exception=Exception) is None
-        with raises(ValueError):
+        with pytest.raises(ValueError):
             f(fail, exception=TypeError)
-        assert f(fail, fail_val=-1) is -1
+        assert f(fail, fail_val=-1) == -1
 
     def test_or_raise(self):
         f = CommonTools.or_raise
         assert f(5) == 5
-        with raises(LookupError):
+        with pytest.raises(LookupError):
             f(None)
         assert f(5, lambda s: "abc") == "abc"
-        with raises(AttributeError):
+        with pytest.raises(AttributeError):
             f(5, lambda s: s.dne)
-        with raises(ValueError):
+        with pytest.raises(ValueError):
             f(None, or_else=ValueError)
 
     def test_iterator_has_elements(self):
         f = CommonTools.iterator_has_elements
         assert not f(iter([]))
         assert f(iter([1]))
-        with raises(TypeError):
+        with pytest.raises(TypeError):
             # noinspection PyTypeChecker
             f(None)
-        with raises(TypeError):
+        with pytest.raises(TypeError):
             f([1])
 
     def test_is_null(self):
@@ -89,7 +87,7 @@ class TestCommon:
         f = CommonTools.unique
         assert f([1, 1, 2, 1, 3, 2]) == [1, 2, 3]
         assert f([]) == []
-        with raises(TypeError):
+        with pytest.raises(TypeError):
             # noinspection PyTypeChecker
             f(None)
 
@@ -99,7 +97,7 @@ class TestCommon:
         assert f([Mammal("cat"), Mammal("dog"), Mammal("cat")], "species") == "cat"
         assert f("21") == "2"
         assert f([]) is None
-        with raises(TypeError):
+        with pytest.raises(TypeError):
             # noinspection PyTypeChecker
             f(None)
 

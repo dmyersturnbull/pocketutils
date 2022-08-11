@@ -142,7 +142,7 @@ class AtcParser:
             if p.exists():
                 with open(p) as f:
                     data = json.loads(f.read())["Annotations"]["Annotation"]
-                    for atc in self._parse(data, atcs):
+                    for _atc in self._parse(data, atcs):
                         pass
                 i += 1
 
@@ -155,7 +155,7 @@ class AtcParser:
             logger.debug(f"Downloading page {i} of {n_pages}.")
             (self.cache_dir / f"page-{i}.txt").write_text(response.text, encoding="utf-8")
             data = response.json()["Annotations"]
-            for atc in self._parse(data["Annotation"], atcs):
+            for _atc in self._parse(data["Annotation"], atcs):
                 pass
             (self.cache_dir / ".is_done").write_text(str(datetime.now()), encoding="utf-8")
 
