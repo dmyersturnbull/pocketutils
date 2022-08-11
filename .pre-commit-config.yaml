@@ -23,16 +23,10 @@ repos:
         exclude: ^recipes/.*
   # --- Commit messages ---
   - repo: https://github.com/commitizen-tools/commitizen
-    rev: v2.28.0
+    rev: v2.29.5
     hooks:
       - id: commitizen
         stages: ["commit-msg"]
-  # --- Strip output from .ipynb files ---
-  - repo: https://github.com/kynan/nbstripout
-    rev: 0.6.0
-    hooks:
-      - id: nbstripout
-        files: ".ipynb"
   # --- Linters ---
   - repo: https://github.com/pycqa/isort
     rev: 5.10.1

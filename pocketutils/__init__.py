@@ -4,9 +4,13 @@ Metadata for this project.
 
 import logging
 
-# If you need Python < 3.8, change to importlib_metadata and add it as a dependency
-from importlib.metadata import PackageNotFoundError
-from importlib.metadata import metadata as __load
+try:
+    from importlib.metadata import PackageNotFoundError
+    from importlib.metadata import metadata as __load
+except ImportError:  # pragma: no cover
+    from importlib_metadata import PackageNotFoundError
+    from importlib_metadata import metadata as __load
+
 from pathlib import Path
 
 pkg = Path(__file__).absolute().parent.name
