@@ -3,15 +3,7 @@
 Adheres to [Semantic Versioning 2.0](https://semver.org/spec/v2.0.0.html) and
 [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
-## [0.10.0] - 2022-08-11
-
-### Removed
-
-- Python 3.7 support
-
-### Fixed
-
-- Dev deps
+-
 
 ## [0.9.0] - 2022-08-11
 
