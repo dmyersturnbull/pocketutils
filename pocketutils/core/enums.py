@@ -215,4 +215,4 @@ class CleverEnum(DisjointEnum):
         return s.strip().replace(" ", "_").replace("-", "_").upper()
 
 
-__all__ = ["TrueFalseEither", "DisjointEnum", "FlagEnum", "CleverEnum"]
+__all__ = ["TrueFalseEither", "DisjointEnum", "FlagEnum", "CleverEnum", "MultiTruth"]
