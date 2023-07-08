@@ -3,11 +3,9 @@ from __future__ import annotations
 import abc
 import contextlib
 import logging
-import shutil
 from pathlib import Path
-from typing import Any, TypeVar, Union
-
-import requests
+from typing import Any, TypeVar
+from urllib import request
 
 from pocketutils.core import PathLike
 
@@ -63,7 +61,7 @@ class LogWriter:
     Has a write method, as well as flush and close methods that do nothing.
     """
 
-    def __init__(self, level: Union[int, str]):
+    def __init__(self, level: int | str):
         if isinstance(level, str):
             level = level.upper()
         self.level = logging.getLevelName(level)
@@ -84,7 +82,7 @@ class LogWriter:
         self.close()
 
 
-class DelegatingWriter(object):
+class DelegatingWriter:
     # we CANNOT override TextIOBase: It causes hangs
     def __init__(self, *writers):
         self._writers = writers
@@ -140,73 +138,96 @@ class Capture:
 
 class OpenMode(str):
     """
-    Extended file open modes with a superset of meanings.
-    The underlying string contains a Python open()-compatible string.
+    Python file open modes (``open()``-compatible).
+    Contains method :meth:`normalize` and properties :meth:`read`.
 
+    Here are the flags:
         - 'r' means read
-        - 'w' and 'o' both mean overwrite
+        - 'w' means overwrite
+        - 'x' means exclusive write; complain if it exists
         - 'a' means append
-        - 'x' means "safe" -- complain if it exists (neither overwrite nor append)
+        - 't' means text (default)
         - 'b' means binary
-        - 'z' means compressed with gzip; works in both binary and text modes
-        - 'd' means detect gzip
+        - '+' means open for updating
     """
-
-    # noinspection PyMissingConstructor
-    def __init__(self, mode: str):
-        self._raw = mode.replace("w", "o")
-        self.internal = (
-            self._raw.replace("o", "w").replace("z", "").replace("i", "").replace("d", "")
-        )
-
-    def __repr__(self):
-        return self.internal
-
-    def __str__(self):
-        return self.internal
 
     @property
     def read(self) -> bool:
-        return "r" in self._raw
+        return "w" not in self and "x" not in self and "a" not in self
 
     @property
     def write(self) -> bool:
-        return "r" not in self._raw
-
-    @property
-    def safe(self) -> bool:
-        return "x" in self._raw
+        return "w" in self or "x" in self or "a" in self
 
     @property
     def overwrite(self) -> bool:
-        return "o" in self._raw or "w" in self._raw
+        return "w" in self
 
     @property
-    def ignore(self) -> bool:
-        return "i" in self._raw
+    def safe(self) -> bool:
+        return "x" in self
 
     @property
     def append(self) -> bool:
-        return "a" in self._raw
+        return "a" in self
 
     @property
     def text(self) -> bool:
-        return "b" not in self._raw
+        return "b" not in self
 
     @property
     def binary(self) -> bool:
-        return "b" in self._raw
+        return "b" in self
 
-    @property
-    def gzipped(self) -> bool:
-        return "z" in self._raw
+    def normalize(self) -> str:
+        s = self.replace("U", "")
+        if "r" not in self and "w" not in self and "x" not in self and "a" not in self:
+            s = "r" + self
+        if "t" not in self and "b" not in self:
+            s = "t" + self
+        return s
 
     def __eq__(self, other):
         if isinstance(other, OpenMode):
-            return self._raw == other._raw
+            return self.normalize() == other.normalize()
         elif isinstance(other, str):
-            return self._raw == other.replace("w", "o")
-        return False
+            return self.normalize() == OpenMode(other).normalize()
+        raise TypeError(f"Wrong type {type(other)} of '{other}'")
+
+    def __ne__(self, other):
+        if isinstance(other, OpenMode):
+            return self.normalize() != other.normalize()
+        elif isinstance(other, str):
+            return self.normalize() != OpenMode(other).normalize()
+        raise TypeError(f"Wrong type {type(other)} of '{other}'")
+
+    def __lt__(self, other):
+        if isinstance(other, OpenMode):
+            return self.normalize() < other.normalize()
+        elif isinstance(other, str):
+            return self.normalize() < OpenMode(other).normalize()
+        raise TypeError(f"Wrong type {type(other)} of '{other}'")
+
+    def __gt__(self, other):
+        if isinstance(other, OpenMode):
+            return self.normalize() > other.normalize()
+        elif isinstance(other, str):
+            return self.normalize() > OpenMode(other).normalize()
+        raise TypeError(f"Wrong type {type(other)} of '{other}'")
+
+    def __le__(self, other):
+        if isinstance(other, OpenMode):
+            return self.normalize() <= other.normalize()
+        elif isinstance(other, str):
+            return self.normalize() <= OpenMode(other).normalize()
+        raise TypeError(f"Wrong type {type(other)} of '{other}'")
+
+    def __ge__(self, other):
+        if isinstance(other, OpenMode):
+            return self.normalize() >= other.normalize()
+        elif isinstance(other, str):
+            return self.normalize() >= OpenMode(other).normalize()
+        raise TypeError(f"Wrong type {type(other)} of '{other}'")
 
 
 def null_context():
@@ -221,9 +242,12 @@ def silenced(no_stdout: bool = True, no_stderr: bool = True):
 
 
 def stream_download(url: str, path: PathLike):
-    with requests.get(url, stream=True) as r:
-        with Path(path).open("wb") as f:
-            shutil.copyfileobj(r.raw, f)
+    with request.urlopen(url) as stream:
+        with Path(path).open("wb") as out:
+            data = stream.read(1024 * 1024)
+            while data:
+                out.write(data)
+                data = data.read(1024 * 1024)
 
 
 __all__ = [

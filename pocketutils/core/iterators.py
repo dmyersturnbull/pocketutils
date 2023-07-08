@@ -1,14 +1,13 @@
 import abc
-from collections.abc import Iterator as _Iterator
-from typing import Iterable, Sequence, Tuple, TypeVar
-
-import numpy as np
+import operator
+from collections.abc import Iterable, Iterator, Sequence
+from typing import TypeVar
 
 T = TypeVar("T")
 IX = TypeVar("IX")
 
 
-class SizedIterator(_Iterator[T], metaclass=abc.ABCMeta):
+class SizedIterator(Iterator[T], metaclass=abc.ABCMeta):
     """
     An iterator with size and progress.
     """
@@ -68,7 +67,7 @@ class SeqIterator(SizedIterator[T]):
         return self.current
 
 
-class TieredIterator(SeqIterator[Tuple[IX]]):
+class TieredIterator(SeqIterator[tuple[IX]]):
     """
     A SizedIterator that iterates over every tuples of combination from multiple sequences.
 
@@ -81,7 +80,9 @@ class TieredIterator(SeqIterator[Tuple[IX]]):
     # noinspection PyMissingConstructor
     def __init__(self, sequence: Sequence[Sequence[IX]]):
         self.__seqs = list([SeqIterator(s) for s in reversed(sequence)])
-        self.__total = 0 if len(self.seqs) == 0 else int(np.product([i.total() for i in self.seqs]))
+        self.__total = (
+            0 if len(self.seqs) == 0 else int(operator.mul([i.total() for i in self.seqs]))
+        )
         self.__i = 0
 
     @property
@@ -94,10 +95,10 @@ class TieredIterator(SeqIterator[Tuple[IX]]):
     def total(self) -> int:
         return self.__total
 
-    def __next__(self) -> Tuple[IX]:
+    def __next__(self) -> tuple[IX]:
         if not self.has_next():
             raise StopIteration(f"Length is {self.total()}")
-        t = tuple((seq.peek() for seq in reversed(self.seqs)))
+        t = tuple(seq.peek() for seq in reversed(self.seqs))
         self.__set(0)
         self.__i += 1
         return t

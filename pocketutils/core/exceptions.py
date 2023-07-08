@@ -6,19 +6,18 @@ from __future__ import annotations
 
 import logging
 import os
+from collections.abc import Collection
 from copy import copy
 from functools import wraps
 from pathlib import Path
 
 # noinspection PyUnresolvedReferences
 from subprocess import CalledProcessError
-from typing import Any, Collection, Union
+from typing import Any
 
 logger = logging.getLogger("pocketutils")
 KeyLike = Any
-PathLike = Union[Path, str, os.PathLike]
-_DW = DeprecationWarning
-_PDW = PendingDeprecationWarning
+PathLike = Path | str, os.PathLike
 
 
 ###################################################################################################
@@ -146,22 +145,6 @@ class XWarning(UserWarning):
     __eq__ = _FnUtils.eq
 
 
-class _CodeWarning(XWarning):
-    """A warning related to code quality."""
-
-
-class ObsoleteWarning(_CodeWarning, _PDW):
-    """The code being called is obsolete and/or may be deprecated in the future."""
-
-
-class DeprecatedWarning(_CodeWarning, _DW):
-    """The code being called is deprecated."""
-
-
-class ImmatureWarning(_CodeWarning):
-    """The code being called is unstable or immature."""
-
-
 class _OpWarning(XWarning):
     """A warning related to problematic requests."""
 
@@ -219,11 +202,6 @@ class NaturalExpectedError(Error):
     """Non-specific exception to short-circuit behavior but meaning 'all ok'."""
 
 
-@ErrorUtils.args(name=str)
-class CodeIncompleteError(Error, NotImplementedError):
-    """The code is not finished!"""
-
-
 class IllegalStateError(Error, AssertionError):
     """
     An assertion failed marking invalid state, potentially recoverable.
@@ -269,6 +247,22 @@ class MultipleMatchesError(Error):
     """
 
 
+class SecurityError(Error):
+    """Security error."""
+
+
+class IdentificationError(SecurityError):
+    """Identification error."""
+
+
+class AuthenticationError(SecurityError):
+    """Authentication error."""
+
+
+class AuthorizationError(SecurityError):
+    """Authorization error."""
+
+
 class UserError(Error):
     """An error caused by input from a user of an application."""
 
@@ -295,17 +289,17 @@ class ResourceError(Error):
     """A problem finding or loading a resource (file, network connection, hardware, etc.)."""
 
 
+@ErrorUtils.args(expected=str, actual=str)
+class HashValidationError(ResourceError):
+    """A resource checksum did not validate."""
+
+
 class LockedError(ResourceError):
     """A resource was found but is locked (ex a hardware component in use)."""
 
 
 class MissingEnvVarError(ResourceError):
     """Missing a required environment variable."""
-
-
-@ErrorUtils.args(expected=str, actual=str)
-class HashValidationError(ResourceError):
-    """A checksum did not validate."""
 
 
 class IncompatibleDataError(ResourceError):
@@ -475,11 +469,11 @@ class HardwareError(_IoError):
 
 
 class DeviceConnectionError(HardwareError):
-    """ "Could not connect to the device."""
+    """Could not connect to the device."""
 
 
 class MissingDeviceError(HardwareError):
-    """ "Could not find the needed device."""
+    """Could not find the needed device."""
 
 
 @ErrorUtils.args(key=KeyLike, value=Any)

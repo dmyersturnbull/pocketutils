@@ -4,11 +4,11 @@ import os
 import subprocess  # nosec
 import textwrap
 import warnings
+from collections.abc import Callable, Generator, Sequence
 from copy import copy
 from pathlib import PurePath
 from queue import Queue
 from threading import Thread
-from typing import Callable, Generator, Optional, Sequence
 
 from pocketutils.core.input_output import DevNull
 from pocketutils.tools.base_tools import BaseTools
@@ -56,7 +56,7 @@ class CallTools(BaseTools):
     ) -> subprocess.CompletedProcess:
         """
         Like ``call_cmd`` for utf-8 only.
-        Set ``text=True`` and ``encoding=utf8``,
+        Set ``text=True`` and ``encoding=utf-8``,
         and strips stdout and stderr of start/end whitespace before returning.
         Can also log formatted stdout and stderr on failure.
         Otherwise, logs the output, unformatted and unstripped, as DEBUG
@@ -74,7 +74,7 @@ class CallTools(BaseTools):
                 capture_output=True,
                 check=True,
                 text=True,
-                encoding="utf8",
+                encoding="utf-8",
                 **kwargs,
             )
             x = subprocess.run(**calling)  # nosec
@@ -104,11 +104,11 @@ class CallTools(BaseTools):
         log_fn(f'Failed on command: {" ".join(e.cmd)}')
         out = None
         if e.stdout is not None:
-            out = e.stdout.decode(encoding="utf8") if isinstance(e.stdout, bytes) else e.stdout
+            out = e.stdout.decode(encoding="utf-8") if isinstance(e.stdout, bytes) else e.stdout
         log_fn("《no stdout》" if out is None else f"stdout: {out}")
         err = None
         if e.stderr is not None:
-            err = e.stderr.decode(encoding="utf8") if isinstance(e.stderr, bytes) else e.stderr
+            err = e.stderr.decode(encoding="utf-8") if isinstance(e.stderr, bytes) else e.stderr
         log_fn("《no stderr》" if err is None else f"stderr: {err}")
 
     @classmethod
@@ -117,7 +117,7 @@ class CallTools(BaseTools):
         cmd: Sequence[str],
         *,
         callback: Callable[[bool, bytes], None] = None,
-        timeout_secs: Optional[float] = None,
+        timeout_secs: float | None = None,
         **kwargs,
     ) -> None:
         """
@@ -168,7 +168,7 @@ class CallTools(BaseTools):
     ) -> None:
         """
         Maps (is_stderr, piped line) pairs to logging statements.
-        The data must be utf8-encoded.
+        The data must be utf-8-encoded.
         If the line starts with ``warning:`` (case-insensitive), uses ``log.warning``.
         The same is true for any other method attached to ``log``.
         Falls back to DEBUG if no valid prefix is found.
@@ -183,15 +183,15 @@ class CallTools(BaseTools):
         source = "stderr" if is_stderr else "stdout"
         fn(f"{fn.__name__.upper()} [{source}]: {line}")
         if line.lower().startswith("FATAL:"):
-            logger.fatal(prefix + line)
+            logger.fatal(prefix + line[6:])
         elif line.startswith("ERROR:"):
-            logger.error(prefix + line)
+            logger.error(prefix + line[6:])
         elif line.startswith("WARNING:"):
-            logger.warning(prefix + line)
+            logger.warning(prefix + line[8:])
         elif line.startswith("INFO:"):
-            logger.info(prefix + line)
+            logger.info(prefix + line[5:])
         elif line.startswith("DEBUG:"):
-            logger.debug(prefix + line)
+            logger.debug(prefix + line[6:])
         else:
             logger.debug(prefix + line)
 

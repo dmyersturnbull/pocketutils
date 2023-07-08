@@ -19,25 +19,11 @@ import os
 import sys
 import traceback as _traceback
 from collections import deque
+from collections.abc import Callable, Mapping, MutableMapping, Sequence
 from dataclasses import dataclass
 from inspect import cleandoc
 from pathlib import Path
-from typing import (
-    AbstractSet,
-    Any,
-    Callable,
-    Deque,
-    Generic,
-    Mapping,
-    MutableMapping,
-    Optional,
-    Sequence,
-    TextIO,
-    Tuple,
-    Type,
-    TypeVar,
-    Union,
-)
+from typing import AbstractSet, Any, Deque, Generic, TextIO, TypeVar
 
 import loguru._defaults as _defaults
 
@@ -53,7 +39,7 @@ from pocketutils.core import PathLike
 from pocketutils.core.exceptions import IllegalStateError, XValueError
 
 _levels = loguru.logger._core.levels
-Formatter = Union[str, Callable[[Mapping[str, Any]], str]]
+Formatter = str | Callable[[Mapping[str, Any]], str]
 DEFAULT_FMT_STRING = cleandoc(
     r"""
     <bold>{time:YYYY-MM-DD HH:mm:ss.SSS} | </bold>
@@ -250,8 +236,8 @@ class HandlerInfo:
     """
 
     hid: int
-    path: Optional[Path]
-    level: Optional[str]
+    path: Path | None
+    level: str | None
     fmt: Formatter
 
 
@@ -259,7 +245,7 @@ class HandlerInfo:
 class _HandlerInfo:
     hid: int
     sink: Any
-    level: Optional[int]
+    level: int | None
     fmt: Formatter
     filter: Any
 
@@ -278,7 +264,7 @@ class LogSinkInfo:
     base: Path
     suffix: str
     serialize: bool
-    compression: Optional[str]
+    compression: str | None
 
 
 class InterceptHandler(logging.Handler):
@@ -341,7 +327,7 @@ class FancyLoguru(Generic[T]):
         self._control_enabled = True
 
     @staticmethod
-    def new(t: Type[Z]) -> FancyLoguru[Z]:
+    def new(t: type[Z]) -> FancyLoguru[Z]:
         ell = _logger.patch(log_traceback)
         logger = t(ell._core, *ell._options)
         return FancyLoguru[Z](logger)
@@ -358,7 +344,7 @@ class FancyLoguru(Generic[T]):
         return self._logger
 
     @property
-    def only_path(self) -> Optional[Path]:
+    def only_path(self) -> Path | None:
         try:
             return next(iter(self._paths.keys()))
         except StopIteration:
@@ -372,7 +358,7 @@ class FancyLoguru(Generic[T]):
         return {e.name: e.no for e in _levels.values()}
 
     @property
-    def aliases(self) -> Mapping[str, Optional[str]]:
+    def aliases(self) -> Mapping[str, str | None]:
         """
         Returns the aliases to levels.
         A ``None`` means no logging ("OFF").
@@ -392,7 +378,7 @@ class FancyLoguru(Generic[T]):
         return list(self._rememberer._messages)
 
     @property
-    def main(self) -> Optional[HandlerInfo]:
+    def main(self) -> HandlerInfo | None:
         """
         Returns the main handler info, if configured.
         """
@@ -409,7 +395,7 @@ class FancyLoguru(Generic[T]):
         """
         return {h.to_friendly for h in self._paths.values()}
 
-    def get_path(self, p: PathLike) -> Optional[HandlerInfo]:
+    def get_path(self, p: PathLike) -> HandlerInfo | None:
         """
         Returns a path handler to this path, or None if it does not exist.
         The path is resolved, following symlinks, via ``pathlib.Path.resolve``.
@@ -462,8 +448,8 @@ class FancyLoguru(Generic[T]):
         name: str,
         level: int,
         *,
-        color: Union[None, str, _SENTINEL] = _SENTINEL,
-        icon: Union[None, str, _SENTINEL] = _SENTINEL,
+        color: None | str | _SENTINEL = _SENTINEL,
+        icon: None | str | _SENTINEL = _SENTINEL,
         replace: bool = True,
     ) -> __qualname__:
         """
@@ -537,7 +523,7 @@ class FancyLoguru(Generic[T]):
         self,
         *,
         sink: TextIO = _SENTINEL,
-        level: Optional[str] = _SENTINEL,
+        level: str | None = _SENTINEL,
         fmt: Formatter = _SENTINEL,
         filter=_SENTINEL,
     ) -> __qualname__:
@@ -678,8 +664,8 @@ class FancyLoguru(Generic[T]):
 
     def from_cli(
         self,
-        path: Union[None, str, Path] = None,
-        main: Optional[str] = None,
+        path: None | str | Path = None,
+        main: str | None = None,
         _msg_level: str = "OFF",
     ) -> __qualname__:
         """
@@ -733,7 +719,7 @@ class FancyLoguru(Generic[T]):
         return self
 
     @classmethod
-    def guess_file_sink_info(cls, path: Union[str, Path]) -> LogSinkInfo:
+    def guess_file_sink_info(cls, path: str | Path) -> LogSinkInfo:
         path = Path(path)
         base, compression = path.name, None
         for c in log_compressions:
@@ -752,7 +738,7 @@ class FancyLoguru(Generic[T]):
             compression=compression,
         )
 
-    def _get_info(self, level: str, fmt: str, filter) -> Tuple[str, int, Formatter, Any]:
+    def _get_info(self, level: str, fmt: str, filter) -> tuple[str, int, Formatter, Any]:
         if level is _SENTINEL and self._main is None:
             level = self._defaults.level
         elif level is _SENTINEL:
@@ -848,7 +834,7 @@ if __name__ == "__main__":
         .config_main(fmt=FANCY_LOGURU_DEFAULTS.fmt_simplified)
         .intercept_std()
     )
-    lg.from_cli(path="nope.log.tmp")
+    lg.from_cli(path="~nope.log.tmp")
 
     with lg.logger.contextualize(omg="why"):
         lg.logger.info("hello", traceback=True)
@@ -860,6 +846,6 @@ __all__ = [
     "FANCY_LOGURU_DEFAULTS",
     "InterceptHandler",
     "HandlerInfo",
-    "Logger",
     "LoggerWithCautionAndNotice",
+    "Logger",
 ]

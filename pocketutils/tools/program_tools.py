@@ -59,13 +59,13 @@ class ProgramTools(BaseTools):
             capture_output=True,
             check=True,
             text=True,
-            encoding="utf8",
+            encoding="utf-8",
         )
         cmd = "git describe --long --dirty --broken --abbrev=40 --tags".split(" ")
         # ignoring bandit security warning because we explain the security concerns
         # in the class docstring
         x = subprocess.run(cmd, **cmd_args)  # nosec
-        return cls._parse(x.stdout.decode(encoding="utf8").strip())
+        return cls._parse(x.stdout.decode(encoding="utf-8").strip())
 
     @classmethod
     def _parse(cls, text: str):

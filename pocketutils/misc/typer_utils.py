@@ -1,8 +1,9 @@
 from __future__ import annotations
 
 import inspect
+from collections.abc import Mapping
 from inspect import cleandoc
-from typing import Generic, Mapping, Optional, Type, TypeVar
+from typing import Generic, TypeVar
 
 import typer
 from typer.models import ArgumentInfo, CommandInfo, OptionInfo, ParameterInfo
@@ -12,14 +13,14 @@ A = TypeVar("A", bound=ParameterInfo)
 
 
 class _Arg(Generic[A]):
-    def __init__(self, a: Type[A]):
+    def __init__(self, a: type[A]):
         self.__a = a
 
     def __arg(
         self,
         doc: str,
         *names: str,
-        default: Optional[T] = None,
+        default: T | None = None,
         **kwargs,
     ):
         args = dict(allow_dash=True, help=cleandoc(doc), **kwargs)
@@ -32,7 +33,7 @@ class _Arg(Generic[A]):
         self,
         doc: str,
         *names,
-        default: Optional[str],
+        default: str | None,
         f: bool,
         d: bool,
         out: bool,
@@ -50,13 +51,13 @@ class _Arg(Generic[A]):
         }
         return self.__arg(doc, *names, default=default, **kwargs)
 
-    def out_file(self, doc: str, *names, default: Optional[str] = None, **kwargs) -> A:
+    def out_file(self, doc: str, *names, default: str | None = None, **kwargs) -> A:
         return self.__path(doc, *names, default=default, f=True, d=False, out=True, **kwargs)
 
-    def out_dir(self, doc: str, *names, default: Optional[str] = None, **kwargs) -> A:
+    def out_dir(self, doc: str, *names, default: str | None = None, **kwargs) -> A:
         return self.__path(doc, *names, default=default, f=True, d=True, out=True, **kwargs)
 
-    def out_path(self, doc: str, *names, default: Optional[str] = None, **kwargs) -> A:
+    def out_path(self, doc: str, *names, default: str | None = None, **kwargs) -> A:
         return self.__path(
             doc,
             *names,
@@ -68,13 +69,13 @@ class _Arg(Generic[A]):
             **kwargs,
         )
 
-    def in_file(self, doc: str, *names, default: Optional[str] = None, **kwargs) -> A:
+    def in_file(self, doc: str, *names, default: str | None = None, **kwargs) -> A:
         return self.__path(doc, *names, default=default, f=True, d=False, out=False, **kwargs)
 
-    def in_dir(self, doc: str, *names, default: Optional[str] = None, **kwargs) -> A:
+    def in_dir(self, doc: str, *names, default: str | None = None, **kwargs) -> A:
         return self.__path(doc, *names, default=default, f=False, d=True, out=False, **kwargs)
 
-    def in_path(self, doc: str, *names, default: Optional[str] = None, **kwargs) -> A:
+    def in_path(self, doc: str, *names, default: str | None = None, **kwargs) -> A:
         return self.__path(
             doc,
             *names,
@@ -86,7 +87,7 @@ class _Arg(Generic[A]):
             **kwargs,
         )
 
-    def val(self, doc: str, *names, default: Optional[T] = None, **kwargs) -> A:
+    def val(self, doc: str, *names, default: T | None = None, **kwargs) -> A:
         return self.__arg(doc, *names, default=default, **kwargs)
 
     def flag(self, doc: str, *names, **kwargs) -> A:

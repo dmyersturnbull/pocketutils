@@ -1,6 +1,7 @@
 import logging
+from collections.abc import MutableMapping
 from pathlib import Path
-from typing import AbstractSet, Any, MutableMapping, Optional
+from typing import Any
 
 import orjson
 
@@ -39,9 +40,7 @@ class Resources:
         """Returns whether a resource file (or dir) exists."""
         return self.path(*nodes).exists()
 
-    def contains_a_file(
-        self, *nodes: PathLike, suffixes: Optional[AbstractSet[str]] = None
-    ) -> bool:
+    def contains_a_file(self, *nodes: PathLike, suffixes: set[str] | None = None) -> bool:
         try:
             self.a_file(*nodes, suffixes=suffixes)
             return True
@@ -99,7 +98,7 @@ class Resources:
             raise FileDoesNotExistError(f"Resource {path} is not readable")
         return path
 
-    def a_file(self, *nodes: PathLike, suffixes: Optional[AbstractSet[str]] = None) -> Path:
+    def a_file(self, *nodes: PathLike, suffixes: set[str] | None = None) -> Path:
         """
         Gets a path of a test resource file under ``resources/``, ignoring suffix.
 

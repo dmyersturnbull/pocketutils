@@ -13,7 +13,7 @@ metadata = None
 try:
     metadata = __load(pkg)
     __status__ = "Development"
-    __copyright__ = "Copyright 2016–2022"
+    __copyright__ = "Copyright 2016–2023"
     __date__ = "2020-09-01"
     __uri__ = metadata["home-page"]
     __title__ = metadata["name"]

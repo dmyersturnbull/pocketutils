@@ -1,7 +1,7 @@
 import logging
 import math
 from datetime import date, datetime, timedelta
-from typing import Optional, SupportsFloat, Tuple, Union
+from typing import SupportsFloat
 
 import regex
 from pint import Quantity, UnitRegistry
@@ -18,10 +18,17 @@ _UNIT_REG = UnitRegistry()
 
 class UnitTools(BaseTools):
     @classmethod
+    def format_approx_big_number(cls, n: int) -> str:
+        for k, v in {1e15: "", 1e12: "T", 1e9: "B", 1e6: "M", 1e3: "k"}.items():
+            if n >= k:
+                return str(n // k) + v
+        return str(n)
+
+    @classmethod
     def approx_time_wrt(
         cls,
-        now: Union[date, datetime],
-        then: Union[date, datetime],
+        now: date | datetime,
+        then: date | datetime,
         *,
         skip_today: bool = False,
         sig: int = 3,
@@ -57,7 +64,7 @@ class UnitTools(BaseTools):
             return then.strftime(_today + "%H:%M:%S.%f")
 
     @classmethod
-    def delta_time_to_str(cls, delta_sec: Union[float, timedelta], *, space: str = "") -> str:
+    def delta_time_to_str(cls, delta_sec: float | timedelta, *, space: str = "") -> str:
         """
         Returns a pretty string from a difference in time in seconds.
         Rounds hours and minutes to 2 decimal places, and seconds to 1.
@@ -128,7 +135,7 @@ class UnitTools(BaseTools):
         return nicesize(n_bytes, space=space)
 
     @classmethod
-    def round_to_sigfigs(cls, num: SupportsFloat, sig_figs: Optional[int]) -> float:
+    def round_to_sigfigs(cls, num: SupportsFloat, sig_figs: int | None) -> float:
         """
         Round to specified number of sigfigs.
 
@@ -154,7 +161,7 @@ class UnitTools(BaseTools):
     def format_micromolar(
         cls,
         micromolar: float,
-        n_sigfigs: Optional[int] = 5,
+        n_sigfigs: int | None = 5,
         *,
         adjust_units: bool = True,
         use_sigfigs: bool = True,
@@ -209,7 +216,7 @@ class UnitTools(BaseTools):
             return str(d) + space + unit
 
     @classmethod
-    def split_species_micromolar(cls, text: str) -> Tuple[str, Optional[float]]:
+    def split_species_micromolar(cls, text: str) -> tuple[str, float | None]:
         """
         Splits a name into a chemical/concentration pair, falling back with the full name.
         Ex: "abc 3.5uM" → (abc, 3.5)
@@ -238,7 +245,7 @@ class UnitTools(BaseTools):
             return drug, dose
 
     @classmethod
-    def extract_micromolar(cls, text: str) -> Optional[float]:
+    def extract_micromolar(cls, text: str) -> float | None:
         """
         Returns what looks like a concentration with units. Accepts one of: mM, µM, uM, nM, pM.
         Searches pretty flexibly.

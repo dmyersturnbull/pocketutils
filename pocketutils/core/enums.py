@@ -1,8 +1,8 @@
 import enum
 import logging
-from typing import AbstractSet, Optional, Union
+from typing import AbstractSet
 
-from pocketutils.core.exceptions import XKeyError, XValueError
+from pocketutils.core.exceptions import XKeyError
 
 logger = logging.getLogger("pocketutils")
 
@@ -17,7 +17,7 @@ class DisjointEnum(enum.Enum):
         return s
 
     @classmethod
-    def or_none(cls, s: Union[str, __qualname__]) -> Optional[__qualname__]:
+    def or_none(cls, s: str | __qualname__) -> __qualname__ | None:
         """
         Returns a choice by name (or returns ``s`` itself).
         Returns ``None`` if the choice is not found.
@@ -28,7 +28,7 @@ class DisjointEnum(enum.Enum):
             return None
 
     @classmethod
-    def of(cls, s: Union[str, __qualname__]) -> __qualname__:
+    def of(cls, s: str | __qualname__) -> __qualname__:
         """
         Returns a choice by name (or returns ``s`` itself).
         """
@@ -92,7 +92,7 @@ class FlagEnum(enum.Flag):
         return value
 
     @classmethod
-    def or_none(cls, s: Union[str, __qualname__]) -> Optional[__qualname__]:
+    def or_none(cls, s: str | __qualname__) -> __qualname__ | None:
         """
         Returns a choice by name (or returns ``s`` itself).
 
@@ -105,7 +105,7 @@ class FlagEnum(enum.Flag):
             return None
 
     @classmethod
-    def of(cls, s: Union[str, __qualname__, AbstractSet[Union[str, __qualname__]]]) -> __qualname__:
+    def of(cls, s: str | __qualname__ | AbstractSet[str | __qualname__]) -> __qualname__:
         """
         Returns a choice by name (or ``s`` itself), or a set of those.
         """
@@ -135,7 +135,7 @@ class TrueFalseEither(DisjointEnum):
     EITHER = ()
 
     @classmethod
-    def _if_not_found(cls, s: Union[str, __qualname__]) -> __qualname__:
+    def _if_not_found(cls, s: str | __qualname__) -> __qualname__:
         return cls.EITHER
 
     @classmethod
@@ -200,14 +200,14 @@ class CleverEnum(DisjointEnum):
     """
 
     @classmethod
-    def of(cls, s: Union[str, __qualname__]) -> __qualname__:
+    def of(cls, s: str | __qualname__) -> __qualname__:
         try:
             return super().of(s)
         except KeyError:
             return cls._if_not_found(s)
 
     @classmethod
-    def _if_not_found(cls, s: Union[str, __qualname__]) -> __qualname__:
+    def _if_not_found(cls, s: str | __qualname__) -> __qualname__:
         raise XKeyError(f"No member for value '{s}'", key=s) from None
 
     @classmethod

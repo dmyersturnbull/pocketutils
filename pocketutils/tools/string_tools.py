@@ -1,13 +1,13 @@
 import re
-import warnings
-from typing import Any, Callable, Iterable, Mapping, Optional, Sequence, Tuple, TypeVar, Union
+from collections.abc import Callable, Iterable, Mapping, Sequence
+from typing import Any, TypeVar
 
 import numpy as np
 import orjson
 import regex
 
 from pocketutils.core.chars import Chars
-from pocketutils.core.exceptions import OutOfRangeError, XTypeError, XValueError
+from pocketutils.core.exceptions import OutOfRangeError, XValueError
 from pocketutils.tools.base_tools import BaseTools
 
 T = TypeVar("T")
@@ -22,17 +22,16 @@ class StringTools(BaseTools):
         Returns a pretty-printed dict, complete with indentation. Will fail on non-JSON-serializable datatypes.
         """
         # return Pretty.condensed(dct)
-        return orjson.dumps(dct, option=orjson.OPT_INDENT_2).decode(encoding="utf8")
+        return orjson.dumps(dct, option=orjson.OPT_INDENT_2).decode(encoding="utf-8")
 
     @classmethod
     def extract_group(
         cls,
-        pattern: Union[str, re.Pattern, regex.Pattern],
-        value: Optional[str],
+        pattern: str | re.Pattern | regex.Pattern,
+        value: str | None,
         *,
         group: int = 0,
-        ignore_null: bool = False,
-    ) -> Optional[str]:
+    ) -> str | None:
         """
         Extracts a capture group from a regex full-match.
         Returns None if there was no match.
@@ -42,7 +41,6 @@ class StringTools(BaseTools):
             pattern: Regex pattern
             value: The target string
             group: The group number
-            ignore_null: Return None if ``value`` is None instead of raising a ValueError
 
         Returns The capture group, or None
         """
@@ -52,8 +50,6 @@ class StringTools(BaseTools):
             pattern = regex.compile(pattern, flags=regex.V1)
         elif isinstance(pattern, regex.Pattern) and not pattern.flags & regex.V1:
             pattern = regex.compile(pattern.pattern, flags=regex.V1)
-        if value is None and ignore_null:
-            return None
         match = pattern.fullmatch(value)
         if match is None:
             return None
@@ -93,7 +89,7 @@ class StringTools(BaseTools):
 
     @classmethod
     def roman_to_arabic(
-        cls, roman: str, min_val: Optional[int] = None, max_val: Optional[int] = None
+        cls, roman: str, min_val: int | None = None, max_val: int | None = None
     ) -> int:
         """
         Converts roman numerals to an integer.
@@ -114,7 +110,7 @@ class StringTools(BaseTools):
             roman = roman.replace(k, str(v))
         # it'll just error if it's empty
         try:
-            value = sum((int(num) for num in roman))
+            value = sum(int(num) for num in roman)
         except (ValueError, StopIteration):
             raise XValueError(f"Cannot parse roman numerals '{roman}'", value=roman)
         if min_val is not None and value < min_val or max_val is not None and value > max_val:
@@ -124,23 +120,23 @@ class StringTools(BaseTools):
         return value
 
     @classmethod
-    def retab(cls, s: str, nspaces: int) -> str:
+    def retab(cls, s: str, n_spaces: int) -> str:
         """
         Converts indentation with spaces to tab indentation.
 
         Args:
             s: The string to convert
-            nspaces: A tab is this number of spaces
+            n_spaces: A tab is this number of spaces
         """
 
         def fix(m):
-            n = len(m.group(1)) // nspaces
-            return "\t" * n + " " * (len(m.group(1)) % nspaces)
+            n = len(m.group(1)) // n_spaces
+            return "\t" * n + " " * (len(m.group(1)) % n_spaces)
 
         return regex.sub("^( +)", fix, s, flags=regex.V1 | regex.MULTILINE)
 
     @classmethod
-    def strip_empty_decimal(cls, num: Union[float, str]) -> str:
+    def strip_empty_decimal(cls, num: float | str) -> str:
         """
         Replaces prefix . with 0. and strips trailing .0 and trailing .
         """
@@ -179,11 +175,11 @@ class StringTools(BaseTools):
     @classmethod
     def truncate(
         cls,
-        s: Optional[str],
+        s: str | None,
         n: int = 40,
         *,
-        null: Optional[str] = None,
-    ) -> Optional[str]:
+        null: str | None = None,
+    ) -> str | None:
         """
         Truncates a string and adds ellipses, if needed.
 
@@ -214,7 +210,7 @@ class StringTools(BaseTools):
         n: int = 40,
         always_dots: bool = False,
         *,
-        null: Optional[str] = None,
+        null: str | None = None,
     ) -> Callable[[str], str]:
         # pretty much functools.partial
         def trunc(s: str) -> str:
@@ -235,60 +231,11 @@ class StringTools(BaseTools):
         return mx
 
     @classmethod
-    def longest_str(cls, parts: Iterable[str]) -> str:
-        """
-        Returns the argmax by length.
-        """
-        return cls.longest(parts)
-
-    @classmethod
-    def strip_off_start(cls, s: str, pre: str) -> str:
-        """
-        Strips the full string ``pre`` from the start of ``str``.
-        See :meth:`strip_off` for more info.
-        """
-        if not isinstance(pre, str):
-            raise XTypeError(
-                f"{pre} is not a string", actual=str(type(pre)), expected=str(type(str))
-            )
-        if s.startswith(pre):
-            s = s[len(pre) :]
-        return s
-
-    @classmethod
-    def strip_off_end(cls, s: str, suf: str) -> str:
-        """
-        Strips the full string ``suf`` from the end of ``str``.
-        See :meth:`strip_off` for more info.
-        """
-        if not isinstance(suf, str):
-            raise TypeError(f"{suf} is not a string")
-        if s.endswith(suf):
-            s = s[: -len(suf)]
-        return s
-
-    @classmethod
-    def strip_off(cls, s: str, prefix_or_suffix: str) -> str:
-        """
-        Strip a substring from the beginning or end of a string (at most 1 occurrence).
-        """
-        return StringTools.strip_off_start(
-            StringTools.strip_off_end(s, prefix_or_suffix), prefix_or_suffix
-        )
-
-    @classmethod
-    def strip_ends(cls, s: str, prefix: str, suffix: str) -> str:
-        """
-        Strips a substring from the start, and another substring from the end, of a string (at most 1 occurrence each).
-        """
-        return StringTools.strip_off_start(StringTools.strip_off_end(s, suffix), prefix)
-
-    @classmethod
     def strip_any_ends(
         cls,
         s: str,
-        prefixes: Union[str, Sequence[str]],
-        suffixes: Union[str, Sequence[str]],
+        prefixes: str | Sequence[str],
+        suffixes: str | Sequence[str],
     ) -> str:
         """
         Flexible variant that strips any number of prefixes and any number of suffixes.
@@ -383,7 +330,7 @@ class StringTools(BaseTools):
         return StringTools.strip_paired(text, pieces)
 
     @classmethod
-    def strip_paired(cls, text: str, pieces: Iterable[Tuple[str, str]]) -> str:
+    def strip_paired(cls, text: str, pieces: Iterable[tuple[str, str]]) -> str:
         """
         Strips pairs of (start, end) from the ends of strings.
 
@@ -411,67 +358,35 @@ class StringTools(BaseTools):
         return text
 
     @classmethod
-    def replace_all(cls, s: str, rep: Mapping[str, str]) -> str:
-        """
-        Simply replace multiple things in a string.
-        """
-        warnings.warn("replace_all will be removed", DeprecationWarning)
-        for k, v in rep.items():
-            s = s.replace(k, v)
-        return s
-
-    @classmethod
-    def superscript(cls, s: Union[str, float]) -> str:
+    def superscript(cls, s: str | float) -> str:
         """
         Replaces digits, +, =, (, and ) with equivalent Unicode superscript chars (ex ¹).
         """
         return "".join(dict(zip("0123456789-+=()", "⁰¹²³⁴⁵⁶⁷⁸⁹⁻⁺⁼⁽⁾")).get(c, c) for c in s)
 
     @classmethod
-    def subscript(cls, s: Union[str, float]) -> str:
+    def subscript(cls, s: str | float) -> str:
         """
         Replaces digits, +, =, (, and ) with equivalent Unicode subscript chars (ex ₁).
         """
         return "".join(dict(zip("0123456789+-=()", "₀₁₂₃₄₅₆₇₈₉₊₋₌₍₎")).get(c, c) for c in s)
 
     @classmethod
-    def unsuperscript(cls, s: Union[str, float]) -> str:
+    def unsuperscript(cls, s: str | float) -> str:
         """
         Replaces Unicode superscript digits, +, =, (, and ) with normal chars.
         """
         return "".join(dict(zip("⁰¹²³⁴⁵⁶⁷⁸⁹⁻⁺⁼⁽⁾", "0123456789-+=()")).get(c, c) for c in s)
 
     @classmethod
-    def unsubscript(cls, s: Union[str, float]) -> str:
+    def unsubscript(cls, s: str | float) -> str:
         """
         Replaces Unicode superscript digits, +, =, (, and ) with normal chars.
         """
         return "".join(dict(zip("₀₁₂₃₄₅₆₇₈₉₊₋₌₍₎", "0123456789+-=()")).get(c, c) for c in s)
 
     @classmethod
-    def dashes_to_hm(cls, s: str) -> str:
-        """
-        Replaces most Latin-alphabet dash-like and hyphen-like characters with a hyphen-minus.
-        """
-        smallem = "﹘"
-        smallhm = "﹣"
-        fullhm = "－"
-        for c in [
-            Chars.em,
-            Chars.en,
-            Chars.fig,
-            Chars.minus,
-            Chars.hyphen,
-            Chars.nbhyphen,
-            smallem,
-            smallhm,
-            fullhm,
-        ]:
-            s = str(s).replace(c, "-")
-        return s
-
-    @classmethod
-    def pretty_float(cls, v: Union[float, int], n_sigfigs: Optional[int] = 5) -> str:
+    def pretty_float(cls, v: float | int, n_sigfigs: int | None = 5) -> str:
         """
         Represents a float as a string, with symbols for NaN and infinity.
         The returned string always has a minus or + prepended. Strip off the plus with .lstrip('+').
@@ -567,9 +482,7 @@ class StringTools(BaseTools):
         elif hasattr(function, "__dict__") and len(function.__dict__) > 0:
             # it's a member with attributes
             # it's interesting enough that it may have a good __str__
-            s = StringTools.strip_off_end(
-                StringTools.strip_off_start(str(function), prefix), suffix
-            )
+            s = str(function).removeprefix(prefix).removesuffix(suffix)
             return prefix + s + addr + suffix
         elif objmatch is not None:
             # it's an instance without attributes
@@ -579,10 +492,7 @@ class StringTools(BaseTools):
             return prefix + s + addr + suffix
         else:
             # it's a primitive, etc
-            s = StringTools.strip_off_end(
-                StringTools.strip_off_start(str(function), prefix), suffix
-            )
-            return s
+            return str(function).removeprefix(prefix).removesuffix(suffix)
 
     @classmethod
     def greek_to_name(cls) -> Mapping[str, str]:
@@ -629,7 +539,7 @@ class StringTools(BaseTools):
         seq: Iterable[T],
         *,
         sep: str = "\t",
-        attr: Optional[str] = None,
+        attr: str | None = None,
         prefix: str = "",
         suffix: str = "",
     ) -> str:

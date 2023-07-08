@@ -89,17 +89,17 @@ class TestUnitTools:
         assert f(55, "pM") * 1e6 == pytest.approx(55)
         assert f(55, "fM") * 1e9 == pytest.approx(55)
 
-    def test_extract_dose(self):
+    def test_extract_micromolar(self):
         f = UnitTools.extract_micromolar
         assert f("abc 55 nM") == 55 / 1000
-        assert f("abc 55{}uM".format(Chars.narrownbsp)) == 55
+        assert f(f"abc 55{Chars.narrownbsp}uM") == 55
         assert f("abc 55 uM") == 55
         assert f("a.55bc 55uM") == 55
 
     def test_split_drug_dose(self):
         f = UnitTools.split_species_micromolar
         assert f("abc 55 nM") == ("abc", 55 / 1000)
-        assert f("abc 55{}uM".format(Chars.narrownbsp)) == ("abc", 55)
+        assert f(f"abc 55{Chars.narrownbsp}uM") == ("abc", 55)
         assert f("abc 55 uM") == ("abc", 55)
         assert f("a.55bc 55uM") == ("a.55bc", 55)
         assert f("") == ("", None)

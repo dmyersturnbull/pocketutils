@@ -5,9 +5,9 @@ import gzip
 import logging
 import operator
 import os
-import sys
+from collections.abc import Callable, Iterable
 from pathlib import Path, PurePath
-from typing import Any, Callable, Iterable, Optional, TypeVar, Union
+from typing import Any, TypeVar, Union
 
 T = TypeVar("T", covariant=True)
 Y = TypeVar("Y")
@@ -95,14 +95,14 @@ def nicesize(nbytes: int, space: str = "") -> str:
     return str(nbytes // scale) + space + suffix
 
 
-def look(obj: Y, attrs: Union[str, Iterable[str], Callable[[Y], Z]]) -> Optional[Z]:
+def look(obj: Y, attrs: str | Iterable[str] | Callable[[Y], Z]) -> Z | None:
     if attrs is None:
         return obj
     if not isinstance(attrs, str) and hasattr(attrs, "__len__") and len(attrs) == 0:
         return obj
     if isinstance(attrs, str):
         attrs = operator.attrgetter(attrs)
-    elif isinstance(attrs, Iterable) and all((isinstance(a, str) for a in attrs)):
+    elif isinstance(attrs, Iterable) and all(isinstance(a, str) for a in attrs):
         attrs = operator.attrgetter(".".join(attrs))
     elif not callable(attrs):
         raise TypeError(
@@ -122,10 +122,10 @@ TOML_SUFFIXES = {".toml" + s for s in {"", *GZ_BZ2_SUFFIXES}}
 def read_txt_or_gz(path: PathLike) -> str:
     path = Path(path)
     if path.name.endswith(".bz2") or path.name.endswith(".bzip2"):
-        return bz2.decompress(path.read_bytes()).decode(encoding="utf8")
+        return bz2.decompress(path.read_bytes()).decode(encoding="utf-8")
     if path.name.endswith(".gz") or path.name.endswith(".gzip"):
-        return gzip.decompress(path.read_bytes()).decode(encoding="utf8")
-    return Path(path).read_text(encoding="utf8")
+        return gzip.decompress(path.read_bytes()).decode(encoding="utf-8")
+    return Path(path).read_text(encoding="utf-8")
 
 
 def write_txt_or_gz(txt: str, path: PathLike, *, mkdirs: bool = False) -> str:
@@ -133,10 +133,10 @@ def write_txt_or_gz(txt: str, path: PathLike, *, mkdirs: bool = False) -> str:
     if mkdirs:
         path.parent.mkdir(parents=True, exist_ok=True)
     if path.name.endswith(".bz2") or path.name.endswith(".bzip2"):
-        data = bz2.compress(txt.encode(encoding="utf8"))
+        data = bz2.compress(txt.encode(encoding="utf-8"))
         path.write_bytes(data)
     elif path.name.endswith(".gz") or path.name.endswith(".gzip"):
-        data = gzip.compress(txt.encode(encoding="utf8"))
+        data = gzip.compress(txt.encode(encoding="utf-8"))
         path.write_bytes(data)
     else:
         path.write_text(txt)

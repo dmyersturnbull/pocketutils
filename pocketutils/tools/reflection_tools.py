@@ -1,7 +1,8 @@
 import inspect
 import sys
 import typing
-from typing import Any, Mapping, Optional, Type
+from collections.abc import Mapping
+from typing import Any
 
 from pocketutils.core.exceptions import InjectionError
 
@@ -10,7 +11,7 @@ T = typing.TypeVar("T")
 
 class ReflectionTools:
     @classmethod
-    def get_generic_arg(cls, clazz: Type[T], bound: Optional[Type[T]] = None) -> Type:
+    def get_generic_arg(cls, clazz: type[T], bound: type[T] | None = None) -> type:
         """
         Finds the generic argument (specific TypeVar) of a :class:`~typing.Generic` class.
         **Assumes that ``clazz`` only has one type parameter. Always returns the first.**
@@ -35,7 +36,7 @@ class ReflectionTools:
         return param
 
     @classmethod
-    def subclass_dict(cls, clazz: Type[T], concrete: bool = False) -> Mapping[str, Type[T]]:
+    def subclass_dict(cls, clazz: type[T], concrete: bool = False) -> Mapping[str, type[T]]:
         return {c.__name__: c for c in cls.subclasses(clazz, concrete=concrete)}
 
     @classmethod
@@ -50,7 +51,7 @@ class ReflectionTools:
                 yield subclass
 
     @classmethod
-    def default_arg_values(cls, func) -> Mapping[str, Optional[Any]]:
+    def default_arg_values(cls, func) -> Mapping[str, Any | None]:
         return {k: v.default for k, v in cls.optional_args(func).items()}
 
     @classmethod
@@ -82,7 +83,7 @@ class ReflectionTools:
         return cls._args(func, False)
 
     @classmethod
-    def injection(cls, fully_qualified: str, clazz: Type[T]) -> Type[T]:
+    def injection(cls, fully_qualified: str, clazz: type[T]) -> type[T]:
         """
         Gets a **class** by its fully-resolved class name.
 

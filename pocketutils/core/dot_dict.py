@@ -2,15 +2,14 @@ from __future__ import annotations
 
 import pickle
 import sys
+from collections.abc import ByteString, Callable, Collection, Iterable, Mapping, Sequence
 from copy import copy
 from datetime import date, datetime
 from pathlib import Path, PurePath
-from typing import Any, ByteString, Callable, Collection, Iterable, Mapping, Optional, Sequence
-from typing import Tuple as Tup
-from typing import Type, TypeVar, Union
+from typing import Any, TypeVar
 
 import orjson
-import toml
+import tomlkit
 
 from pocketutils.core import PathLike
 from pocketutils.core._internal import read_txt_or_gz, write_txt_or_gz
@@ -38,7 +37,7 @@ class NestedDotDict(Mapping):
 
     @classmethod
     def read_toml(cls, path: PathLike) -> NestedDotDict:
-        return NestedDotDict(toml.loads(read_txt_or_gz(path)))
+        return NestedDotDict(tomlkit.loads(read_txt_or_gz(path)))
 
     @classmethod
     def read_json(cls, path: PathLike) -> NestedDotDict:
@@ -53,7 +52,7 @@ class NestedDotDict(Mapping):
         return cls(data)
 
     @classmethod
-    def read_pickle(cls, path: Union[PurePath, str]) -> NestedDotDict:
+    def read_pickle(cls, path: PurePath | str) -> NestedDotDict:
         """
 
         Note that this function has potential security concerns.
@@ -65,7 +64,7 @@ class NestedDotDict(Mapping):
 
     @classmethod
     def parse_toml(cls, data: str) -> NestedDotDict:
-        return cls(toml.loads(data))
+        return cls(tomlkit.loads(data))
 
     @classmethod
     def parse_json(cls, data: str) -> NestedDotDict:
@@ -73,7 +72,7 @@ class NestedDotDict(Mapping):
         Parses JSON from a string, into a NestedDotDict.
         If the JSON data is a list type, converts into a dict with the key ``data``.
         """
-        data = orjson.loads(data.encode(encoding="utf8"))
+        data = orjson.loads(data.encode(encoding="utf-8"))
         if isinstance(data, list):
             data = dict(enumerate(data))
         return cls(data)
@@ -135,13 +134,13 @@ class NestedDotDict(Mapping):
         """
         kwargs = dict(option=orjson.OPT_INDENT_2) if indent else {}
         encoded = orjson.dumps(self._x, default=_json_encode_default, **kwargs)
-        return encoded.decode(encoding="utf8")
+        return encoded.decode(encoding="utf-8")
 
     def to_toml(self) -> str:
         """
         Returns TOML text.
         """
-        return toml.dumps(self._x)
+        return tomlkit.dumps(self._x)
 
     def n_elements_total(self) -> int:
         return len(self._all_elements())
@@ -201,7 +200,7 @@ class NestedDotDict(Mapping):
         except XKeyError:
             return NestedDotDict({})
 
-    def exactly(self, items: str, astype: Type[T]) -> T:
+    def exactly(self, items: str, astype: type[T]) -> T:
         """
         Gets the key ``items`` from the dict if it has type ``astype``.
 
@@ -224,9 +223,7 @@ class NestedDotDict(Mapping):
             )
         return z
 
-    def get_as(
-        self, items: str, astype: Callable[[Any], T], default: Optional[T] = None
-    ) -> Optional[T]:
+    def get_as(self, items: str, astype: Callable[[Any], T], default: T | None = None) -> T | None:
         """
         Gets the value of an *optional* key, or ``default`` if it doesn't exist.
         Calls ``astype(value)`` on the value before returning.
@@ -259,7 +256,7 @@ class NestedDotDict(Mapping):
             return self._to_datetime(x)
         return astype(x)
 
-    def req_as(self, items: str, astype: Optional[Callable[[Any], T]]) -> T:
+    def req_as(self, items: str, astype: Callable[[Any], T] | None) -> T:
         """
         Gets the value of a *required* key.
         Calls ``astype(value)`` on the value before returning.
@@ -287,8 +284,8 @@ class NestedDotDict(Mapping):
         return astype(x)
 
     def get_list_as(
-        self, items: str, astype: Callable[[Any], T], default: Optional[Sequence[T]] = None
-    ) -> Optional[Sequence[T]]:
+        self, items: str, astype: Callable[[Any], T], default: Sequence[T] | None = None
+    ) -> Sequence[T] | None:
         """
         Gets list values from an *optional* key.
         Note that ``astype`` here converts elements *within* the list, not the whole list.
@@ -313,7 +310,7 @@ class NestedDotDict(Mapping):
             raise XTypeError(f"Value {x} is not a list for lookup {items}", actual=str(type(x)))
         return [astype(y) for y in x]
 
-    def req_list_as(self, items: str, astype: Optional[Callable[[Any], T]]) -> Sequence[T]:
+    def req_list_as(self, items: str, astype: Callable[[Any], T] | None) -> Sequence[T]:
         """
         Gets list values from a *required* key.
         Note that ``astype`` here converts elements *within* the list, not the whole list.
@@ -364,7 +361,7 @@ class NestedDotDict(Mapping):
             at = at[item]
         return NestedDotDict(at) if isinstance(at, dict) else copy(at)
 
-    def items(self) -> Sequence[Tup[str, Any]]:
+    def items(self) -> Sequence[tuple[str, Any]]:
         return list(self._x.items())
 
     def keys(self) -> Sequence[str]:
@@ -382,7 +379,7 @@ class NestedDotDict(Mapping):
         """
         return orjson.dumps(
             self.leaves(), option=orjson.OPT_SORT_KEYS | orjson.OPT_INDENT_2 | orjson.OPT_UTC_Z
-        ).decode(encoding="utf8")
+        ).decode(encoding="utf-8")
 
     def __len__(self) -> int:
         """

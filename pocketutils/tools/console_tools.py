@@ -1,21 +1,19 @@
 import logging
 import sys
-import time
-from typing import Callable, Union
+from collections.abc import Callable
+from typing import Any
 
 from pocketutils.tools.base_tools import BaseTools
-from pocketutils.tools.filesys_tools import FilesysTools
 
 logger = logging.getLogger("pocketutils")
 
 
 class ConsoleTools(BaseTools):
-
     CURSOR_UP_ONE = "\x1b[1A"
     ERASE_LINE = "\x1b[2K"
 
     @classmethod
-    def prompt_yes_no(cls, msg: str, writer: Callable[[str], None] = sys.stdout.write) -> bool:
+    def prompt_yes_no(cls, msg: str, writer: Callable[[str], Any] = sys.stdout.write) -> bool:
         """
         Asks for "yes" or "no" via ``input``.
         Consider using ``typer.prompt`` instead.
@@ -31,53 +29,26 @@ class ConsoleTools(BaseTools):
                 writer("Enter 'yes' or 'no'.\n")
 
     @classmethod
-    def slow_delete(
-        cls,
-        path: str,
-        wait: int = 5,
-        *,
-        delete_fn: Callable[[str], None] = FilesysTools.delete_surefire,
-        writer: Callable[[str], None] = sys.stdout.write,
-    ):
-        logger.debug(f"Deleting directory tree {path} ...")
-        writer(f"Waiting for {wait}s before deleting {path}: ")
-        for i in range(0, wait):
-            time.sleep(1)
-            writer(str(wait - i) + " ")
-        time.sleep(1)
-        writer("...")
-        delete_fn(path)
-        writer(" deleted.\n")
-        logger.debug(f"Deleted directory tree {path}")
-
-    @classmethod
     def confirm(
         cls,
-        msg: Union[None, str, Callable[[], None]] = None,
+        msg: str = "Confirm? [yes/no]",
         *,
         input_fn: Callable[[str], str] = input,
-        writer: Callable[[str], None] = sys.stdout.write,
+        writer: Callable[[str], Any] = sys.stdout.write,
     ) -> bool:
         """
         Asks for a confirmation from the user using the builtin ``input``.
 
         Consider using ``typer.prompt`` instead.
-            msg: If None defaults to 'Confirm? [yes/no]'
+            msg: If None, no message is written
             input_fn: Function to get the user input (its argument is always '')
             writer: Print using this function (should not print a newline by default)
 
         Returns:
             True if the user answered 'yes'; False otherwise
         """
-        if msg is None:
-            msg = "Confirm? [yes/no]"
-        if isinstance(msg, str):
-
-            def msg():
-                writer(msg + " ")
-
         while True:
-            msg()
+            writer(msg + " ")
             command = input_fn("").lower()
             if command in ["yes", "y"]:
                 return True

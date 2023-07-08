@@ -49,20 +49,11 @@ class TestStringTools:
         assert f("BETA", lowercase=True) == "BETA"
         assert f("Beta", lowercase=True) == "\u03B2"
 
-    def test_strip_off(self):
-        f = StringTools.strip_off
-        assert "abc" == f("abs=abc", "abs=")
-        assert "abc" == f("abs=abcabs=", "abs=")
-
-    def test_ends(self):
-        f = StringTools.strip_ends
-        assert f("123456", "1", "6")
-
     def test_tabs_to_list(self):
         assert ["a", "b", "c\td", "e"] == StringTools.tabs_to_list('a\t"b"\t"c\td"\te')
 
-    def test_longest_str(self):
-        f = StringTools.longest_str
+    def test_longest(self):
+        f = StringTools.longest
         assert f(["1", "abc", "xyz", "2"]) == "abc"
 
     def test_strip_brackets(self):
@@ -107,9 +98,6 @@ class TestStringTools:
         assert StringTools.superscript(StringTools.unsuperscript(s)) == s
 
     """
-
-    def test_dashes_to_hm(self):
-        assert StringTools.dashes_to_hm("-——") == "---"
 
     def test_pretty_float(self):
         f = StringTools.pretty_float

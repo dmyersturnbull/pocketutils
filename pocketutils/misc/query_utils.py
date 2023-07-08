@@ -1,9 +1,10 @@
 import logging
 import random
 import time
+from collections.abc import ByteString, Callable, Mapping
 from dataclasses import dataclass
 from datetime import timedelta
-from typing import Any, ByteString, Callable, Mapping, Optional
+from typing import Any
 from urllib import request
 
 logger = logging.getLogger("pocketutils")
@@ -29,8 +30,8 @@ class QueryExecutor:
         self,
         sec_delay_min: float = 0.25,
         sec_delay_max: float = 0.25,
-        encoding: Optional[str] = "utf-8",
-        querier: Optional[Callable[[request.Request], ByteString]] = None,
+        encoding: str | None = "utf-8",
+        querier: Callable[[request.Request], ByteString] | None = None,
     ):
         self._min = sec_delay_min
         self._max = sec_delay_max
@@ -48,8 +49,8 @@ class QueryExecutor:
         self,
         url: str,
         method: str = "get",
-        encoding: Optional[str] = "-1",
-        headers: Optional[Mapping[str, str]] = None,
+        encoding: str | None = "-1",
+        headers: Mapping[str, str] | None = None,
         errors: str = "ignore",
     ) -> str:
         headers = {} if headers is None else headers

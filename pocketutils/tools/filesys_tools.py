@@ -1,3 +1,5 @@
+import base64
+import csv
 import gzip
 import hashlib
 import logging
@@ -7,27 +9,15 @@ import shutil
 import stat
 import sys
 import tempfile
+from collections.abc import Callable, Generator, Iterable, Mapping, Sequence
 from contextlib import contextmanager
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 from pathlib import Path, PurePath
-from typing import (
-    Any,
-    Callable,
-    Generator,
-    Iterable,
-    Mapping,
-    Optional,
-    Sequence,
-    SupportsBytes,
-    Tuple,
-    Type,
-    Union,
-)
+from typing import Any, Literal, SupportsBytes
 
 import numpy as np
 import orjson
-import pandas as pd
 import regex
 from defusedxml import ElementTree
 
@@ -35,7 +25,6 @@ from pocketutils.core._internal import read_txt_or_gz, write_txt_or_gz
 from pocketutils.core.chars import Chars
 from pocketutils.core.exceptions import (
     AlreadyUsedError,
-    ContradictoryRequestError,
     DirDoesNotExistError,
     FileDoesNotExistError,
     ParsingError,
@@ -73,16 +62,16 @@ class PathInfo:
     """
 
     source: Path
-    resolved: Optional[Path]
+    resolved: Path | None
     as_of: datetime
-    real_stat: Optional[os.stat_result]
-    link_stat: Optional[os.stat_result]
+    real_stat: os.stat_result | None
+    link_stat: os.stat_result | None
     has_access: bool
     has_read: bool
     has_write: bool
 
     @property
-    def mod_or_create_dt(self) -> Optional[datetime]:
+    def mod_or_create_dt(self) -> datetime | None:
         """
         Returns the modification or access datetime.
         Uses whichever is available: creation on Windows and modification on Unix-like.
@@ -93,7 +82,7 @@ class PathInfo:
         return self._get_dt("st_mtime")
 
     @property
-    def mod_dt(self) -> Optional[datetime]:
+    def mod_dt(self) -> datetime | None:
         """
         Returns the modification datetime, if known.
         Returns None on Windows or if the path does not exist.
@@ -103,7 +92,7 @@ class PathInfo:
         return self._get_dt("st_mtime")
 
     @property
-    def create_dt(self) -> Optional[datetime]:
+    def create_dt(self) -> datetime | None:
         """
         Returns the creation datetime, if known.
         Returns None on Unix-like systems or if the path does not exist.
@@ -113,7 +102,7 @@ class PathInfo:
         return self._get_dt("st_ctime")
 
     @property
-    def access_dt(self) -> Optional[datetime]:
+    def access_dt(self) -> datetime | None:
         """
         Returns the access datetime.
         *Should* never return None if the path exists, but not guaranteed.
@@ -179,7 +168,7 @@ class PathInfo:
     def is_broken_symlink(self) -> bool:
         return self.is_symlink and not self.exists
 
-    def _get_dt(self, attr: str) -> Optional[datetime]:
+    def _get_dt(self, attr: str) -> datetime | None:
         if self.real_stat is None:
             return None
         sec = getattr(self.real_stat, attr)
@@ -297,9 +286,7 @@ class FilesysTools(BaseTools):
         Path(path.parent).mkdir(parents=True, exist_ok=exist_ok)
 
     @classmethod
-    def dump_error(
-        cls, e: Optional[BaseException], path: Union[None, PathLike, datetime] = None
-    ) -> Path:
+    def dump_error(cls, e: BaseException | None, path: None | PathLike | datetime = None) -> Path:
         """
         Writes a .json file containing the error message, stack trace, and sys info.
         System info is from :meth:`get_env_info`.
@@ -315,7 +302,7 @@ class FilesysTools(BaseTools):
         return path
 
     @classmethod
-    def dump_error_as_dict(cls, e: Optional[BaseException]) -> Mapping[str, Any]:
+    def dump_error_as_dict(cls, e: BaseException | None) -> Mapping[str, Any]:
         try:
             system = SystemTools.get_env_info()
         except BaseException as e2:
@@ -325,13 +312,13 @@ class FilesysTools(BaseTools):
         return dict(message=msg, stacktrace=tb, system=system)
 
     @classmethod
-    def dt_for_filesys(cls, dt: Optional[datetime] = None) -> str:
+    def dt_for_filesys(cls, dt: datetime | None = None) -> str:
         if dt is None:
             dt = datetime.now()
         return dt.strftime("%Y-%m-%d_%H-%M-%S")
 
     @classmethod
-    def delete_surefire(cls, path: PathLike) -> Optional[Exception]:
+    def delete_surefire(cls, path: PathLike) -> Exception | None:
         """
         Deletes files or directories cross-platform, but working around multiple issues in Windows.
 
@@ -355,7 +342,7 @@ class FilesysTools(BaseTools):
             shutil.rmtree(str(path), ignore_errors=True)  # ignore_errors because of Windows
             try:
                 path.unlink(missing_ok=True)  # again, because of Windows
-            except IOError:
+            except OSError:
                 pass  # almost definitely because it doesn't exist
         else:
             path.unlink(missing_ok=True)
@@ -363,7 +350,7 @@ class FilesysTools(BaseTools):
         return chmod_err
 
     @classmethod
-    def trash(cls, path: PathLike, trash_dir: Optional[PathLike] = None) -> None:
+    def trash(cls, path: PathLike, trash_dir: PathLike | None = None) -> None:
         """
         Trash a file or directory.
 
@@ -378,7 +365,7 @@ class FilesysTools(BaseTools):
         logger.debug(f"Trashed {path} to {trash_dir}")
 
     @classmethod
-    def try_cleanup(cls, path: Path, *, bound: Type[Exception] = PermissionError) -> None:
+    def try_cleanup(cls, path: Path, *, bound: type[Exception] = PermissionError) -> None:
         """
         Try to delete a file (probably temp file), if it exists, and log any ``PermissionError``.
         """
@@ -437,7 +424,7 @@ class FilesysTools(BaseTools):
 
     @classmethod
     def write_properties_file(
-        cls, properties: Mapping[Any, Any], path: Union[str, PurePath], mode: str = "o"
+        cls, properties: Mapping[Any, Any], path: str | PurePath, mode: str = "o"
     ) -> None:
         """
         Writes a .properties file.
@@ -445,52 +432,53 @@ class FilesysTools(BaseTools):
         .. caution::
             The escaping is not compliant with the standard
         """
-        if not OpenMode(mode).write:
-            raise ContradictoryRequestError(f"Cannot write text to {path} in mode {mode}")
         with FilesysTools.open_file(path, mode) as f:
-            bads = []
+            bad_keys = []
+            bad_values = []
             for k, v in properties.items():
-                if "=" in k or "=" in v or "\n" in k or "\n" in v:
-                    bads.append(k)
+                if "=" in k or "\n" in k:
+                    bad_keys.append(k)
+                if "=" in v or "\n" in v:
+                    bad_values.append(k)
                 f.write(
                     str(k).replace("=", "--").replace("\n", "\\n")
                     + "="
                     + str(v).replace("=", "--").replace("\n", "\\n")
                     + "\n"
                 )
-            if 0 < len(bads) <= 10:
+            if len(bad_keys) > 0:
                 logger.warning(
-                    "At least one properties entry contains an equals sign or newline (\\n)."
-                    f"These were escaped: {', '.join(bads)}"
+                    f"These keys containing '=' or \\n were escaped: {', '.join(bad_keys)}"
                 )
-            elif len(bads) > 0:
+            if len(bad_values) > 0:
                 logger.warning(
-                    "At least one properties entry contains an equals sign or newline (\\n),"
-                    "which were escaped."
+                    f"These keys containing '=' or \\n were escaped: {', '.join(bad_values)}"
                 )
 
     @classmethod
     def save_json(cls, data: Any, path: PathLike, mode: str = "w") -> None:
+        mode = mode.replace("t", "")
+        if "b" not in mode:
+            mode += "b"
         with cls.open_file(path, mode) as f:
-            f.write(orjson.dumps(data).decode(encoding="utf8"))
+            f.write(orjson.dumps(data))
 
     @classmethod
-    def load_json(cls, path: PathLike) -> Union[dict, list]:
-        return orjson.loads(Path(path).read_text(encoding="utf8"))
+    def load_json(cls, path: PathLike) -> dict | list:
+        return orjson.loads(Path(path).read_text(encoding="utf-8"))
 
     @classmethod
     def read_any(
         cls, path: PathLike
-    ) -> Union[
-        str,
-        bytes,
-        Sequence[str],
-        pd.DataFrame,
-        Sequence[int],
-        Sequence[float],
-        Sequence[str],
-        Mapping[str, str],
-    ]:
+    ) -> (
+        str
+        | bytes
+        | Sequence[str]
+        | Sequence[int]
+        | Sequence[float]
+        | Sequence[str]
+        | Mapping[str, str]
+    ):
         """
         Reads a variety of simple formats based on filename extension.
         Includes '.txt', 'csv', .xml', '.properties', '.json'.
@@ -514,16 +502,18 @@ class FilesysTools(BaseTools):
             return cls.read_lines_file(path)
         elif ext == "txt":
             return path.read_text(encoding="utf-8")
-        elif ext == "data":
+        elif ext == "bytes":
             return path.read_bytes()
         elif ext == "json":
             return cls.load_json(path)
         elif ext in ["npy", "npz"]:
-            return np.load(str(path), allow_pickle=False, encoding="utf8")
+            return np.load(str(path), allow_pickle=False, encoding="utf-8")
         elif ext == "properties":
             return cls.read_properties_file(path)
         elif ext == "csv":
-            return pd.read_csv(path, encoding="utf8")
+            with path.open(encoding="utf-8") as f:
+                reader = csv.DictReader(f)
+                return list(reader)
         elif ext == "ints":
             return load_list(int)
         elif ext == "floats":
@@ -537,9 +527,9 @@ class FilesysTools(BaseTools):
 
     @classmethod
     @contextmanager
-    def open_file(cls, path: PathLike, mode: Union[OpenMode, str], *, mkdir: bool = False):
+    def open_file(cls, path: PathLike, mode: OpenMode | str, *, mkdir: bool = False):
         """
-        Opens a text file, always using utf8, optionally gzipped.
+        Opens a text file, always using utf-8, optionally gzipped.
 
         See Also:
             :class:`pocketutils.core.input_output.OpenMode`
@@ -550,12 +540,12 @@ class FilesysTools(BaseTools):
             path.parent.mkdir(exist_ok=True, parents=True)
         if not mode.read:
             cls.prep_file(path, exist_ok=mode.overwrite or mode.append)
-        if mode.gzipped:
-            yield gzip.open(path, mode.internal, compresslevel=COMPRESS_LEVEL, encoding="utf8")
+        if path.suffix == ".gz" or path.suffix == ".gzip":
+            yield gzip.open(path, mode, compresslevel=COMPRESS_LEVEL, encoding="utf-8")
         elif mode.binary:
-            yield open(path, mode.internal, encoding="utf8")
+            yield open(path, mode, encoding="utf-8")
         else:
-            yield open(path, mode.internal, encoding="utf8")
+            yield open(path, mode, encoding="utf-8")
 
     @classmethod
     def write_lines(cls, iterable: Iterable[Any], path: PathLike, mode: str = "w") -> int:
@@ -582,13 +572,34 @@ class FilesysTools(BaseTools):
         return n
 
     @classmethod
-    def hash_hex(cls, x: SupportsBytes, algorithm: str) -> str:
+    def hash_digest(
+        cls,
+        x: SupportsBytes,
+        algorithm: str,
+        to: Literal["base64"] | Literal["base64-safe"] | Literal["hex"] = "base64",
+        *,
+        length: int | None = None,
+        **kwargs,
+    ) -> str:
         """
         Returns the hex-encoded hash of the object (converted to bytes).
         """
-        m = hashlib.new(algorithm)
-        m.update(bytes(x))
-        return m.hexdigest()
+        if algorithm.startswith("shake_"):
+            m = getattr(hashlib, algorithm)
+            m.update(bytes(x))
+            d = m.digest(128 if length is None else length)
+        else:
+            m = hashlib.new(algorithm, **kwargs)
+            m.update(bytes(x))
+            d = m.digest()
+        if to == "base64-safe":
+            return base64.standard_b64encode(d).decode(encoding="ascii")
+        elif to == "base64":
+            return base64.urlsafe_b64decode(d).decode(encoding="ascii")
+        elif to == "hex":
+            return f"{int(d, 2):X}"
+        else:
+            raise ValueError(f"Unknown encoding {to}")
 
     @classmethod
     def replace_in_file(cls, path: PathLike, changes: Mapping[str, str]) -> None:
@@ -602,7 +613,7 @@ class FilesysTools(BaseTools):
         path.write_text(data, encoding="utf-8")
 
     @classmethod
-    def tmppath(cls, path: Optional[PathLike] = None, **kwargs) -> Generator[Path, None, None]:
+    def tmp_path(cls, path: PathLike | None = None, **kwargs) -> Generator[Path, None, None]:
         """
         Makes a temporary Path. Won't create ``path`` but will delete it at the end.
         If ``path`` is None, will use ``tempfile.mkstemp``.
@@ -615,8 +626,8 @@ class FilesysTools(BaseTools):
             Path(path).unlink()
 
     @classmethod
-    def tmpfile(
-        cls, path: Optional[PathLike] = None, *, spooled: bool = False, **kwargs
+    def tmp_file(
+        cls, path: PathLike | None = None, *, spooled: bool = False, **kwargs
     ) -> Generator[Writeable, None, None]:
         """
         Simple wrapper around tempfile functions.
@@ -633,7 +644,7 @@ class FilesysTools(BaseTools):
                 yield x
 
     @classmethod
-    def tmpdir(cls, **kwargs) -> Generator[Path, None, None]:
+    def tmp_dir(cls, **kwargs) -> Generator[Path, None, None]:
         with tempfile.TemporaryDirectory(**kwargs) as x:
             yield Path(x)
 
@@ -641,13 +652,13 @@ class FilesysTools(BaseTools):
     def check_expired(
         cls,
         path: PathLike,
-        max_sec: Union[timedelta, float],
+        max_sec: timedelta | float,
         *,
-        parent: Optional[PathLike] = None,
+        parent: PathLike | None = None,
         warn_expired_fmt: str = "{path_rel} is {delta} out of date [{mod_rel}]",
         warn_unknown_fmt: str = "{path_rel} mod date is unknown [created: {create_rel}]",
-        log: Optional[Callable[[str], Any]] = logger.warning,
-    ) -> Optional[bool]:
+        log: Callable[[str], Any] | None = logger.warning,
+    ) -> bool | None:
         """
         Warns and returns True if ``path`` mod date is more than ``max_sec`` in the past.
         Returns None if it could not be determined.
@@ -694,11 +705,11 @@ class FilesysTools(BaseTools):
     def _warn_expired(
         cls,
         now: datetime,
-        mod: Optional[datetime],
-        created: Optional[datetime],
+        mod: datetime | None,
+        created: datetime | None,
         path: Path,
-        parent: Optional[Path],
-        fmt: Optional[str],
+        parent: Path | None,
+        fmt: str | None,
         log: Callable[[str], Any],
     ):
         if isinstance(fmt, str):
@@ -729,8 +740,8 @@ class FilesysTools(BaseTools):
 
     @classmethod
     def _expire_warning_info(
-        cls, now: datetime, then: Optional[datetime]
-    ) -> Tuple[str, str, str, str, str]:
+        cls, now: datetime, then: datetime | None
+    ) -> tuple[str, str, str, str, str]:
         now_str = now.strftime("%Y-%m-%d %H:%M:%S")
         if then is None:
             return now_str, "", "", "", ""
@@ -741,7 +752,7 @@ class FilesysTools(BaseTools):
         return now_str, then_str, then_rel, delta_str, str(delta.total_seconds())
 
     @classmethod
-    def __stat_raw(cls, path: Path) -> Optional[os.stat_result]:
+    def __stat_raw(cls, path: Path) -> os.stat_result | None:
         try:
             return path.lstat()
         except OSError as e:

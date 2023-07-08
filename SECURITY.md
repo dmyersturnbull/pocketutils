@@ -1,14 +1,5 @@
 # Security policy
 
-## Supported versions
-
-These versions of Pocketutils are supported:
-
-| Version | Supported          |
-| ------- | ------------------ |
-| 0.4.x   | :white_check_mark: |
-
-
 ## How to report a vulnerability
 
 Please report security problems with the

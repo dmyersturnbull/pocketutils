@@ -12,10 +12,11 @@ import socket
 import struct
 import sys
 import traceback
+from collections.abc import Callable, Mapping, Sequence
 from dataclasses import asdict, dataclass
 from datetime import datetime, timezone
 from getpass import getuser
-from typing import Any, Callable, Mapping, NamedTuple, Optional, Sequence, Union
+from typing import Any, NamedTuple
 
 from pocketutils.core.input_output import Writeable
 from pocketutils.tools.base_tools import BaseTools
@@ -32,7 +33,7 @@ class Frame:
     name: str
     repeats: int
 
-    def as_dict(self) -> Mapping[str, Union[int, str]]:
+    def as_dict(self) -> Mapping[str, int | str]:
         return asdict(self)
 
 
@@ -46,7 +47,7 @@ class SignalHandler:
     name: str
     code: int
     desc: str
-    sink: Union[Writeable, Callable[[str], Any]]
+    sink: Writeable | Callable[[str], Any]
 
     def __call__(self):
         self.sink.write(f"~~{self.name}[{self.code}] ({self.desc})~~")
@@ -68,12 +69,15 @@ class ExitHandler:
 
 class SystemTools(BaseTools):
     @classmethod
-    def get_env_info(cls, *, include_insecure: bool = False) -> Mapping[str, str]:
+    def get_env_info(
+        cls, *, extended: bool = False, include_insecure: bool = False
+    ) -> Mapping[str, str]:
         """
         Get a dictionary of some system and environment information.
         Includes os_release, hostname, username, mem + disk, shell, etc.
 
         Args:
+            extended: Get info from psutil
             include_insecure: Include data like hostname and username
 
         .. caution ::
@@ -81,11 +85,6 @@ class SystemTools(BaseTools):
             sources. For example, this includes the specific OS release, which could
             be used in attack.
         """
-        try:
-            import psutil
-        except ImportError:
-            psutil = None
-            logger.warning("psutil is not installed, so cannot get extended env info")
 
         now = datetime.now(timezone.utc).astimezone().isoformat()
         uname = platform.uname()
@@ -94,7 +93,7 @@ class SystemTools(BaseTools):
         data = {}
 
         def _try(os_fn, k: str, *args):
-            if any((a is None for a in args)):
+            if any(a is None for a in args):
                 return None
             try:
                 v = os_fn(*args)
@@ -150,7 +149,9 @@ class SystemTools(BaseTools):
             if hasattr(os, "getpriority"):
                 _try(os.getpriority, "priority", os.PRIO_PROCESS, pid)
                 _try(os.getpriority, "parent_priority", os.PRIO_PROCESS, ppid)
-        if psutil is not None:
+        if extended:
+            import psutil
+
             data.update(
                 dict(
                     disk_used=psutil.disk_usage(".").used,
@@ -178,19 +179,19 @@ class SystemTools(BaseTools):
         return dct
 
     @classmethod
-    def serialize_exception(cls, e: Optional[BaseException]) -> SerializedException:
+    def serialize_exception(cls, e: BaseException | None) -> SerializedException:
         tbe = traceback.TracebackException.from_exception(e)
         msg = [] if e is None else list(tbe.format_exception_only())
         tb = SystemTools.build_traceback(e)
         return SerializedException(msg, tb)
 
     @classmethod
-    def serialize_exception_msg(cls, e: Optional[BaseException]) -> Sequence[str]:
+    def serialize_exception_msg(cls, e: BaseException | None) -> Sequence[str]:
         tbe = traceback.TracebackException.from_exception(e)
         return [] if e is None else list(tbe.format_exception_only())
 
     @classmethod
-    def build_traceback(cls, e: Optional[BaseException]) -> Sequence[Frame]:
+    def build_traceback(cls, e: BaseException | None) -> Sequence[Frame]:
         if e is None:
             return []
         tb = []

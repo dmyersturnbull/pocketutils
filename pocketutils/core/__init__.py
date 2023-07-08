@@ -1,10 +1,10 @@
 from __future__ import annotations
 
 import abc
-import enum
 import logging
 from collections import UserDict
-from typing import Any, Callable, Generic, Iterable, Sequence, Type, TypeVar
+from collections.abc import Callable, Iterable, Sequence
+from typing import Any, Generic, TypeVar
 
 # noinspection PyProtectedMember
 from pocketutils.core._internal import PathLike, PathLikeUtils
@@ -82,21 +82,21 @@ class ClearableLazyWrapped(LazyWrapped, metaclass=abc.ABCMeta):
 
 class LazyWrap:
     @classmethod
-    def new_type(cls, dtype: str, generator: Callable[[], V]) -> Type[PlainLazyWrapped]:
+    def new_type(cls, dtype: str, generator: Callable[[], V]) -> type[PlainLazyWrapped]:
         # noinspection PyTypeChecker
         return cls._new_type(dtype, generator, PlainLazyWrapped)
 
     @classmethod
     def new_clearable_type(
         cls, dtype: str, generator: Callable[[], V]
-    ) -> Type[ClearableLazyWrapped]:
+    ) -> type[ClearableLazyWrapped]:
         # noinspection PyTypeChecker
         return cls._new_type(dtype, generator, ClearableLazyWrapped)
 
     @classmethod
     def _new_type(
-        cls, dtype: str, generator: Callable[[], V], superclass: Type[LazyWrapped]
-    ) -> Type[LazyWrapped]:
+        cls, dtype: str, generator: Callable[[], V], superclass: type[LazyWrapped]
+    ) -> type[LazyWrapped]:
         """
         Creates a new mutable wrapped type.
 

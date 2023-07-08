@@ -1,9 +1,10 @@
 import logging
 import os
 import sys
+from collections.abc import Callable, Sequence
 from copy import copy
 from pathlib import Path
-from typing import Any, Callable, Optional, Sequence, Union
+from typing import Any
 
 import regex
 
@@ -102,10 +103,10 @@ class PathTools(BaseTools):
         cls,
         path: PathLike,
         *,
-        is_file: Optional[bool] = None,
+        is_file: bool | None = None,
         fat: bool = False,
         trim: bool = False,
-        warn: Union[bool, Callable[[str], Any]] = True,
+        warn: bool | Callable[[str], Any] = True,
     ) -> Path:
         r"""
         Sanitizes a path for major OSes and filesystems.
@@ -144,7 +145,7 @@ class PathTools(BaseTools):
         cls,
         bits: Sequence[PathLike],
         *,
-        is_file: Optional[bool] = None,
+        is_file: bool | None = None,
         fat: bool = False,
         trim: bool = False,
     ) -> Sequence[str]:
@@ -169,8 +170,8 @@ class PathTools(BaseTools):
         cls,
         bit: PathLike,
         *,
-        is_file: Optional[bool] = None,
-        is_root_or_drive: Optional[bool] = None,
+        is_file: bool | None = None,
+        is_root_or_drive: bool | None = None,
         fat: bool = False,
         trim: bool = False,
     ) -> str:

@@ -1,22 +1,11 @@
 import logging
 import sys
+from collections.abc import ByteString, Callable, Generator, Iterable, Iterator
 from contextlib import contextmanager
-from typing import (
-    Any,
-    ByteString,
-    Callable,
-    Generator,
-    Iterable,
-    Iterator,
-    List,
-    Optional,
-    Tuple,
-    TypeVar,
-    Union,
-)
+from typing import Any, TypeVar
 
 from pocketutils.core._internal import look as _look
-from pocketutils.core.exceptions import LengthMismatchError, MultipleMatchesError, XTypeError
+from pocketutils.core.exceptions import MultipleMatchesError, XTypeError
 from pocketutils.core.input_output import Writeable
 
 logger = logging.getLogger("pocketutils")
@@ -46,7 +35,8 @@ class BaseTools:
     def only(
         cls,
         sequence: Iterable[Any],
-        condition: Union[str, Callable[[Any], bool]] = None,
+        condition: str | Callable[[Any], bool] = None,
+        *,
         name: str = "collection",
     ) -> Any:
         """
@@ -90,71 +80,6 @@ class BaseTools:
             return _only([s for s in sequence if condition(s)])
         else:
             return _only(sequence)
-
-    @classmethod
-    def zip_strict(cls, *args: Iterable[Any]) -> Generator[Tuple[Any], None, None]:
-        """
-        Same as zip(), but raises an IndexError if the lengths don't match.
-
-        Args:
-            args: Same as with ``zip``
-
-        Yields:
-            Tuples corresponding to the input items
-
-        Raises:
-            LengthMismatchError: If the lengths of the input iterators don't match
-        """
-        # we need to catch these cases before or they'll fail
-        # in particular, 1 element would fail with a LengthMismatchError
-        # and 0 elements would loop forever
-        if len(args) < 2:
-            yield from zip(*args)
-            return
-        iters = [iter(axis) for axis in args]
-        n_elements = 0
-        failures = []
-        while len(failures) == 0:
-            values = []
-            failures = []
-            for axis, iterator in enumerate(iters):
-                try:
-                    values.append(next(iterator))
-                except StopIteration:
-                    failures.append(axis)
-            if len(failures) == 0:
-                yield tuple(values)
-            elif len(failures) == 1:
-                raise LengthMismatchError(
-                    f"Too few elements ({n_elements}) along axis {failures[0]}"
-                )
-            elif len(failures) < len(iters):
-                raise LengthMismatchError(f"Too few elements ({n_elements}) along axes {failures}")
-            n_elements += 1
-
-    @classmethod
-    def zip_list(cls, *args) -> List[Tuple[Any]]:
-        """
-        Same as :meth:`zip_strict`, but more informative.
-        Converts to a list and can provide a more detailed error message.
-        Zips two sequences into a list of tuples and raises an
-        IndexError if the lengths don't match.
-
-        Args:
-            args: Same as with ``zip``
-
-        Yields:
-            Tuples corresponding to the input items
-
-        Raises:
-            LengthMismatchError: If the lengths of the input iterators don't match
-        """
-        try:
-            return list(cls.zip_strict(*args))
-        except LengthMismatchError:
-            raise LengthMismatchError(
-                "Length mismatch in zip_strict: Sizes are {}".format([len(x) for x in args])
-            ) from None
 
     @classmethod
     def forever(cls) -> Iterator[int]:
@@ -218,7 +143,7 @@ class BaseTools:
         yield
 
     @classmethod
-    def look(cls, obj: Y, attrs: Union[str, Iterable[str], Callable[[Y], Z]]) -> Optional[Z]:
+    def look(cls, obj: Y, attrs: str | Iterable[str] | Callable[[Y], Z]) -> Z | None:
         """
         Follows a dotted syntax for getting an item nested in class attributes.
         Returns the value of a chain of attributes on object ``obj``,
@@ -246,7 +171,7 @@ class BaseTools:
         return _look(obj, attrs)
 
     @classmethod
-    def make_writer(cls, writer: Union[Writeable, Callable[[str], Any]]):
+    def make_writer(cls, writer: Writeable | Callable[[str], Any]):
         if Writeable.isinstance(writer):
             return writer
         elif callable(writer):
@@ -265,9 +190,7 @@ class BaseTools:
         raise XTypeError(f"{type(writer)} cannot be wrapped into a Writeable")
 
     @classmethod
-    def get_log_function(
-        cls, log: Union[None, str, Callable[[str], None], Any]
-    ) -> Callable[[str], None]:
+    def get_log_function(cls, log: str | Callable[[str], Any] | None) -> Callable[[str], None]:
         """
         Gets a logging function from user input.
         The rules are:

@@ -6,7 +6,7 @@ description-file = "README.md"
 # https://github.com/ContinuumIO/anaconda-issues/issues/12094
 # Poetry uses pip and setuptools (although they're not included as dependencies)
 # We don't need to list wheel here, but setting a min vr can avoid generating inferior wheels
-requires = ["poetry>=1.1,<2", "virtualenv==20.0.33", "wheel>=0.36,<1.0"]
+requires = ["poetry>=1.2,<2", "virtualenv>=20", "wheel>=0.36,<1.0"]
 build-backend = "poetry.masonry.api"
 
 
@@ -16,7 +16,7 @@ build-backend = "poetry.masonry.api"
 
 [tool.poetry]
 name = "pocketutils"
-version = "0.9.1"
+version = "0.10.0-alpha0"
 description = "Adorable little Python code for you to copy or import."
 keywords = ["python", "snippets", "utils", "gists", "bioinformatics"]
 authors = ["Douglas Myers-Turnbull"]
@@ -30,8 +30,6 @@ classifiers = [
     "Development Status :: 3 - Alpha",
     "Natural Language :: English",
     "Programming Language :: Python :: 3 :: Only",
-    "Programming Language :: Python :: 3.8",
-    "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
 	"Intended Audience :: Developers",
@@ -46,150 +44,139 @@ Download = "https://pypi.org/project/pocketutils/"
 Changelog = "https://github.com/dmyersturnbull/pocketutils/blob/main/CHANGELOG.md"
 
 
-#########################################################################################
-# Poetry build & dependencies
-#########################################################################################
+###################
+# Poetry
+###################
 
 [tool.poetry.dependencies]
-python                   = "^3.8"
-defusedxml               = ">=0.6, <1.0"
-orjson                   = "^3"
-regex                    = ">=2019"
-toml                     = ">=0.10, <1.0"
-tomlkit                  = ">=0.5, <1.0"
+python                   = "^3.10"
+defusedxml               = ">=0.6"
+orjson                   = ">=3.6"
+regex                    = ">=2021"
+tomlkit                  = ">=0.7"
 
-loguru                   = {version=">=0.5, <1.0", optional=true}
-notifiers                = {version="^1", optional=true}
-
-joblib                   = {version="^1", optional=true}
-numpy                    = {version="^1.17", optional=true}
-pandas                   = {version="^1", optional=true}
-pint                     = {version=">=0.10, <1.0", optional=true}
-
-matplotlib               = {version="^3", optional=true}
-
-goatools                 = {version="^1", optional=true}
-requests                 = {version="^2", optional=true}
-uniprot                  = {version="^1.3", optional=true}
-
+loguru                   = {version=">=0.6", optional=true}
+joblib                   = {version=">=1", optional=true}
+numpy                    = {version=">=1.17", optional=true}
+pint                     = {version=">=0.20", optional=true}
+pydantic                 = {version=">=2", optional=true}
 psutil                   = {version=">=5", optional=true}
-typer                    = {version=">=0.4, <1.0", optional=true}
+typer                    = {version=">=0.6", optional=true}
+pandas = "^2.0.3"
 
-# open-ended because it updates often
-ipython                  = {version=">=7", optional=true}
+[tool.poetry.group.test.dependencies]
+bandit                        = ">=1.7"
+Flake8-pyproject              = "^1.2"
+flake8                        = "^6"
+flake8-warnings               = ">=0.4"
+flake8-noqa                   = ">=1.3"
+wemake-python-styleguide      = ">=0.18"
+coverage                      = {version = "^7", extras = ["toml"]}
+nbqa                          = "^1.7"
+pre-commit                    = "^3.3"
+pydocstyle                    = ">=6"
+pytest                        = "^7"
+pytest-cov                    = "^4"
 
-
-[tool.poetry.dev-dependencies]
-pre-commit               = "^2.20"
-bandit                   = "^1.7"
-hypothesis               = "^6"
-pytest                   = "^7"
-coverage                 = {extras = ["toml"], version = "^6"}
-pytest-cov               = "^3"
-flake8                   = "^5"
-flake8-bugbear           = ">=22.7"
-flake8-docstrings        = "^1.6"
-sphinx                   = "^5"
-sphinx-copybutton        = ">=0.5, <1.0"
-sphinx-autoapi           = "^1.9"
-sphinx-rtd-theme         = "^1"
+[tool.poetry.group.docs.dependencies]
+sphinx                        = "^7"
+sphinx-autoapi                = "^2"
+sphinx-copybutton             = ">=0.5"
+furo                          = "=2023.5.20"
 
 
 [tool.poetry.extras]
-tools      = ["joblib", "numpy", "pandas", "pint", "loguru"]
-plotting   = ["matplotlib", "numpy", "pandas"]
-notebooks  = ["ipython", "pandas"]
-misc       = ["psutil", "typer"]
-biochem    = ["goatools", "requests", "uniprot", "numpy", "pandas", "pint"]
-all = [
-    "joblib", "numpy", "pandas", "pint",
+extras = [
+    "joblib", "numpy", "pint",
     "loguru",
-    "matplotlib",
-    "ipython",
-    "psutil", "typer",
-    "goatools", "requests", "uniprot"
+    "psutil", "typer", "pydantic",
+    "requests",
 ]
 
 
-#########################################################################################
-# Tyrannosaurus
-#########################################################################################
-
-[tool.tyrannosaurus.options]
-align    = true
-
-[tool.tyrannosaurus.sources]
-status             = "'Development'"
-date               = "${today}"
-copyright          = "'Copyright 2016–2021'"
-version            = "tool.poetry.version"
-release            = "tool.poetry.version"
-pyversions         = "tool.poetry.dependencies"
-devdeps            = "tool.poetry.dev-dependencies"
-linelength         = "tool.black.line-length"
-
-authors = [
-    "Douglas Myers-Turnbull <github:dmyersturnbull,orcid:0000-0003-3610-4808>"
-]
-contributors = [
-	"Chris S Ki <github:chriski777>",
-	"Cole Helsell <github:chelsell,orcid:0000-0002-8869-3125>"
-]
-maintainers = "tool.tyrannosaurus.sources.authors"
-
-[tool.tyrannosuarus.paths]
-recipe             = "'recipes/pocketutils/meta.yml'"
-environment        = "'environment.yml'"
-
-[tool.tyrannosaurus.targets]
-pyproject    = true
-init         = true
-tox          = true
-docs         = true
-recipes      = true
-license      = true
-authors      = true
-github       = true
-travis       = true
-dockerfile   = true
-readme       = true
-changelog    = true
-citation     = true
-codemeta     = true
-environment  = false
-
-
-#########################################################################################
-# Testing
-#########################################################################################
-
+###################
+# pytest
+###################
+#[tool.pytest]  # in a future version of pytest
 [tool.pytest.ini_options]
 log_cli = true
 log_cli_level = "INFO"
 log_cli_format = "%(asctime)s [%(levelname)8s] %(name)s: %(message)s (%(filename)s:%(lineno)s)"
 log_cli_date_format = "%Y-%m-%d %H:%M:%S"
+# :tyranno: source = addopts = "--cov ${.name} --cov-report term-missing"
+addopts = "--cov tyrannosaurus --cov-report term-missing"
 
 
-#########################################################################################
-# Style checking
-#########################################################################################
-
-[tool.coverage.paths]
-source = ["pocketutils"]
+###################
+# coverage
+###################
 
 [tool.coverage.run]
-source = ["pocketutils"]
+source = "tyrannosaurus"  # tyranno:<: source = "${.name}"
+
+[tool.coverage.html]
+directory = ".coverage_report"
+
+[tool.coverage.paths]
+source = ["tyrannosaurus"]  # tyranno:<: source = ["${.name}"]
 
 [tool.coverage.report]
 show_missing = true
 
+
+###################
+# commitizen
+###################
+[tool.commitizen]
+annotated_tag = true
+
+
+###################
+# flake8
+###################
+[tool.flake8]
+statistics = true
+format = "wemake"
+min-name-length = 1  # was 2; forbids names like 'x'
+max-local-variables = 8  # was 5
+max-expressions = 12  # was 9
+max-methods = 12  # was 7
+max-imports = 16  # was 12
+max-asserts = 10  # was 5
+max-raises = 5  # was 3
+max-call-level = 5  # was 3
+max-import-from-members = 10  # was 8
+# :tyranno: max-line-length = ${.line-length}
+max-line-length = 100
+# :tyranno: max-doc-length = ${.line-length}
+max-doc-length = 100
+extend-ignore = [
+    "D107",  # Missing docstring in __init__ (put in class docstring)
+    "D212",  # Multi-line docstring start (contradictory)
+    "E203",  # Colons with space before (sometimes useful expand)
+    "E225",  # Missing whitespace around operator (sometimes useful to condense)
+    "E501",  # Line > 79 chars (we use black)
+    "S101",  # Assertion (totally not a problem; needed in tests, too)
+]
+per-file-ignores = ["tests: S101"]
+doctests = true
+exclude =  [".git", "__pycache__/", "build/", "dist/"]
+import-order-style = "google"
+docstring-convention = "google"
+
+
+###################
+# Black
+###################
 [tool.black]
 line-length = 100
-target-version = ["py38", "py39"]
+# target-version is not needed; Black figures it out
 
+
+###################
+# isort
+###################
 [tool.isort]
+profile = "black"
+# :tyranno: line_length = ${.line-length}
 line_length = 100
-
-[mypy]
-check_untyped_defs = true
-strict_optional = true

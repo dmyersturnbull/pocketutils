@@ -1,75 +1,31 @@
-from typing import Optional, SupportsFloat, SupportsInt, TypeVar
-
-import numpy as np
+import math
+from collections.abc import Sequence
+from typing import SupportsFloat, SupportsInt, SupportsRound
 
 from pocketutils.tools.base_tools import BaseTools
-
-V = TypeVar("V")
 
 
 class NumericTools(BaseTools):
     @classmethod
-    def fnone(cls, f: Optional[SupportsFloat]) -> float:
+    def float_opt(cls, f: SupportsFloat | None) -> float:
         return None if f is None else float(f)
 
     @classmethod
-    def iroundopt(cls, f: Optional[SupportsInt]) -> int:
-        # noinspection PyTypeChecker
-        return None if f is None else int(np.round(f))
+    def round_opt(cls, f: SupportsRound | None) -> int:
+        return None if f is None else int(round(f))
 
     @classmethod
-    def iceilopt(cls, f: Optional[SupportsInt]) -> int:
-        # noinspection PyTypeChecker
-        return None if f is None else int(np.ceil(f))
+    def ceil_opt(cls, f: SupportsFloat | None) -> int:
+        return None if f is None else int(math.ceil(f))
 
     @classmethod
-    def iflooropt(cls, f: Optional[SupportsInt]) -> int:
-        # noinspection PyTypeChecker
-        return None if f is None else int(np.floor(f))
+    def floor_opt(cls, f: SupportsFloat | None) -> int:
+        return None if f is None else int(math.floor(f))
 
     @classmethod
-    def iround(cls, f: Optional[SupportsInt]) -> int:
-        # noinspection PyTypeChecker
-        return None if f is None else int(np.round(f))
-
-    @classmethod
-    def iceil(cls, f: SupportsFloat) -> int:
-        """
-        Fixes ``np.ceil`` to return a Python integer rather than a Numpy float.
-
-        Args:
-            f: A Python or Numpy float, or something else that defines ``__float__``
-
-        Returns:
-            An integer of the ceiling
-        """
-        # noinspection PyTypeChecker
-        return int(np.ceil(f))
-
-    @classmethod
-    def ifloor(cls, f: SupportsFloat) -> int:
-        """
-        Fixes ``np.floor`` to return a Python integer rather than a Numpy float.
-
-        Args:
-            f: A Python or Numpy float, or something else that defines ``__float__``
-
-        Returns:
-            An integer of the ceiling
-        """
-        # noinspection PyTypeChecker
-        return int(np.floor(f))
-
-    @classmethod
-    def imin(cls, *f) -> int:
-        return int(np.min(f))
-
-    @classmethod
-    def imax(cls, *f) -> int:
-        return int(np.max(f))
-
-    @classmethod
-    def slice_bounded(cls, arr: np.array, i: Optional[int], j: Optional[int]) -> np.array:
+    def slice(
+        cls, arr: Sequence[SupportsRound], i: SupportsInt | None, j: SupportsInt | None
+    ) -> Sequence[SupportsRound]:
         """
         Slices ``arr[max(i,0), min(j, len(arr))``.
         Converts ``i`` and ``j`` to int.
@@ -82,8 +38,14 @@ class NumericTools(BaseTools):
             i = len(arr) - i
         if j < 0:
             j = len(arr) - j
-        start, stop = NumericTools.imax(0, i), NumericTools.imin(len(arr), j)
+        start, stop = int(min(0, i)), int(max(len(arr), j))
         return arr[start:stop]
+
+    @classmethod
+    def clamp(
+        cls, arr: Sequence[SupportsFloat], floor: SupportsFloat, ceil: SupportsFloat
+    ) -> Sequence[SupportsFloat]:
+        return [max([min([float(x), float(ceil)]), float(floor)]) for x in arr]
 
 
 __all__ = ["NumericTools"]

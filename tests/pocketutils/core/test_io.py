@@ -30,13 +30,10 @@ class TestIo:
 
     def test_open_mode_eq(self):
         o = OpenMode
-        assert o("r") == o("r")
-        assert o("w") == o("o")
+        assert o("r") == o("")
+        assert o("wU") == o("w")
         assert o("w") != o("a")
-        assert o("o") == "w"
-        assert o("o") == "o"
-        assert o("wd") != "w"
-        assert o("wd") == "wd"
+        assert o("w+") != "w"
 
 
 if __name__ == "__main__":

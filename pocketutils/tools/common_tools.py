@@ -1,21 +1,7 @@
 import sys
 from collections import defaultdict
-from typing import (
-    Any,
-    Callable,
-    Generator,
-    Iterable,
-    Iterator,
-    Mapping,
-    Optional,
-    Sequence,
-    Tuple,
-    Type,
-    TypeVar,
-    Union,
-)
-
-import pandas as pd
+from collections.abc import Callable, Generator, Iterable, Iterator, Mapping, Sequence
+from typing import Any, TypeVar
 
 from pocketutils.core._internal import nicesize
 from pocketutils.core.exceptions import RefusingRequestError, XKeyError, XValueError
@@ -49,9 +35,9 @@ class CommonTools(BaseTools):
     def try_none(
         cls,
         function: Callable[[], T],
-        fail_val: Optional[T] = None,
+        fail_val: T | None = None,
         exception=Exception,
-    ) -> Optional[T]:
+    ) -> T | None:
         """
         Returns the value of a function or None if it raised an exception.
 
@@ -72,7 +58,7 @@ class CommonTools(BaseTools):
         return cls.try_none(function, exception=exception) is not None
 
     @classmethod
-    def or_null(cls, x: Any, dtype=lambda s: s, or_else: Any = None) -> Optional[Any]:
+    def or_null(cls, x: Any, dtype=lambda s: s, or_else: Any = None) -> Any | None:
         """
         Return ``None`` if the operation ``dtype`` on ``x`` failed; returns the result otherwise.
         """
@@ -83,7 +69,7 @@ class CommonTools(BaseTools):
         cls,
         x: Any,
         dtype=lambda s: s,
-        or_else: Union[None, BaseException, Type[BaseException]] = None,
+        or_else: BaseException | type[BaseException] | None = None,
     ) -> Any:
         """
         Returns ``dtype(x)`` if ``x`` is not None, or raises ``or_else``.
@@ -111,19 +97,19 @@ class CommonTools(BaseTools):
     @classmethod
     def is_null(cls, x: Any) -> bool:
         """
-        Returns True for None, float, and ``pd.isna``.
-
-        That is, if and only if:
-            - ``x is None``
-            - ``x is float('NaN')``
-            - ``pd.isna(x)``
+        Returns True for None, NaN, and NaT (not a time) values from Numpy, Pandas, and Python.
+        Not perfect; may return false positive True for types declared outside Numpy and Pandas.
         """
-        try:
-            if pd.isna(x):
-                return True
-        except (ValueError, TypeError):
-            pass
-        return x is None or x == float("NaN")
+        if x is None:
+            return True
+        if isinstance(x, str):
+            return False
+        return str(x) in [
+            "nan",  # float('NaN') and Numpy float NaN
+            "NaN",  # Pandas NaN and decimal.Decimal NaN
+            "<NA>",  # Pandas pd.NA
+            "NaT",  # Numpy datetime and timedelta NaT
+        ]
 
     @classmethod
     def is_empty(cls, x: Any) -> bool:
@@ -131,8 +117,7 @@ class CommonTools(BaseTools):
         Returns True if x is None, NaN according to Pandas, or contains 0 items.
 
         That is, if and only if:
-            - x is None
-            - pd.is_na(x)
+            - :meth:`is_null`
             - x is something with 0 length
             - x is iterable and has 0 elements (will call ``__iter__``)
 
@@ -142,14 +127,12 @@ class CommonTools(BaseTools):
         if isinstance(x, Iterator):
             raise RefusingRequestError("Do not call is_empty on an iterator.")
         try:
-            if pd.isna(x):
+            if cls.is_null(x):
                 return True
         except (ValueError, TypeError):
             pass
         return (
-            x is None
-            or x == float("NaN")
-            or hasattr(x, "__len__")
+            hasattr(x, "__len__")
             and len(x) == 0
             or hasattr(x, "__iter__")
             and len(list(iter(x))) == 0
@@ -161,14 +144,12 @@ class CommonTools(BaseTools):
         Returns True if ``x`` is None, NaN according to Pandas, 0 length, or a string representation.
 
         Specifically, returns True if and only if:
-            - ``x is None``
-            - ``pd.isna(x)``
+            - :meth:`is_null`
             - x is something with 0 length
             - x is iterable and has 0 elements (will call ``__iter__``)
-            - a str(x) is 'nan', 'n/a', 'null', or 'none'; case-insensitive
+            - a str(x) is 'nan', 'na', 'n/a', 'null', or 'none'; case-insensitive
 
         Things that are **NOT** probable nulls:
-            - ``"na"``
             - ``0``
             - ``[None]``
 
@@ -176,7 +157,7 @@ class CommonTools(BaseTools):
             TypeError If ``x`` is an Iterator.
                       Calling this would empty the iterator, which is dangerous.
         """
-        return cls.is_empty(x) or str(x).lower() in ["nan", "n/a", "null", "none"]
+        return cls.is_empty(x) or str(x).lower() in ["nan", "n/a", "na", "null", "none"]
 
     @classmethod
     def unique(cls, sequence: Iterable[T]) -> Sequence[T]:
@@ -193,7 +174,7 @@ class CommonTools(BaseTools):
         return [x for x in sequence if not (x in seen or seen.add(x))]
 
     @classmethod
-    def first(cls, collection: Iterable[Any], attr: Optional[str] = None) -> Optional[Any]:
+    def first(cls, collection: Iterable[Any], attr: str | None = None) -> Any:
         """
         Gets the first element.
 
@@ -219,7 +200,7 @@ class CommonTools(BaseTools):
             return None
 
     @classmethod
-    def iter_rowcol(cls, n_rows: int, n_cols: int) -> Generator[Tuple[int, int], None, None]:
+    def iter_rowcol(cls, n_rows: int, n_cols: int) -> Generator[tuple[int, int], None, None]:
         """
         An iterator over (row column) pairs for a row-first grid traversal.
 
@@ -235,7 +216,7 @@ class CommonTools(BaseTools):
     def multidict(
         cls,
         sequence: Iterable[Z],
-        key_attr: Union[str, Iterable[str], Callable[[Y], Z]],
+        key_attr: str | Iterable[str] | Callable[[Y], Z],
         skip_none: bool = False,
     ) -> Mapping[Y, Sequence[Z]]:
         """
