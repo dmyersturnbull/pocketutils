@@ -85,8 +85,8 @@ class FlagEnum(enum.Flag):
         return obj
 
     @classmethod
-    def _create_pseudo_member_(cls, value):
-        value = super()._create_pseudo_member_(value)
+    def _create_pseudo_member(cls, value):
+        value = super()._create_pseudo_member(value)
         members, _ = enum._decompose(cls, value)
         value._name_ = "|".join([m.name for m in members])
         return value
