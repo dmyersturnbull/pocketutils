@@ -7,15 +7,16 @@ from importlib.metadata import PackageNotFoundError
 from importlib.metadata import metadata as __load
 from pathlib import Path
 
+from pocketutils.core import *
 from pocketutils.core.chars import *
+from pocketutils.core.decorators import *
 from pocketutils.core.dot_dict import *
 from pocketutils.core.enums import *
 from pocketutils.core.exceptions import *
 from pocketutils.core.frozen_types import *
 from pocketutils.core.input_output import *
 from pocketutils.core.iterators import *
-from pocketutils.core.mocks import *
-from pocketutils.misc.smartio import SmartIo
+from pocketutils.core.smartio import SmartIo
 from pocketutils.tools.call_tools import *
 from pocketutils.tools.common_tools import *
 from pocketutils.tools.console_tools import *

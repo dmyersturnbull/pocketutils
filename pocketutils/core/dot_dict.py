@@ -5,7 +5,6 @@ import sys
 from collections.abc import ByteString, Callable, Collection, Mapping, Sequence
 from copy import copy
 from datetime import date, datetime
-from pathlib import Path, PurePath
 from typing import Any, TypeVar
 
 import orjson
@@ -32,17 +31,6 @@ class NestedDotDict(Mapping):
     A dot is reserved for splitting values to traverse the tree.
     For example, ``dotdict["pet.species.name"]``.
     """
-
-    @classmethod
-    def read_pickle(cls, path: PurePath | str) -> NestedDotDict:
-        """
-
-        Note that this function has potential security concerns.
-        This is because it relies on the pickle module.
-        """
-        data = Path(path).read_bytes()
-        data = pickle.loads(data)  # nosec
-        return cls(data)
 
     @classmethod
     def parse_toml(cls, data: str) -> NestedDotDict:

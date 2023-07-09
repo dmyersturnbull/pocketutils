@@ -1,11 +1,11 @@
 import logging
+import os
 from collections.abc import MutableMapping
-from pathlib import Path
+from pathlib import Path, PurePath
 from typing import Any
 
 import orjson
 
-from pocketutils.core import PathLike
 from pocketutils.core.dot_dict import NestedDotDict
 from pocketutils.core.exceptions import (
     DirDoesNotExistError,
@@ -16,6 +16,7 @@ from pocketutils.core.exceptions import (
 from pocketutils.tools.common_tools import CommonTools
 from pocketutils.tools.filesys_tools import FilesysTools
 
+PathLike = PurePath | str | os.PathLike
 _logger = logging.getLogger("pocketutils")
 _json_suffixes = {".json", ".json.gz", ".json.gzip", ".json.bz2", ".json.bzip2"}
 _toml_suffixes = {".toml", ".toml.gz", ".toml.gzip", ".toml.bz2", ".toml.bzip2"}

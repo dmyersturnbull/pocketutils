@@ -14,11 +14,6 @@ from datetime import datetime
 from pathlib import Path, PurePath
 from typing import Any, Self
 
-import brotli
-import lz4.frame
-import snappy
-import zstandard
-
 from pocketutils import WritePermissionsError
 
 PathLike = str | PurePath
@@ -80,26 +75,40 @@ class CompressionSet:
             return self[""]
 
 
-COMPRESSIONS = (
-    CompressionSet.empty()
-    + Compression("gzip", {".gz", ".gzip"}, gzip.compress, gzip.decompress)
-    + Compression("brotli", {".bro", ".brotli"}, brotli.compress, brotli.decompress)
-    + Compression("zstandard", {".zst", ".zstd"}, zstandard.compress, zstandard.decompress)
-    + Compression("lz4", {".lz4"}, lz4.frame.compress, lz4.frame.decompress)
-    + Compression("snappy", {".snappy"}, snappy.compress, snappy.decompress)
-    + Compression("bzip2", {".bz2", ".bzip2"}, bz2.compress, bz2.decompress)
-    + Compression("xz", {".xz"}, lzma.compress, lzma.decompress)
-)
+def _get_compressions():
+    import brotli
+    import lz4.frame
+    import snappy
+    import zstandard
+
+    return (
+        CompressionSet.empty()
+        + Compression("gzip", {".gz", ".gzip"}, gzip.compress, gzip.decompress)
+        + Compression("brotli", {".bro", ".brotli"}, brotli.compress, brotli.decompress)
+        + Compression("zstandard", {".zst", ".zstd"}, zstandard.compress, zstandard.decompress)
+        + Compression("lz4", {".lz4"}, lz4.frame.compress, lz4.frame.decompress)
+        + Compression("snappy", {".snappy"}, snappy.compress, snappy.decompress)
+        + Compression("bzip2", {".bz2", ".bzip2"}, bz2.compress, bz2.decompress)
+        + Compression("xz", {".xz"}, lzma.compress, lzma.decompress)
+    )
 
 
 @dataclass(slots=True, frozen=True)
 class SmartIo:
+    _COMPRESSIONS = None
+
+    @classmethod
+    def compressions(cls) -> CompressionSet:
+        if cls._COMPRESSIONS is None:
+            _COMPRESSIONS = _get_compressions()
+        return cls._COMPRESSIONS
+
     @classmethod
     def write(
         cls, data: Any, path: PathLike, *, atomic: bool = False, mkdirs: bool = False
     ) -> None:
         path = Path(path)
-        compressed = COMPRESSIONS.guess(path).compress(data)
+        compressed = cls.compressions().guess(path).compress(data)
         if path.exists() and not path.is_file():
             raise WritePermissionsError(f"Path {path} is not a file", path=path)
         if path.exists() and not os.access(path, os.W_OK):
@@ -126,7 +135,7 @@ class SmartIo:
         Reads, decompressing according to the filename suffix.
         """
         data = Path(path).read_bytes()
-        return COMPRESSIONS.guess(path).decompress(data)
+        return cls.compressions().guess(path).decompress(data)
 
     @classmethod
     def tmp_path(cls, path: PathLike, extra: str = "tmp") -> Path:
@@ -136,4 +145,4 @@ class SmartIo:
         return path.parent / f".part_{extra}.{now}{suffix}"
 
 
-__all__ = ["Compression", "CompressionSet", "COMPRESSIONS", "SmartIo"]
+__all__ = ["Compression", "CompressionSet", "SmartIo"]

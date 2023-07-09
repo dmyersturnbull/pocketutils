@@ -141,38 +141,6 @@ class DictNamespace(UserDict):
         return NotImplemented
 
 
-# noinspection PyPep8Naming
-class frozenlist(Sequence):
-    """
-    An immutable sequence backed by a list.
-    The sole advantage over a tuple is the list-like __str__ with square brackets, which may be less confusing to a user.
-    """
-
-    def __init__(self, items: Iterable[T]):
-        self.__items = list(items)
-
-    def __getitem__(self, item) -> T:
-        if isinstance(item, int):
-            return self.__items[item]
-        else:
-            return frozenlist(self.__items[item])
-
-    def __setitem__(self, key, value):
-        raise ImmutableError()
-
-    def __len__(self) -> int:
-        return len(self.__items)
-
-    def __repr__(self):
-        return repr(self.__items)
-
-    def __eq__(self, other):
-        return type(self) == type(other) and self.__items == other.__items
-
-    def __str__(self):
-        return repr(self.__items)
-
-
 class OptRow:
     """
     Short for 'optional row'.
@@ -233,9 +201,6 @@ class OptRow:
 
 __all__ = [
     "Sentinel",
-    "frozenlist",
-    "PathLike",
-    "PathLikeUtils",
     "OptRow",
     "LazyWrap",
     "DictNamespace",
