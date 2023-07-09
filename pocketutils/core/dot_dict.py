@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import pickle
 import sys
-from collections.abc import ByteString, Callable, Collection, Iterable, Mapping, Sequence
+from collections.abc import ByteString, Callable, Collection, Mapping, Sequence
 from copy import copy
 from datetime import date, datetime
 from pathlib import Path, PurePath
@@ -11,12 +11,10 @@ from typing import Any, TypeVar
 import orjson
 import tomlkit
 
-from pocketutils.core import PathLike
-from pocketutils.core._internal import read_txt_or_gz, write_txt_or_gz
 from pocketutils.core.exceptions import XKeyError, XTypeError, XValueError
 
-PICKLE_PROTOCOL = 5
 T = TypeVar("T")
+PICKLE_PROTOCOL = 5
 
 
 def _json_encode_default(obj: Any) -> Any:
@@ -34,22 +32,6 @@ class NestedDotDict(Mapping):
     A dot is reserved for splitting values to traverse the tree.
     For example, ``dotdict["pet.species.name"]``.
     """
-
-    @classmethod
-    def read_toml(cls, path: PathLike) -> NestedDotDict:
-        return NestedDotDict(tomlkit.loads(read_txt_or_gz(path)))
-
-    @classmethod
-    def read_json(cls, path: PathLike) -> NestedDotDict:
-        """
-        Reads JSON from a file, into a NestedDotDict.
-        If the JSON data is a list type, converts into a dict with keys ``"1", "2", ...`` .
-        Can read .json or .json.gz.
-        """
-        data = orjson.loads(read_txt_or_gz(path))
-        if isinstance(data, list):
-            data = dict(enumerate(data))
-        return cls(data)
 
     @classmethod
     def read_pickle(cls, path: PurePath | str) -> NestedDotDict:
@@ -83,6 +65,12 @@ class NestedDotDict(Mapping):
             data = bytes(data)
         return NestedDotDict(pickle.loads(data))
 
+    def to_pickle(self, protocol: int = PICKLE_PROTOCOL) -> bytes:
+        """
+        Writes to a pickle file.
+        """
+        return pickle.dumps(self._x, protocol=PICKLE_PROTOCOL)
+
     def __init__(self, x: Mapping[str, Any]) -> None:
         """
         Constructor.
@@ -103,30 +91,6 @@ class NestedDotDict(Mapping):
         self._x = x
         # Let's make sure this constructor gets called on sub-dicts:
         self.leaves()
-
-    def write_json(self, path: PathLike, *, indent: bool = False, mkdirs: bool = False) -> str:
-        """
-        Writes to a json or .json.gz file.
-
-        Returns:
-            The JSON text
-        """
-        return write_txt_or_gz(self.to_json(indent=indent), path, mkdirs=mkdirs)
-
-    def write_toml(self, path: PathLike, mkdirs: bool = False) -> str:
-        """
-        Writes to a toml or .toml.gz file.
-
-        Returns:
-            The JSON text
-        """
-        return write_txt_or_gz(self.to_toml(), path, mkdirs=mkdirs)
-
-    def write_pickle(self, path: PathLike) -> None:
-        """
-        Writes to a pickle file.
-        """
-        Path(path).write_bytes(pickle.dumps(self._x, protocol=PICKLE_PROTOCOL))
 
     def to_json(self, *, indent: bool = False) -> str:
         """

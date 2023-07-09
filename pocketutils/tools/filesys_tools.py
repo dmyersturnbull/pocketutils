@@ -1,7 +1,6 @@
-import base64
+import bz2
 import csv
 import gzip
-import hashlib
 import logging
 import os
 import pathlib
@@ -11,26 +10,25 @@ import sys
 import tempfile
 from collections.abc import Callable, Generator, Iterable, Mapping, Sequence
 from contextlib import contextmanager
-from dataclasses import dataclass
 from datetime import datetime, timedelta
 from pathlib import Path, PurePath
-from typing import Any, Literal, SupportsBytes
+from typing import Any
 
-import numpy as np
 import orjson
 import regex
 from defusedxml import ElementTree
 
-from pocketutils.core._internal import read_txt_or_gz, write_txt_or_gz
 from pocketutils.core.chars import Chars
 from pocketutils.core.exceptions import (
     AlreadyUsedError,
     DirDoesNotExistError,
     FileDoesNotExistError,
     ParsingError,
+    ReadPermissionsError,
+    WritePermissionsError,
 )
 from pocketutils.core.input_output import OpenMode, PathLike, Writeable
-from pocketutils.tools.base_tools import BaseTools
+from pocketutils.tools.path_info import PathInfo
 from pocketutils.tools.path_tools import PathTools
 from pocketutils.tools.sys_tools import SystemTools
 from pocketutils.tools.unit_tools import UnitTools
@@ -39,143 +37,7 @@ logger = logging.getLogger("pocketutils")
 COMPRESS_LEVEL = 9
 
 
-@dataclass(frozen=True, repr=True)
-class PathInfo:
-    """
-    Info about an extant or nonexistent path as it was at some time.
-    Use this to avoid making repeated filesystem calls (e.g. ``.is_dir()``):
-    None of the properties defined here make OS calls.
-
-    Attributes:
-        source: The original path used for lookup; may be a symlink
-        resolved: The fully resolved path, or None if it does not exist
-        as_of: A datetime immediately before the system calls (system timezone)
-        real_stat: ``os.stat_result``, or None if the path does not exist
-        link_stat: ``os.stat_result``, or None if the path is not a symlink
-        has_access: Path exists and has the 'a' flag set
-        has_read: Path exists and has the 'r' flag set
-        has_write: Path exists and has the 'w' flag set
-
-    All the additional properties refer to the resolved path,
-    except for :meth:`is_symlink`, :meth:`is_valid_symlink`,
-    and :meth:`is_broken_symlink`.
-    """
-
-    source: Path
-    resolved: Path | None
-    as_of: datetime
-    real_stat: os.stat_result | None
-    link_stat: os.stat_result | None
-    has_access: bool
-    has_read: bool
-    has_write: bool
-
-    @property
-    def mod_or_create_dt(self) -> datetime | None:
-        """
-        Returns the modification or access datetime.
-        Uses whichever is available: creation on Windows and modification on Unix-like.
-        """
-        if os.name == "nt":
-            return self._get_dt("st_ctime")
-        # will work on posix; on java try anyway
-        return self._get_dt("st_mtime")
-
-    @property
-    def mod_dt(self) -> datetime | None:
-        """
-        Returns the modification datetime, if known.
-        Returns None on Windows or if the path does not exist.
-        """
-        if os.name == "nt":
-            return None
-        return self._get_dt("st_mtime")
-
-    @property
-    def create_dt(self) -> datetime | None:
-        """
-        Returns the creation datetime, if known.
-        Returns None on Unix-like systems or if the path does not exist.
-        """
-        if os.name == "posix":
-            return None
-        return self._get_dt("st_ctime")
-
-    @property
-    def access_dt(self) -> datetime | None:
-        """
-        Returns the access datetime.
-        *Should* never return None if the path exists, but not guaranteed.
-        """
-        return self._get_dt("st_atime")
-
-    @property
-    def exists(self) -> bool:
-        """
-        Returns whether the resolved path exists.
-        """
-        return self.real_stat is not None
-
-    @property
-    def is_file(self) -> bool:
-        return self.exists and stat.S_ISREG(self.real_stat.st_mode)
-
-    @property
-    def is_dir(self) -> bool:
-        return self.exists and stat.S_ISDIR(self.real_stat.st_mode)
-
-    @property
-    def is_readable_dir(self) -> bool:
-        return self.is_file and self.has_access and self.has_read
-
-    @property
-    def is_writeable_dir(self) -> bool:
-        return self.is_dir and self.has_access and self.has_write
-
-    @property
-    def is_readable_file(self) -> bool:
-        return self.is_file and self.has_access and self.has_read
-
-    @property
-    def is_writeable_file(self) -> bool:
-        return self.is_file and self.has_access and self.has_write
-
-    @property
-    def is_block_device(self) -> bool:
-        return self.exists and stat.S_ISBLK(self.real_stat.st_mode)
-
-    @property
-    def is_char_device(self) -> bool:
-        return self.exists and stat.S_ISCHR(self.real_stat.st_mode)
-
-    @property
-    def is_socket(self) -> bool:
-        return self.exists and stat.S_ISSOCK(self.real_stat.st_mode)
-
-    @property
-    def is_fifo(self) -> bool:
-        return self.exists and stat.S_ISFIFO(self.real_stat.st_mode)
-
-    @property
-    def is_symlink(self) -> bool:
-        return self.link_stat is not None
-
-    @property
-    def is_valid_symlink(self) -> bool:
-        return self.is_symlink and self.exists
-
-    @property
-    def is_broken_symlink(self) -> bool:
-        return self.is_symlink and not self.exists
-
-    def _get_dt(self, attr: str) -> datetime | None:
-        if self.real_stat is None:
-            return None
-        sec = getattr(self.real_stat, attr)
-        return datetime.fromtimestamp(sec).astimezone()
-
-
-class FilesysTools(BaseTools):
+class FilesysTools:
     """
     Tools for file/directory creation, etc.
 
@@ -183,13 +45,61 @@ class FilesysTools(BaseTools):
         Some functions may be insecure.
     """
 
+    def get_encoding(self, encoding: str = "utf-8") -> str:
+        """
+        Returns a text encoding from a more flexible string.
+        Ignores hyphens and lowercases the string.
+        Permits these nonstandard shorthands:
+
+          - ``"platform"``: use ``sys.getdefaultencoding()`` on the fly
+          - ``"utf8(bom)"``: use ``"utf-8-sig"`` on Windows; ``"utf-8"`` otherwise
+          - ``"utf16(bom)"``: use ``"utf-16-sig"`` on Windows; ``"utf-16"`` otherwise
+          - ``"utf32(bom)"``: use ``"utf-32-sig"`` on Windows; ``"utf-32"`` otherwise
+        """
+        encoding = encoding.lower().replace("-", "")
+        if encoding == "platform":
+            encoding = sys.getdefaultencoding()
+        if encoding == "utf8(bom)":
+            encoding = "utf-8-sig" if os.name == "nt" else "utf-8"
+        if encoding == "utf16(bom)":
+            encoding = "utf-16-sig" if os.name == "nt" else "utf-16"
+        if encoding == "utf32(bom)":
+            encoding = "utf-32-sig" if os.name == "nt" else "utf-32"
+        return encoding
+
+    def get_encoding_errors(self, errors: str | None) -> str | None:
+        """
+        Returns the value passed as``errors=`` in ``open``.
+        Raises:
+            ValueError: If invalid
+        """
+        if errors is None:
+            return "strict"
+        if errors in (
+            "strict",
+            "ignore",
+            "replace",
+            "xmlcharrefreplace",
+            "backslashreplace",
+            "namereplace",
+            "surrogateescape",
+            "surrogatepass",
+        ):
+            return errors
+        raise ValueError(f"Invalid value {errors} for errors")
+
     @classmethod
     def read_compressed_text(cls, path: PathLike) -> str:
         """
         Reads text from a text file, optionally gzipped or bz2-ed.
         Recognized suffixes for compression are ``.gz``, ``.gzip``, ``.bz2``, and ``.bzip2``.
         """
-        return read_txt_or_gz(path)
+        path = Path(path)
+        if path.name.endswith(".bz2") or path.name.endswith(".bzip2"):
+            return bz2.decompress(path.read_bytes()).decode(encoding="utf-8")
+        if path.name.endswith(".gz") or path.name.endswith(".gzip"):
+            return gzip.decompress(path.read_bytes()).decode(encoding="utf-8")
+        return Path(path).read_text(encoding="utf-8")
 
     @classmethod
     def write_compressed_text(cls, txt: str, path: PathLike, *, mkdirs: bool = False) -> None:
@@ -197,19 +107,17 @@ class FilesysTools(BaseTools):
         Writes text to a text file, optionally gzipped or bz2-ed.
         Recognized suffixes for compression are ``.gz``, ``.gzip``, ``.bz2``, and ``.bzip2``.
         """
-        write_txt_or_gz(txt, path, mkdirs=mkdirs)
-
-    @classmethod
-    def is_linux(cls) -> bool:
-        return sys.platform == "linux"
-
-    @classmethod
-    def is_windows(cls) -> bool:
-        return sys.platform == "win32"
-
-    @classmethod
-    def is_macos(cls) -> bool:
-        return sys.platform == "darwin"
+        path = Path(path)
+        if mkdirs:
+            path.parent.mkdir(parents=True, exist_ok=True)
+        if path.name.endswith(".bz2") or path.name.endswith(".bzip2"):
+            data = bz2.compress(txt.encode(encoding="utf-8"))
+            path.write_bytes(data)
+        elif path.name.endswith(".gz") or path.name.endswith(".gzip"):
+            data = gzip.compress(txt.encode(encoding="utf-8"))
+            path.write_bytes(data)
+        else:
+            path.write_text(txt)
 
     @classmethod
     def get_info(
@@ -286,7 +194,7 @@ class FilesysTools(BaseTools):
         Path(path.parent).mkdir(parents=True, exist_ok=exist_ok)
 
     @classmethod
-    def dump_error(cls, e: BaseException | None, path: None | PathLike | datetime = None) -> Path:
+    def dump_error(cls, e: BaseException | None, path: PathLike | datetime | None = None) -> Path:
         """
         Writes a .json file containing the error message, stack trace, and sys info.
         System info is from :meth:`get_env_info`.
@@ -316,6 +224,91 @@ class FilesysTools(BaseTools):
         if dt is None:
             dt = datetime.now()
         return dt.strftime("%Y-%m-%d_%H-%M-%S")
+
+    @classmethod
+    def verify_can_read_files(
+        cls,
+        *paths: str | Path,
+        missing_ok: bool = False,
+        attempt: bool = False,
+    ) -> None:
+        """
+        Checks that all files can be written to, to ensure atomicity before operations.
+
+        Args:
+            *paths: The files
+            missing_ok: Don't raise an error if a path doesn't exist
+            attempt: Actually try opening
+
+        Returns:
+            ReadPermissionsError: If a path is not a file (modulo existence) or doesn't have 'W' set
+        """
+        paths = [Path(p) for p in paths]
+        for path in paths:
+            if path.exists() and not path.is_file():
+                raise ReadPermissionsError(f"Path {path} is not a file", path=path)
+            if (not missing_ok or path.exists()) and not os.access(path, os.R_OK):
+                raise ReadPermissionsError(f"Cannot read from {path}", path=path)
+            if attempt:
+                try:
+                    with open(path):
+                        pass
+                except OSError:
+                    raise WritePermissionsError(f"Failed to open {path} for read", key=str(path))
+
+    @classmethod
+    def verify_can_write_files(
+        cls,
+        *paths: str | Path,
+        missing_ok: bool = False,
+        attempt: bool = False,
+    ) -> None:
+        """
+        Checks that all files can be written to, to ensure atomicity before operations.
+
+        Args:
+            *paths: The files
+            missing_ok: Don't raise an error if a path doesn't exist
+            attempt: Actually try opening
+
+        Returns:
+            WritePermissionsError: If a path is not a file (modulo existence) or doesn't have 'W' set
+        """
+        paths = [Path(p) for p in paths]
+        for path in paths:
+            if path.exists() and not path.is_file():
+                raise WritePermissionsError(f"Path {path} is not a file", path=path)
+            if (not missing_ok or path.exists()) and not os.access(path, os.W_OK):
+                raise WritePermissionsError(f"Cannot write to {path}", path=path)
+            if attempt:
+                try:
+                    with open(path, "a"):  # or w
+                        pass
+                except OSError:
+                    raise WritePermissionsError(f"Failed to open {path} for write", path=path)
+
+    @classmethod
+    def verify_can_write_dirs(cls, *paths: str | Path, missing_ok: bool = False) -> None:
+        """
+        Checks that all directories can be written to, to ensure atomicity before operations.
+
+        Args:
+            *paths: The directories
+            missing_ok: Don't raise an error if a path doesn't exist
+
+        Returns:
+            WritePermissionsError: If a path is not a directory (modulo existence) or doesn't have 'W' set
+        """
+        paths = [Path(p) for p in paths]
+        for path in paths:
+            if path.exists() and not path.is_dir():
+                raise WritePermissionsError(f"Path {path} is not a dir", path=(path))
+            if missing_ok and not path.exists():
+                continue
+            if not os.access(path, os.W_OK):
+                raise WritePermissionsError(f"{path} lacks write permission", path=path)
+            if not os.access(path, os.X_OK):
+                raise WritePermissionsError(f"{path} lacks access permission", path=path)
 
     @classmethod
     def delete_surefire(cls, path: PathLike) -> Exception | None:
@@ -506,8 +499,6 @@ class FilesysTools(BaseTools):
             return path.read_bytes()
         elif ext == "json":
             return cls.load_json(path)
-        elif ext in ["npy", "npz"]:
-            return np.load(str(path), allow_pickle=False, encoding="utf-8")
         elif ext == "properties":
             return cls.read_properties_file(path)
         elif ext == "csv":
@@ -562,44 +553,12 @@ class FilesysTools(BaseTools):
             FileExistsError: If the path exists and append is False
             PathIsNotFileError: If append is True, and the path exists but is not a file
         """
-        if not cls.is_true_iterable(iterable):
-            raise TypeError("Not a true iterable")  # TODO include iterable if small
         n = 0
         with cls.open_file(path, mode) as f:
             for x in iterable:
                 f.write(str(x) + "\n")
             n += 1
         return n
-
-    @classmethod
-    def hash_digest(
-        cls,
-        x: SupportsBytes,
-        algorithm: str,
-        to: Literal["base64"] | Literal["base64-safe"] | Literal["hex"] = "base64",
-        *,
-        length: int | None = None,
-        **kwargs,
-    ) -> str:
-        """
-        Returns the hex-encoded hash of the object (converted to bytes).
-        """
-        if algorithm.startswith("shake_"):
-            m = getattr(hashlib, algorithm)
-            m.update(bytes(x))
-            d = m.digest(128 if length is None else length)
-        else:
-            m = hashlib.new(algorithm, **kwargs)
-            m.update(bytes(x))
-            d = m.digest()
-        if to == "base64-safe":
-            return base64.standard_b64encode(d).decode(encoding="ascii")
-        elif to == "base64":
-            return base64.urlsafe_b64decode(d).decode(encoding="ascii")
-        elif to == "hex":
-            return f"{int(d, 2):X}"
-        else:
-            raise ValueError(f"Unknown encoding {to}")
 
     @classmethod
     def replace_in_file(cls, path: PathLike, changes: Mapping[str, str]) -> None:

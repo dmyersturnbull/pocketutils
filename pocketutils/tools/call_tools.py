@@ -11,17 +11,16 @@ from queue import Queue
 from threading import Thread
 
 from pocketutils.core.input_output import DevNull
-from pocketutils.tools.base_tools import BaseTools
 
 logger = logging.getLogger("pocketutils")
 
 
 @contextlib.contextmanager
-def null_context(cls):
+def null_context():
     yield
 
 
-class CallTools(BaseTools):
+class CallTools:
     @classmethod
     @contextlib.contextmanager
     def silenced(
@@ -31,9 +30,9 @@ class CallTools(BaseTools):
         Context manager that suppresses stdout and stderr.
         """
         # noinspection PyTypeChecker
-        with contextlib.redirect_stdout(DevNull()) if no_stdout else cls.null_context():
+        with contextlib.redirect_stdout(DevNull()) if no_stdout else null_context():
             # noinspection PyTypeChecker
-            with contextlib.redirect_stderr(DevNull()) if no_stderr else cls.null_context():
+            with contextlib.redirect_stderr(DevNull()) if no_stderr else null_context():
                 yield
 
     @classmethod

@@ -3,12 +3,10 @@ import sys
 from collections.abc import Callable
 from typing import Any
 
-from pocketutils.tools.base_tools import BaseTools
-
 logger = logging.getLogger("pocketutils")
 
 
-class ConsoleTools(BaseTools):
+class ConsoleTools:
     CURSOR_UP_ONE = "\x1b[1A"
     ERASE_LINE = "\x1b[2K"
 

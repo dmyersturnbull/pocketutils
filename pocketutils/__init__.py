@@ -7,6 +7,28 @@ from importlib.metadata import PackageNotFoundError
 from importlib.metadata import metadata as __load
 from pathlib import Path
 
+from pocketutils.core.chars import *
+from pocketutils.core.dot_dict import *
+from pocketutils.core.enums import *
+from pocketutils.core.exceptions import *
+from pocketutils.core.frozen_types import *
+from pocketutils.core.input_output import *
+from pocketutils.core.iterators import *
+from pocketutils.core.mocks import *
+from pocketutils.misc.smartio import SmartIo
+from pocketutils.tools.call_tools import *
+from pocketutils.tools.common_tools import *
+from pocketutils.tools.console_tools import *
+from pocketutils.tools.filesys_tools import *
+from pocketutils.tools.io_tools import *
+from pocketutils.tools.numeric_tools import *
+from pocketutils.tools.path_tools import *
+from pocketutils.tools.program_tools import *
+from pocketutils.tools.reflection_tools import *
+from pocketutils.tools.string_tools import *
+from pocketutils.tools.sys_tools import *
+from pocketutils.tools.unit_tools import *
+
 pkg = Path(__file__).absolute().parent.name
 logger = logging.getLogger(pkg)
 metadata = None
@@ -26,8 +48,21 @@ try:
 except PackageNotFoundError:  # pragma: no cover
     logger.error(f"Could not load package metadata for {pkg}. Is it installed?")
 
-if __name__ == "__main__":  # pragma: no cover
-    if metadata is not None:
-        print(f"{pkg} (v{metadata['version']})")
-    else:
-        print("Unknown project info")
+
+class Tools(
+    CallTools,
+    CommonTools,
+    ConsoleTools,
+    NumericTools,
+    PathTools,
+    ProgramTools,
+    StringTools,
+    FilesysTools,
+    UnitTools,
+    ReflectionTools,
+    SystemTools,
+    IoTools,
+):
+    """
+    A collection of utility static functions.
+    """

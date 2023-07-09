@@ -4,7 +4,7 @@ import pytest
 from pocketutils.tools.numeric_tools import NumericTools
 
 
-class TestPandasTools:
+class TestNumericTools:
     def test_slice(self):
         arr = np.arange(5)
         assert list(NumericTools.slice(arr, 0, 1)) == [0]

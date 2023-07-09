@@ -2,10 +2,8 @@ import math
 from collections.abc import Sequence
 from typing import SupportsFloat, SupportsInt, SupportsRound
 
-from pocketutils.tools.base_tools import BaseTools
 
-
-class NumericTools(BaseTools):
+class NumericTools:
     @classmethod
     def float_opt(cls, f: SupportsFloat | None) -> float:
         return None if f is None else float(f)

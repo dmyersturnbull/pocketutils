@@ -30,7 +30,6 @@ classifiers = [
     "Development Status :: 3 - Alpha",
     "Natural Language :: English",
     "Programming Language :: Python :: 3 :: Only",
-    "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
 	"Intended Audience :: Developers",
     "Operating System :: OS Independent",
@@ -49,22 +48,23 @@ Changelog = "https://github.com/dmyersturnbull/pocketutils/blob/main/CHANGELOG.m
 ###################
 
 [tool.poetry.dependencies]
-python                   = "^3.10"
-defusedxml               = ">=0.6"
-orjson                   = ">=3.6"
+python                   = "^3.11"
+defusedxml               = ">=0.7"
+orjson                   = ">=3.8"
+pint                     = ">=0.20"
 regex                    = ">=2021"
-tomlkit                  = ">=0.7"
+tomlkit                  = ">=0.11"
 
+brotli                   = {version=">=1", optional=true}
 loguru                   = {version=">=0.6", optional=true}
-joblib                   = {version=">=1", optional=true}
-numpy                    = {version=">=1.17", optional=true}
-pint                     = {version=">=0.20", optional=true}
-pydantic                 = {version=">=2", optional=true}
+lz4                      = {version=">=4", optional=true}
 psutil                   = {version=">=5", optional=true}
-typer                    = {version=">=0.6", optional=true}
-pandas = "^2.0.3"
+snappy                   = {version=">=3", optional=true}
+typer                    = {version=">=0.9", optional=true}
+zstandard                = {version=">=0.20", optional=true}
 
 [tool.poetry.group.test.dependencies]
+numpy                         = ">=1.25"
 bandit                        = ">=1.7"
 Flake8-pyproject              = "^1.2"
 flake8                        = "^6"
@@ -86,11 +86,9 @@ furo                          = "=2023.5.20"
 
 
 [tool.poetry.extras]
-extras = [
-    "joblib", "numpy", "pint",
-    "loguru",
-    "psutil", "typer", "pydantic",
-    "requests",
+all = [
+    "pint", "loguru", "psutil", "typer",
+    "zstandard", "snappy", "brotli", "lz4"
 ]
 
 

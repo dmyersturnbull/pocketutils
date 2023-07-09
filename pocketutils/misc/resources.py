@@ -6,7 +6,6 @@ from typing import Any
 import orjson
 
 from pocketutils.core import PathLike
-from pocketutils.core._internal import GZ_BZ2_SUFFIXES, read_txt_or_gz
 from pocketutils.core.dot_dict import NestedDotDict
 from pocketutils.core.exceptions import (
     DirDoesNotExistError,
@@ -18,6 +17,8 @@ from pocketutils.tools.common_tools import CommonTools
 from pocketutils.tools.filesys_tools import FilesysTools
 
 _logger = logging.getLogger("pocketutils")
+_json_suffixes = {".json", ".json.gz", ".json.gzip", ".json.bz2", ".json.bzip2"}
+_toml_suffixes = {".toml", ".toml.gz", ".toml.gzip", ".toml.bz2", ".toml.bzip2"}
 
 
 class Resources:
@@ -121,18 +122,18 @@ class Resources:
 
     def toml(self, *nodes: PathLike) -> NestedDotDict:
         """Reads a TOML file under ``resources/``."""
-        path = self.a_file(*nodes, suffixes=GZ_BZ2_SUFFIXES)
-        return NestedDotDict.read_toml(path)
+        path = self.a_file(*nodes, suffixes=_toml_suffixes)
+        return NestedDotDict.parse_toml(FilesysTools.read_compressed_text(path))
 
     def json(self, *nodes: PathLike) -> NestedDotDict:
         """Reads a JSON file under ``resources/``."""
-        path = self.a_file(*nodes, suffixes=GZ_BZ2_SUFFIXES)
-        return NestedDotDict.read_json(path)
+        path = self.a_file(*nodes, suffixes=_json_suffixes)
+        return NestedDotDict.parse_json(FilesysTools.read_compressed_text(path))
 
     def json_dict(self, *nodes: PathLike) -> MutableMapping:
         """Reads a JSON file under ``resources/``."""
-        path = self.a_file(*nodes, suffixes=GZ_BZ2_SUFFIXES)
-        return orjson.loads(read_txt_or_gz(path))
+        path = self.a_file(*nodes, suffixes=_json_suffixes)
+        return orjson.loads(FilesysTools.read_compressed_text(path))
 
 
 __all__ = ["Resources"]

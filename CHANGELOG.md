@@ -5,9 +5,9 @@ Adheres to [Semantic Versioning 2.0](https://semver.org/spec/v2.0.0.html) and
 
 ## [0.10.0] - unreleased
 
-### Removed
+### Changed
 
-- Most code
+- A lot
 
 ## [0.9.0] - 2022-08-11
 

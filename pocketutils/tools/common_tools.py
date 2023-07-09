@@ -1,20 +1,50 @@
+import logging
 import sys
 from collections import defaultdict
-from collections.abc import Callable, Generator, Iterable, Iterator, Mapping, Sequence
+from collections.abc import ByteString, Callable, Generator, Iterable, Iterator, Mapping, Sequence
+from contextlib import contextmanager
 from typing import Any, TypeVar
 
-from pocketutils.core._internal import nicesize
-from pocketutils.core.exceptions import RefusingRequestError, XKeyError, XValueError
-from pocketutils.core.input_output import DevNull
-from pocketutils.tools.base_tools import BaseTools
+from pocketutils.core._internal import is_lambda, look, parse_bool, parse_bool_flex
+from pocketutils.core.exceptions import (
+    MultipleMatchesError,
+    RefusingRequestError,
+    XKeyError,
+    XTypeError,
+)
+from pocketutils.core.input_output import DevNull, Writeable
 
 Y = TypeVar("Y")
 T = TypeVar("T")
 Z = TypeVar("Z")
 Q = TypeVar("Q")
+logger = logging.getLogger("pocketutils")
 
 
-class CommonTools(BaseTools):
+class CommonTools:
+    def nice_size(n_bytes: int, *, space: str = "") -> str:
+        """
+        Uses IEC 1998 units, such as KiB (1024).
+            n_bytes: Number of bytes
+            space: Separator between digits and units
+
+            Returns:
+                Formatted string
+        """
+        data = {
+            "PiB": 1024**5,
+            "TiB": 1024**4,
+            "GiB": 1024**3,
+            "MiB": 1024**2,
+            "KiB": 1024**1,
+        }
+        for suffix, scale in data.items():
+            if n_bytes >= scale:
+                break
+        else:
+            scale, suffix = 1, "B"
+        return str(n_bytes // scale) + space + suffix
+
     @classmethod
     def limit(cls, items: Iterable[Q], n: int) -> Generator[Q, None, None]:
         for _i, x in zip(range(n), items):
@@ -195,7 +225,7 @@ class CommonTools(BaseTools):
         try:
             # note: calling iter on an iterator creates a view only
             x = next(iter(collection))
-            return x if attr is None else cls.look(x, attr)
+            return x if attr is None else look(x, attr)
         except StopIteration:
             return None
 
@@ -231,25 +261,12 @@ class CommonTools(BaseTools):
         """
         dct = defaultdict(lambda: [])
         for item in sequence:
-            v = CommonTools.look(item, key_attr)
+            v = look(item, key_attr)
             if not skip_none and v is None:
                 raise XKeyError(f"No {key_attr} in {item}", key=key_attr)
             if v is not None:
                 dct[v].append(item)
         return dct
-
-    @classmethod
-    def mem_size(cls, obj) -> str:
-        """
-        Returns the size of the object in memory as a human-readable string.
-
-        Args:
-            obj: Any Python object
-
-        Returns:
-            A human-readable size with units
-        """
-        return nicesize(sys.getsizeof(obj))
 
     @classmethod
     def devnull(cls):
@@ -272,13 +289,7 @@ class CommonTools(BaseTools):
         Raises:
             ValueError: If neither true nor false
         """
-        if isinstance(s, bool):
-            return s
-        if s.lower() == "false":
-            return False
-        if s.lower() == "true":
-            return True
-        raise XValueError(f"{s} is not true/false", value=s)
+        return parse_bool(s)
 
     @classmethod
     def parse_bool_flex(cls, s: str) -> bool:
@@ -292,14 +303,229 @@ class CommonTools(BaseTools):
         Raises:
             XValueError: If neither true nor false
         """
-        mp = {
-            **{v: True for v in {"true", "t", "yes", "y", "1"}},
-            **{v: False for v in {"false", "f", "no", "n", "0"}},
-        }
-        v = mp.get(s.lower())
-        if v is None:
-            raise XValueError(f"{s.lower()} is not in {','.join(mp.keys())}", value=s)
-        return v
+        return parse_bool_flex(s)
+
+    @classmethod
+    def is_lambda(cls, function: Any) -> bool:
+        """
+        Returns whether this is a lambda function. Will return False for non-callables.
+        """
+        return is_lambda(function)
+
+    @classmethod
+    def only(
+        cls,
+        sequence: Iterable[Any],
+        condition: str | Callable[[Any], bool] = None,
+        *,
+        name: str = "collection",
+    ) -> Any:
+        """
+        Returns either the SINGLE (ONLY) UNIQUE ITEM in the sequence or raises an exception.
+        Each item must have __hash__ defined on it.
+
+        Args:
+            sequence: A list of any items (untyped)
+            condition: If nonnull, consider only those matching this condition
+            name: Just a name for the collection to use in an error message
+
+        Returns:
+            The first item the sequence.
+
+        Raises:
+            LookupError If the sequence is empty
+            MultipleMatchesError If there is more than one unique item.
+        """
+
+        def _only(sq):
+            st = set(sq)
+            if len(st) > 1:
+                raise MultipleMatchesError("More then 1 item in " + str(name))
+            if len(st) == 0:
+                raise LookupError("Empty " + str(name))
+            return next(iter(st))
+
+        if condition and isinstance(condition, str):
+            return _only(
+                [
+                    s
+                    for s in sequence
+                    if (
+                        not getattr(s, condition[1:])
+                        if condition.startswith("!")
+                        else getattr(s, condition)
+                    )
+                ]
+            )
+        elif condition:
+            return _only([s for s in sequence if condition(s)])
+        else:
+            return _only(sequence)
+
+    @classmethod
+    def forever(cls) -> Iterator[int]:
+        """
+        Yields i for i in range(0, infinity).
+        Useful for simplifying a i = 0; while True: i += 1 block.
+        """
+        i = 0
+        while True:
+            yield i
+            i += 1
+
+    @classmethod
+    def to_true_iterable(cls, s: Any) -> Iterable[Any]:
+        """
+        See :meth:`is_true_iterable`.
+
+        Examples:
+            - ``to_true_iterable('abc')         # ['abc']``
+            - ``to_true_iterable(['ab', 'cd')]  # ['ab', 'cd']``
+        """
+        if cls.is_true_iterable(s):
+            return s
+        else:
+            return [s]
+
+    @classmethod
+    def is_true_iterable(cls, s: Any) -> bool:
+        """
+        Returns whether ``s`` is a probably "proper" iterable.
+        In other words, iterable but not a string or bytes.
+
+        .. caution::
+            This is not fully reliable.
+            Types that do not define ``__iter__`` but are iterable
+            via ``__getitem__`` will not be included.
+        """
+        return (
+            s is not None
+            and isinstance(s, Iterable)
+            and not isinstance(s, str)
+            and not isinstance(s, ByteString)
+        )
+
+    @classmethod
+    @contextmanager
+    def null_context(cls) -> Generator[None, None, None]:
+        """
+        Returns an empty context (literally just yields).
+        Useful to simplify when a generator needs to be used depending on a switch.
+        Ex::
+            if verbose_flag:
+                do_something()
+            else:
+                with Tools.silenced():
+                    do_something()
+        Can become::
+            with (Tools.null_context() if verbose else Tools.silenced()):
+                do_something()
+        """
+        yield
+
+    @classmethod
+    def look(cls, obj: Y, attrs: str | Iterable[str] | Callable[[Y], Z]) -> Z | None:
+        """
+        Follows a dotted syntax for getting an item nested in class attributes.
+        Returns the value of a chain of attributes on object ``obj``,
+        or None any object in that chain is None or lacks the next attribute.
+
+        Example:
+            Get a kitten's breed::
+
+                BaseTools.look(kitten), 'breed.name')  # either None or a string
+
+        Args:
+            obj: Any object
+            attrs: One of:
+                - A string in the form attr1.attr2, translating to ``obj.attr1``
+                - An iterable of strings of the attributes
+                - A function that maps ``obj`` to its output;
+                   equivalent to calling `attrs(obj)` but returning None on ``AttributeError``.
+
+        Returns:
+            Either None or the type of the attribute
+
+        Raises:
+            TypeError:
+        """
+        return look(obj, attrs)
+
+    @classmethod
+    def make_writer(cls, writer: Writeable | Callable[[str], Any]):
+        if Writeable.isinstance(writer):
+            return writer
+        elif callable(writer):
+
+            class W_(Writeable):
+                def write(self, msg):
+                    writer(msg)
+
+                def flush(self):
+                    pass
+
+                def close(self):
+                    pass
+
+            return W_()
+        raise XTypeError(f"{type(writer)} cannot be wrapped into a Writeable")
+
+    @classmethod
+    def get_log_function(cls, log: str | Callable[[str], Any] | None) -> Callable[[str], None]:
+        """
+        Gets a logging function from user input.
+        The rules are:
+            - If None, uses logger.info
+            - If 'print' or 'stdout',  use sys.stdout.write
+            - If 'stderr', use sys.stderr.write
+            - If another str or int, try using that logger level (raises an error if invalid)
+            - If callable, returns it
+            - If it has a callable method called 'write', uses that
+
+        Returns:
+            A function of the log message that returns None
+        """
+        if log is None:
+            return logger.info
+        elif isinstance(log, str) and log.lower() in ["print", "stdout"]:
+            # noinspection PyTypeChecker
+            return sys.stdout.write
+        elif log == "stderr":
+            # noinspection PyTypeChecker
+            return sys.stderr.write
+        elif isinstance(log, int):
+            return getattr(logger, logging.getLevelName(log).lower())
+        elif isinstance(log, str):
+            return getattr(logger, log.lower())
+        elif callable(log):
+            return log
+        elif hasattr(log, "write"):
+            return log.write
+        else:
+            raise XTypeError(f"Log type {type(log)} not known", actual=str(type(log)))
+
+    @classmethod
+    def sentinel(cls, name: str) -> Any:
+        class _Sentinel:
+            def __eq__(self, other):
+                return self is other
+
+            def __reduce__(self):
+                return name  # returning string is for singletons
+
+            def __str__(self):
+                return name
+
+            def __repr__(self):
+                return name
+
+        return _Sentinel()
+
+    def __repr__(self):
+        return self.__class__.__name__
+
+    def __str__(self):
+        return self.__class__.__name__
 
 
-__all__ = ["CommonTools"]
+__all__ = ["CommonTools", "Writeable"]

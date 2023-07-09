@@ -3,14 +3,13 @@ import os
 import sys
 from collections.abc import Callable, Sequence
 from copy import copy
-from pathlib import Path
+from pathlib import Path, PurePath
 from typing import Any
 
 import regex
 
 from pocketutils.core import PathLike
 from pocketutils.core.exceptions import ContradictoryRequestError, IllegalPathError
-from pocketutils.tools.base_tools import BaseTools
 
 logger = logging.getLogger("pocketutils")
 
@@ -65,9 +64,13 @@ _bad_strs = {
 _bad_strs_fat = {*_bad_strs, *{"$IDLE$", "CONFIG$", "KEYBD$", "SCREEN$", "CLOCK$", "LST"}}
 
 
-class PathTools(BaseTools):
+class PathTools:
     @classmethod
-    def updir(cls, n: int, *parts) -> Path:
+    def is_path_like(cls, value: Any):
+        return isinstance(value, (str, PurePath, os.PathLike))
+
+    @classmethod
+    def up_dir(cls, n: int, *parts) -> Path:
         """
         Get an absolute path ``n`` parents from ``os.getcwd()``.
         Does not sanitize.

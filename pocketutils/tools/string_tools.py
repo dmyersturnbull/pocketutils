@@ -1,21 +1,28 @@
 import re
-from collections.abc import Callable, Iterable, Mapping, Sequence
+from collections.abc import ByteString, Callable, Iterable, Mapping, Sequence
 from typing import Any, TypeVar
 
-import numpy as np
 import orjson
 import regex
 
-from pocketutils.core.chars import Chars
+from pocketutils.core._internal import is_lambda
 from pocketutils.core.exceptions import OutOfRangeError, XValueError
-from pocketutils.tools.base_tools import BaseTools
 
 T = TypeVar("T")
 V = TypeVar("V")
 _control_chars = regex.compile(r"\p{C}", flags=regex.V1)
 
 
-class StringTools(BaseTools):
+def is_true_iterable(s: Any) -> bool:
+    return (
+        s is not None
+        and isinstance(s, Iterable)
+        and not isinstance(s, str)
+        and not isinstance(s, ByteString)
+    )
+
+
+class StringTools:
     @classmethod
     def pretty_dict(cls, dct: Mapping[Any, Any]) -> str:
         """
@@ -242,16 +249,8 @@ class StringTools(BaseTools):
         Also less type-safe than more specific variants.
         Note that the order of the prefixes (or suffixes) DOES matter.
         """
-        prefixes = (
-            [str(z) for z in prefixes]
-            if StringTools.is_true_iterable(prefixes)
-            else [str(prefixes)]
-        )
-        suffixes = (
-            [str(z) for z in suffixes]
-            if StringTools.is_true_iterable(suffixes)
-            else [str(suffixes)]
-        )
+        prefixes = [str(z) for z in prefixes] if is_true_iterable(prefixes) else [str(prefixes)]
+        suffixes = [str(z) for z in suffixes] if is_true_iterable(suffixes) else [str(suffixes)]
         s = str(s)
         for pre in prefixes:
             if s.startswith(pre):
@@ -270,17 +269,17 @@ class StringTools(BaseTools):
              strip_paired
         """
         pieces = [
-            ("(", ")"),
-            ("[", "]"),
-            ("[", "]"),
-            ("{", "}"),
-            ("<", ">"),
-            (Chars.lshell, Chars.rshell),
-            (Chars.langle, Chars.rangle),
-            (Chars.ldparen, Chars.rdparen),
-            (Chars.ldbracket, Chars.rdbracket),
-            (Chars.ldangle, Chars.rdangle),
-            (Chars.ldshell, Chars.rdshell),
+            ("()"),
+            ("[]"),
+            ("[]"),
+            ("{}"),
+            ("<>"),
+            ("⦗⦘"),
+            ("⟨⟩"),
+            ("⸨⸩"),
+            ("⟦〛"),
+            ("《》"),
+            ("〘〙"),
         ]
         return StringTools.strip_paired(text, pieces)
 
@@ -293,11 +292,11 @@ class StringTools(BaseTools):
             strip_paired
         """
         pieces = [
-            ("`", "`"),
-            (Chars.lsq, Chars.rsq),
-            (Chars.ldq, Chars.rdq),
-            ("'", "'"),
-            ('"', '"'),
+            ("``"),
+            ("’‘"),
+            ("”“"),
+            ("''"),
+            ('""'),
         ]
         return StringTools.strip_paired(text, pieces)
 
@@ -310,33 +309,33 @@ class StringTools(BaseTools):
             strip_paired
         """
         pieces = [
-            ("(", ")"),
-            ("[", "]"),
-            ("[", "]"),
-            ("{", "}"),
-            ("<", ">"),
-            (Chars.lshell, Chars.rshell),
-            (Chars.langle, Chars.rangle),
-            ("`", "`"),
-            (Chars.lsq, Chars.rsq),
-            (Chars.ldq, Chars.rdq),
-            ("'", "'"),
-            ('"', '"'),
-            (Chars.ldparen, Chars.rdparen),
-            (Chars.ldbracket, Chars.rdbracket),
-            (Chars.ldangle, Chars.rdangle),
-            (Chars.ldshell, Chars.rdshell),
+            ("()"),
+            ("[]"),
+            ("[]"),
+            ("{}"),
+            ("<>"),
+            ("⦗⦘"),
+            ("⟨⟩"),
+            ("⸨⸩"),
+            ("⟦〛"),
+            ("《》"),
+            ("〘〙"),
+            ("``"),
+            ("’‘"),
+            ("”“"),
+            ("''"),
+            ('""'),
         ]
         return StringTools.strip_paired(text, pieces)
 
     @classmethod
-    def strip_paired(cls, text: str, pieces: Iterable[tuple[str, str]]) -> str:
+    def strip_paired(cls, text: str, pieces: Iterable[tuple[str, str] | str]) -> str:
         """
         Strips pairs of (start, end) from the ends of strings.
 
         Example:
             .. code-block::
-                StringTools.strip_paired("[(abc]", [("(", ")"), ("[", "]"))  # returns "(abc"
+                StringTools.strip_paired("[(abc]", [("()"), ("[]"))  # returns "(abc"
 
         See Also:
             strip_brackets
@@ -396,7 +395,7 @@ class StringTools(BaseTools):
             - StringTools.pretty_float(.2222222)       # '+0.22222'
             - StringTools.pretty_float(-.2222222)      # '−0.22222' (Unicode minus)
             - StringTools.pretty_float(-float('inf'))  # '−∞'
-            - StringTools.pretty_float(np.NaN)         # '⌀'
+            - StringTools.pretty_float(np.NaN)         # 'NaN'
         """
         # TODO this seems absurdly long for what it does
         if n_sigfigs is None or n_sigfigs < 1:
@@ -406,15 +405,17 @@ class StringTools(BaseTools):
                 minimum=1,
             )
         # first, handle NaN and infinities
-        if np.isneginf(v):
-            return Chars.minus + Chars.inf
-        elif np.isposinf(v):
-            return "+" + Chars.inf
-        elif np.isnan(v):
-            return Chars.null
+        if v == float("-Inf"):
+            return "−∞"
+        if v == float("Inf"):
+            return "+∞"
+        elif not isinstance(v, str) and str(v) in ["nan", "na", "NaN"]:
+            return "NaN"
+        elif not isinstance(v, str) and str(v) == "NaT":
+            return "NaT"
         # sweet. it's a regular float or int.
         if n_sigfigs is None:
-            s = StringTools.strip_empty_decimal(str(v))
+            s = cls.strip_empty_decimal(str(v))
         else:
             # yes, this is weird. we need to convert from str to float then back to str
             s = str(float(str(("%." + str(n_sigfigs) + "g") % v)))
@@ -423,12 +424,12 @@ class StringTools(BaseTools):
         # and if n_sigfigs<1, it definitely can't
         # and ... %g does this.
         if isinstance(v, int) or n_sigfigs is not None and n_sigfigs < 2:
-            s = StringTools.strip_empty_decimal(s)
+            s = cls.strip_empty_decimal(s)
         # prepend + or - (unless 0)
         if float(s) == 0.0:
             return s
-        s = s.replace("-", Chars.minus)
-        if not s.startswith(Chars.minus):
+        s = s.replace("-", "−")
+        if not s.startswith("−"):
             s = "+" + s[1:]
         if len(s) > 1 and s[1] == ".":
             s = s[0] + "0." + s[2:]
@@ -455,14 +456,14 @@ class StringTools(BaseTools):
             suffix: Suffix to the whole string
         """
         if function is None:
-            return Chars.null
+            return "⌀"
         n_args = str(function.__code__.co_argcount) if hasattr(function, "__code__") else "?"
         pat = regex.compile(r"^<bound method [^ .]+\.([^ ]+) of (.+)>$", flags=regex.V1)
         boundmatch = pat.fullmatch(str(function))
         pat = regex.compile(r"<([A-Za-z0-9_.<>]+)[ ']*object", flags=regex.V1)
         objmatch = pat.search(str(function))  # instance of global or local class
         addr = " @ " + hex(id(function)) if with_address else ""
-        if cls.is_lambda(function):
+        if is_lambda(function):
             # simplify lambda functions!
             return prefix + "λ(" + n_args + ")" + addr + suffix
         elif boundmatch is not None:

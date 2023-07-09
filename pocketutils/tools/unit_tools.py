@@ -7,16 +7,14 @@ import regex
 from pint import Quantity, UnitRegistry
 from pint.errors import PintTypeError
 
-from pocketutils.core._internal import nicesize
 from pocketutils.core.exceptions import OutOfRangeError, StringPatternError
-from pocketutils.tools.base_tools import BaseTools
 from pocketutils.tools.string_tools import StringTools
 
 logger = logging.getLogger("pocketutils")
 _UNIT_REG = UnitRegistry()
 
 
-class UnitTools(BaseTools):
+class UnitTools:
     @classmethod
     def format_approx_big_number(cls, n: int) -> str:
         for k, v in {1e15: "", 1e12: "T", 1e9: "B", 1e6: "M", 1e3: "k"}.items():
@@ -125,14 +123,6 @@ class UnitTools(BaseTools):
             return f"{sgn}{z_hr}:{z_min}:{z_sec}"
         else:
             return f"{sgn}{z_min}:{z_sec}"
-
-    @classmethod
-    def friendly_size(cls, n_bytes: int, *, space: str = " ") -> str:
-        """
-        Returns a text representation of a number of bytes.
-        Uses base 2 with IEC 1998, rounded to 0 decimal places, and without a space.
-        """
-        return nicesize(n_bytes, space=space)
 
     @classmethod
     def round_to_sigfigs(cls, num: SupportsFloat, sig_figs: int | None) -> float:

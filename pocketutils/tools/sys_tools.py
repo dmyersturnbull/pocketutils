@@ -3,6 +3,7 @@ Low-level tools (e.g. memory management).
 """
 import atexit
 import importlib
+import importlib.metadata
 import locale
 import logging
 import os
@@ -18,9 +19,8 @@ from datetime import datetime, timezone
 from getpass import getuser
 from typing import Any, NamedTuple
 
+from pocketutils.core._internal import parse_bool, parse_bool_flex
 from pocketutils.core.input_output import Writeable
-from pocketutils.tools.base_tools import BaseTools
-from pocketutils.tools.common_tools import CommonTools
 
 logger = logging.getLogger("pocketutils")
 
@@ -67,7 +67,19 @@ class ExitHandler:
             self.sink.write(line)
 
 
-class SystemTools(BaseTools):
+class SystemTools:
+    @classmethod
+    def is_linux(cls) -> bool:
+        return sys.platform == "linux"
+
+    @classmethod
+    def is_windows(cls) -> bool:
+        return sys.platform == "win32"
+
+    @classmethod
+    def is_macos(cls) -> bool:
+        return sys.platform == "darwin"
+
     @classmethod
     def get_env_info(
         cls, *, extended: bool = False, include_insecure: bool = False
@@ -199,7 +211,7 @@ class SystemTools(BaseTools):
         tbe = traceback.TracebackException.from_exception(e)
         last, repeats = None, 0
         for i, s in enumerate(tbe.stack):
-            current = Frame(depth=i, filename=s.filename, line=s.line, name=s.name, repeats=-1)
+            current = Frame(depth=i, filename=s.filename, line=int(s.line), name=s.name, repeats=-1)
             if current == last:
                 repeats += 1
             else:
@@ -235,12 +247,15 @@ class SystemTools(BaseTools):
         atexit.register(ExitHandler(sink))
 
     @classmethod
-    def env_var_flag(cls, name: str) -> bool:
+    def env_var_flag(cls, name: str, *, flex: bool = False) -> bool:
         """
         Returns the boolean-parsed value of an environment variable (False if missing).
         Uses :meth:`pocketutils.tools.common_tools.CommonTools.parse_bool_flex`.
         """
-        return CommonTools.parse_bool_flex(os.environ.get(name, "false"))
+        if flex:
+            return parse_bool_flex(os.environ.get(name, "false"))
+        else:
+            return parse_bool(os.environ.get(name, "false"))
 
 
 __all__ = ["SignalHandler", "ExitHandler", "SystemTools"]

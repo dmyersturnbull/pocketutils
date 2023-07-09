@@ -4,20 +4,17 @@ Projects can/should subclass from these in addition to the normal Python ones.
 """
 from __future__ import annotations
 
-import logging
-import os
-from collections.abc import Collection
-from copy import copy
-from functools import wraps
-from pathlib import Path
+import os as _os
+from collections.abc import Collection as _Collection
+from functools import wraps as _wraps
+from pathlib import PurePath as _PurePath
 
 # noinspection PyUnresolvedReferences
-from subprocess import CalledProcessError
-from typing import Any
+from subprocess import CalledProcessError as _CalledProcessError
+from typing import Any as _Any
 
-logger = logging.getLogger("pocketutils")
-KeyLike = Any
-PathLike = Path | str, os.PathLike
+KeyLike = _Any
+PathLike = _PurePath | str, _os.PathLike
 
 
 ###################################################################################################
@@ -43,7 +40,7 @@ class ErrorUtils:
         if any([s == "info" or s.startswith("__") and s.endswith("__") for s in names]):
             raise AssertionError(f"Failed on {names}")
 
-        @wraps(names)
+        @_wraps(names)
         def dec(cls):
             def _doc(doc: str) -> str:
                 if doc is None:
@@ -66,7 +63,7 @@ class ErrorUtils:
                 )
 
             def _init(self, *args, **kwargs) -> None:
-                kwargs = copy(kwargs)
+                kwargs = dict(kwargs)
                 # when we call super(), we need to know which class we're on and which should be called next
                 # note that self will always be the first class
                 thisclass = kwargs.pop("__thisclass") if "__thisclass" in kwargs else self.__class__
@@ -367,7 +364,7 @@ class LengthError(_SizeError):
     """The length is too large or too small."""
 
 
-@ErrorUtils.args(lengths=Collection[int])
+@ErrorUtils.args(lengths=_Collection[int])
 class LengthMismatchError(_SizeError):
     """The objects (2 or more) have different lengths."""
 
@@ -386,7 +383,7 @@ class XTypeError(Error, TypeError):
     """A TypeError containing the expected and actual types."""
 
 
-@ErrorUtils.args(value=Any)
+@ErrorUtils.args(value=_Any)
 class XValueError(Error, ValueError):
     """A ValueError containing the value."""
 
@@ -428,7 +425,7 @@ class XKeyError(Error, KeyError):
 
 
 # parsing files or similar resources
-@ErrorUtils.args(resource=Any)
+@ErrorUtils.args(resource=_Any)
 class _ParsingLikeError(Error):
     """Failed to parse."""
 
@@ -476,7 +473,7 @@ class MissingDeviceError(HardwareError):
     """Could not find the needed device."""
 
 
-@ErrorUtils.args(key=KeyLike, value=Any)
+@ErrorUtils.args(key=KeyLike, value=_Any)
 class BadWriteError(HardwareError):
     """Could not write to a hardware device (typically to a pin)."""
 
@@ -551,3 +548,17 @@ class PathIsNotAFileError(PathExistsError):
 
 class PathIsNotADirError(PathExistsError):
     """The path already exists and is not a directory."""
+
+
+@ErrorUtils.args(path=PathLike)
+class ReadPermissionsError(OSError):
+    """
+    Couldn't read from a file.
+    """
+
+
+@ErrorUtils.args(path=PathLike)
+class WritePermissionsError(OSError):
+    """
+    Couldn't write to a file.
+    """

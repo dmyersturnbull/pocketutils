@@ -175,7 +175,7 @@ class CleverEnum(DisjointEnum):
             OTHER = ()
 
             @classmethod
-            def _if_not_found(cls, s: Union[str, __qualname__]) -> __qualname__:
+            def _if_not_found(cls, s: str) -> __qualname__:
                 # raise XValueError(f"No member for value '{s}'", value=s) from None
                 #   ^
                 #   the default implementation

@@ -1,5 +1,5 @@
 import abc
-import operator
+import math
 from collections.abc import Iterable, Iterator, Sequence
 from typing import TypeVar
 
@@ -80,9 +80,10 @@ class TieredIterator(SeqIterator[tuple[IX]]):
     # noinspection PyMissingConstructor
     def __init__(self, sequence: Sequence[Sequence[IX]]):
         self.__seqs = list([SeqIterator(s) for s in reversed(sequence)])
-        self.__total = (
-            0 if len(self.seqs) == 0 else int(operator.mul([i.total() for i in self.seqs]))
-        )
+        if len(self.seqs) == 0:
+            self.__total = 0
+        else:
+            self.__total = math.prod([it.total() for it in self.seqs])
         self.__i = 0
 
     @property
