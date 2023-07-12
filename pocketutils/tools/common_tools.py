@@ -1,10 +1,11 @@
 import logging
 import sys
-from collections import defaultdict
+from collections import defaultdict, deque
 from collections.abc import ByteString, Callable, Generator, Iterable, Iterator, Mapping, Sequence
 from contextlib import contextmanager
 from typing import Any, TypeVar
 
+from pocketutils import FrozeDict, FrozeList, FrozeSet
 from pocketutils.core._internal import is_lambda, look, parse_bool, parse_bool_flex
 from pocketutils.core.exceptions import (
     MultipleMatchesError,
@@ -22,6 +23,49 @@ logger = logging.getLogger("pocketutils")
 
 
 class CommonTools:
+    @classmethod
+    def freeze(cls, v: Any) -> Any:
+        """
+        Returns ``v`` or a hashable view of it.
+        Note that the returned types must be hashable but might not be ordered.
+        You can generally add these values as DataFrame elements, but you might not
+        be able to sort on those columns.
+
+        Args:
+            v: Any value
+
+        Returns:
+            Either ``v`` itself,
+            a :class:`typeddfs.utils.FrozeSet` (subclass of :class:`collections.abc.Set`),
+            a :class:`typeddfs.utils.FrozeList` (subclass of :class:`collections.abc.Sequence`),
+            or a :class:`typeddfs.utils.FrozeDict` (subclass of :class:`collections.abc.Mapping`).
+            int, float, str, np.generic, and tuple are always returned as-is.
+
+        Raises:
+            AttributeError: If ``v`` is not hashable and could not be converted to
+                            a FrozeSet, FrozeList, or FrozeDict, *or* if one of the elements for
+                            one of the above types is not hashable.
+            TypeError: If ``v`` is an ``Iterator`` or `deque``
+        """
+        if isinstance(v, (int, float, str, tuple, frozenset)):
+            return v  # short-circuit
+        if str(type(v)).startswith("<class 'numpy."):
+            return v
+        match v:
+            case Iterator():  # let's not ruin their iterator by traversing
+                raise TypeError("Type is an iterator")
+            case deque():  # the only other major built-in type we won't accept
+                raise TypeError("Type is a deque")
+            case Sequence():
+                return FrozeList(v)
+            case FrozeSet():
+                return FrozeList(v)
+            case Mapping():
+                return FrozeDict(v)
+            case _:
+                hash(v)  # raise an AttributeError if not hashable
+                return v
+
     def nice_size(n_bytes: int, *, space: str = "") -> str:
         """
         Uses IEC 1998 units, such as KiB (1024).
@@ -267,19 +311,6 @@ class CommonTools:
             if v is not None:
                 dct[v].append(item)
         return dct
-
-    @classmethod
-    def devnull(cls):
-        """
-        Yields a 'writer' that does nothing.
-
-        Example:
-            .. code-block::
-
-                with CommonTools.devnull() as devnull:
-                    devnull.write('hello')
-        """
-        yield DevNull()
 
     @classmethod
     def parse_bool(cls, s: str) -> bool:

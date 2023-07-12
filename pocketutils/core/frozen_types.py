@@ -4,8 +4,8 @@ Hashable and ordered collections.
 
 
 import functools
-from collections.abc import Hashable, Iterator, Mapping, MutableMapping, Sequence, ValuesView
-from typing import AbstractSet, Self, TypeVar
+from collections.abc import Hashable, Iterator, Mapping, MutableMapping, Sequence, Set, ValuesView
+from typing import Self, TypeVar
 
 T = TypeVar("T", covariant=True)
 K = TypeVar("K", contravariant=True)
@@ -92,7 +92,7 @@ class FrozeList(Sequence[T], Hashable):
         raise TypeError(f"Cannot compare to {type(other)}")
 
 
-class FrozeSet(AbstractSet[T], Hashable):
+class FrozeSet(Set[T], Hashable):
     """
     An immutable set.
     Hashable and ordered.
@@ -102,7 +102,7 @@ class FrozeSet(AbstractSet[T], Hashable):
 
     EMPTY: Self = NotImplemented  # delayed
 
-    def __init__(self, lst: AbstractSet[T]):
+    def __init__(self, lst: Set[T]):
         self.__lst = lst if isinstance(lst, set) else set(lst)
         try:
             self.__hash = hash(tuple(lst))
@@ -145,10 +145,10 @@ class FrozeSet(AbstractSet[T], Hashable):
     def __hash__(self) -> int:
         return self.__hash
 
-    def __eq__(self, other: AbstractSet[T]) -> bool:
+    def __eq__(self, other: Set[T]) -> bool:
         return self.__lst == self.__make_other(other)
 
-    def __lt__(self, other: AbstractSet[T]):
+    def __lt__(self, other: Set[T]):
         """
         Compares ``self`` and ``other`` for partial ordering.
         Sorts ``self`` and ``other``, then compares the two sorted sets.
@@ -177,18 +177,18 @@ class FrozeSet(AbstractSet[T], Hashable):
     def __repr__(self) -> str:
         return repr(self.__lst)
 
-    def to_set(self) -> AbstractSet[T]:
+    def to_set(self) -> Set[T]:
         return set(self.__lst)
 
-    def to_frozenset(self) -> AbstractSet[T]:
+    def to_frozenset(self) -> Set[T]:
         return frozenset(self.__lst)
 
-    def __make_other(self, other: AbstractSet[T]) -> set[T]:
+    def __make_other(self, other: Set[T]) -> set[T]:
         if isinstance(other, FrozeSet):
             other = other.__lst
         if isinstance(other, set):
             return other
-        elif isinstance(other, AbstractSet):
+        elif isinstance(other, Set):
             return set(other)
         raise TypeError(f"Cannot compare to {type(other)}")
 
@@ -221,10 +221,10 @@ class FrozeDict(Mapping[K, V], Hashable):
             return self.__dct[key]
         return self.__dct.get(key, default)
 
-    def items(self) -> AbstractSet[tuple[K, V]]:  # pragma: no cover
+    def items(self) -> Set[tuple[K, V]]:  # pragma: no cover
         return self.__dct.items()
 
-    def keys(self) -> AbstractSet[K]:  # pragma: no cover
+    def keys(self) -> Set[K]:  # pragma: no cover
         return self.__dct.keys()
 
     def values(self) -> ValuesView[V]:  # pragma: no cover

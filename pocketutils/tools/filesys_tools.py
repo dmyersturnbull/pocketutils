@@ -1,4 +1,3 @@
-import bz2
 import csv
 import gzip
 import logging
@@ -34,7 +33,6 @@ from pocketutils.tools.sys_tools import SystemTools
 from pocketutils.tools.unit_tools import UnitTools
 
 logger = logging.getLogger("pocketutils")
-COMPRESS_LEVEL = 9
 
 
 class FilesysTools:
@@ -87,37 +85,6 @@ class FilesysTools:
         ):
             return errors
         raise ValueError(f"Invalid value {errors} for errors")
-
-    @classmethod
-    def read_compressed_text(cls, path: PathLike) -> str:
-        """
-        Reads text from a text file, optionally gzipped or bz2-ed.
-        Recognized suffixes for compression are ``.gz``, ``.gzip``, ``.bz2``, and ``.bzip2``.
-        """
-        path = Path(path)
-        if path.name.endswith(".bz2") or path.name.endswith(".bzip2"):
-            return bz2.decompress(path.read_bytes()).decode(encoding="utf-8")
-        if path.name.endswith(".gz") or path.name.endswith(".gzip"):
-            return gzip.decompress(path.read_bytes()).decode(encoding="utf-8")
-        return Path(path).read_text(encoding="utf-8")
-
-    @classmethod
-    def write_compressed_text(cls, txt: str, path: PathLike, *, mkdirs: bool = False) -> None:
-        """
-        Writes text to a text file, optionally gzipped or bz2-ed.
-        Recognized suffixes for compression are ``.gz``, ``.gzip``, ``.bz2``, and ``.bzip2``.
-        """
-        path = Path(path)
-        if mkdirs:
-            path.parent.mkdir(parents=True, exist_ok=True)
-        if path.name.endswith(".bz2") or path.name.endswith(".bzip2"):
-            data = bz2.compress(txt.encode(encoding="utf-8"))
-            path.write_bytes(data)
-        elif path.name.endswith(".gz") or path.name.endswith(".gzip"):
-            data = gzip.compress(txt.encode(encoding="utf-8"))
-            path.write_bytes(data)
-        else:
-            path.write_text(txt)
 
     @classmethod
     def get_info(
@@ -200,9 +167,9 @@ class FilesysTools:
         System info is from :meth:`get_env_info`.
         """
         if path is None:
-            path = f"err-dump-{cls.dt_for_filesys()}.json"
+            path = f"err-dump-{cls.dt_for_filesys(datetime.now().astimezone())}.json"
         elif isinstance(path, datetime):
-            path = f"err-dump-{cls.dt_for_filesys(path)}.json"
+            path = f"err-dump-{cls.dt_for_filesys(datetime.now().astimezone())}.json"
         path = Path(path)
         data = cls.dump_error_as_dict(e)
         data = orjson.dumps(data, option=orjson.OPT_INDENT_2)
@@ -220,10 +187,8 @@ class FilesysTools:
         return dict(message=msg, stacktrace=tb, system=system)
 
     @classmethod
-    def dt_for_filesys(cls, dt: datetime | None = None) -> str:
-        if dt is None:
-            dt = datetime.now()
-        return dt.strftime("%Y-%m-%d_%H-%M-%S")
+    def dt_for_filesys(cls, dt: datetime, *, timespec: str = "milliseconds") -> str:
+        return dt.isoformat(timespec=timespec).replace(":", "")
 
     @classmethod
     def verify_can_read_files(
@@ -370,97 +335,6 @@ class FilesysTools:
             logger.error(f"Permission error preventing deleting {path}")
 
     @classmethod
-    def read_lines_file(cls, path: PathLike, *, ignore_comments: bool = False) -> Sequence[str]:
-        """
-        Returns a list of lines in the file.
-        Optionally skips lines starting with ``#`` or that only contain whitespace.
-        """
-        lines = []
-        with cls.open_file(path, "r") as f:
-            for line in f.readlines():
-                line = line.strip()
-                if not ignore_comments or not line.startswith("#") and not len(line.strip()) == 0:
-                    lines.append(line)
-        return lines
-
-    @classmethod
-    def read_properties_file(cls, path: PathLike) -> Mapping[str, str]:
-        """
-        Reads a .properties file.
-        A list of lines with key=value pairs (with an equals sign).
-        Lines beginning with # are ignored.
-        Each line must contain exactly 1 equals sign.
-
-        .. caution::
-            The escaping is not compliant with the standard
-
-        Args:
-            path: Read the file at this local path
-
-        Returns:
-            A dict mapping keys to values, both with surrounding whitespace stripped
-        """
-        dct = {}
-        with cls.open_file(path, "r") as f:
-            for i, line in enumerate(f.readlines()):
-                line = line.strip()
-                if len(line) == 0 or line.startswith("#"):
-                    continue
-                if line.count("=") != 1:
-                    raise ParsingError(f"Bad line {i} in {path}", resource=path)
-                k, v = line.split("=")
-                k, v = k.strip(), v.strip()
-                if k in dct:
-                    raise AlreadyUsedError(f"Duplicate property {k} (line {i})", key=k)
-                dct[k] = v
-        return dct
-
-    @classmethod
-    def write_properties_file(
-        cls, properties: Mapping[Any, Any], path: str | PurePath, mode: str = "o"
-    ) -> None:
-        """
-        Writes a .properties file.
-
-        .. caution::
-            The escaping is not compliant with the standard
-        """
-        with FilesysTools.open_file(path, mode) as f:
-            bad_keys = []
-            bad_values = []
-            for k, v in properties.items():
-                if "=" in k or "\n" in k:
-                    bad_keys.append(k)
-                if "=" in v or "\n" in v:
-                    bad_values.append(k)
-                f.write(
-                    str(k).replace("=", "--").replace("\n", "\\n")
-                    + "="
-                    + str(v).replace("=", "--").replace("\n", "\\n")
-                    + "\n"
-                )
-            if len(bad_keys) > 0:
-                logger.warning(
-                    f"These keys containing '=' or \\n were escaped: {', '.join(bad_keys)}"
-                )
-            if len(bad_values) > 0:
-                logger.warning(
-                    f"These keys containing '=' or \\n were escaped: {', '.join(bad_values)}"
-                )
-
-    @classmethod
-    def save_json(cls, data: Any, path: PathLike, mode: str = "w") -> None:
-        mode = mode.replace("t", "")
-        if "b" not in mode:
-            mode += "b"
-        with cls.open_file(path, mode) as f:
-            f.write(orjson.dumps(data))
-
-    @classmethod
-    def load_json(cls, path: PathLike) -> dict | list:
-        return orjson.loads(Path(path).read_text(encoding="utf-8"))
-
-    @classmethod
     def read_any(
         cls, path: PathLike
     ) -> (
@@ -532,7 +406,7 @@ class FilesysTools:
         if not mode.read:
             cls.prep_file(path, exist_ok=mode.overwrite or mode.append)
         if path.suffix == ".gz" or path.suffix == ".gzip":
-            yield gzip.open(path, mode, compresslevel=COMPRESS_LEVEL, encoding="utf-8")
+            yield gzip.open(path, mode, encoding="utf-8")
         elif mode.binary:
             yield open(path, mode, encoding="utf-8")
         else:

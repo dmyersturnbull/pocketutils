@@ -22,8 +22,8 @@ from collections import deque
 from collections.abc import Callable, Mapping, MutableMapping, Sequence
 from dataclasses import dataclass
 from inspect import cleandoc
-from pathlib import Path
-from typing import AbstractSet, Any, Deque, Generic, TextIO, TypeVar
+from pathlib import Path, PurePath
+from typing import Any, Deque, Generic, TextIO, TypeVar
 
 import loguru._defaults as _defaults
 
@@ -35,8 +35,8 @@ from loguru import logger as _logger
 # noinspection PyProtectedMember
 from loguru._logger import Logger
 
-from pocketutils.core import PathLike
 from pocketutils.core.exceptions import IllegalStateError, XValueError
+from pocketutils.core.smartio import SmartIo
 
 _levels = loguru.logger._core.levels
 Formatter = str | Callable[[Mapping[str, Any]], str]
@@ -71,15 +71,11 @@ def log_traceback(record):
 
 _LOGGER_ARG_PATTERN = regex.compile(r"(?:([a-zA-Z]+):)?(.*)", flags=regex.V1)
 log_compressions = {
-    ".xz",
-    ".lzma",
-    ".gz",
-    ".zip",
-    ".bz2",
-    ".tar",
-    ".tar.gz",
-    ".tar.bz2",
-    ".tar.xz",
+    **{k: v.compress_file for k, v in SmartIo.mapping()},
+    ".tar": "tar",
+    ".tar.gz": "tar.gz",
+    ".tar.bz2": "tar.bz2",
+    ".tar.xz": "tar.xz",
 }
 valid_log_suffixes = {
     *{f".log{c}" for c in log_compressions},
@@ -389,13 +385,13 @@ class FancyLoguru(Generic[T]):
         )
 
     @property
-    def paths(self) -> AbstractSet[HandlerInfo]:
+    def paths(self) -> set[HandlerInfo]:
         """
         Lists all path handlers configured in this object.
         """
         return {h.to_friendly for h in self._paths.values()}
 
-    def get_path(self, p: PathLike) -> HandlerInfo | None:
+    def get_path(self, p: PurePath | str) -> HandlerInfo | None:
         """
         Returns a path handler to this path, or None if it does not exist.
         The path is resolved, following symlinks, via ``pathlib.Path.resolve``.
@@ -587,7 +583,7 @@ class FancyLoguru(Generic[T]):
 
     def add_path(
         self,
-        path: PathLike,
+        path: PurePath | str,
         level: str = _SENTINEL,
         *,
         fmt: str = _SENTINEL,
@@ -823,22 +819,6 @@ class FancyLoguru(Generic[T]):
 
 
 FANCY_LOGURU_DEFAULTS = _Defaults()
-
-
-if __name__ == "__main__":
-    _logger.remove(None)
-    lg = (
-        FancyLoguru.new(LoggerWithCautionAndNotice)
-        .set_control(False)
-        .set_control(True)
-        .config_main(fmt=FANCY_LOGURU_DEFAULTS.fmt_simplified)
-        .intercept_std()
-    )
-    lg.from_cli(path="~nope.log.tmp")
-
-    with lg.logger.contextualize(omg="why"):
-        lg.logger.info("hello", traceback=True)
-    print(lg.recent_messages)
 
 
 __all__ = [

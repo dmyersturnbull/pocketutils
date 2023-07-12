@@ -22,9 +22,27 @@ PathLike = str | PurePath
 @dataclass(frozen=True)
 class Compression(metaclass=abc.ABCMeta):
     name: str
-    suffixes: set[str]
+    suffixes: list[str]
     compress: Callable[[bytes], bytes]
     decompress: Callable[[bytes], bytes]
+
+    def compress_file(self, source: PurePath | str, dest: PurePath | str | None = None) -> None:
+        source = Path(source)
+        if dest is None:
+            dest = source.parent / (source.name + self.suffixes[0])
+        else:
+            dest = Path(dest)
+        data = self.compress(source.read_bytes())
+        dest.write_bytes(data)
+
+    def decompress_file(self, source: PurePath | str, dest: PurePath | str | None = None) -> None:
+        source = Path(source)
+        if dest is None:
+            dest = source.with_suffix("")
+        else:
+            dest = Path(dest)
+        data = self.decompress(source.read_bytes())
+        dest.write_bytes(data)
 
 
 def identity(x):
@@ -37,7 +55,7 @@ class CompressionSet:
 
     @classmethod
     def empty(cls) -> Self:
-        return CompressionSet({"": Compression("", set(), identity, identity)})
+        return CompressionSet({"": Compression("", [], identity, identity)})
 
     def __add__(self, fmt: Compression):
         new = {fmt.name: fmt} | {s: fmt for s in fmt.suffixes}
@@ -83,25 +101,30 @@ def _get_compressions():
 
     return (
         CompressionSet.empty()
-        + Compression("gzip", {".gz", ".gzip"}, gzip.compress, gzip.decompress)
-        + Compression("brotli", {".bro", ".brotli"}, brotli.compress, brotli.decompress)
-        + Compression("zstandard", {".zst", ".zstd"}, zstandard.compress, zstandard.decompress)
-        + Compression("lz4", {".lz4"}, lz4.frame.compress, lz4.frame.decompress)
-        + Compression("snappy", {".snappy"}, snappy.compress, snappy.decompress)
-        + Compression("bzip2", {".bz2", ".bzip2"}, bz2.compress, bz2.decompress)
-        + Compression("xz", {".xz"}, lzma.compress, lzma.decompress)
+        + Compression("gzip", [".gz", ".gzip"], gzip.compress, gzip.decompress)
+        + Compression("brotli", [".bro", ".brotli"], brotli.compress, brotli.decompress)
+        + Compression("zstandard", [".zst", ".zstd"], zstandard.compress, zstandard.decompress)
+        + Compression("lz4", [".lz4"], lz4.frame.compress, lz4.frame.decompress)
+        + Compression("snappy", [".snappy"], snappy.compress, snappy.decompress)
+        + Compression("bzip2", [".bz2", ".bzip2"], bz2.compress, bz2.decompress)
+        + Compression("xz", [".xz"], lzma.compress, lzma.decompress)
+        + Compression("lzma", [".lzma"], lzma.compress, lzma.decompress)
     )
 
 
 @dataclass(slots=True, frozen=True)
 class SmartIo:
-    _COMPRESSIONS = None
+    __COMPRESSIONS = None
+
+    @classmethod
+    def mapping(cls) -> dict[str, Compression]:
+        return cls.compressions().mapping
 
     @classmethod
     def compressions(cls) -> CompressionSet:
-        if cls._COMPRESSIONS is None:
+        if cls.__COMPRESSIONS is None:
             _COMPRESSIONS = _get_compressions()
-        return cls._COMPRESSIONS
+        return cls.__COMPRESSIONS
 
     @classmethod
     def write(
@@ -123,11 +146,11 @@ class SmartIo:
             path.write_bytes(compressed)
 
     @classmethod
-    def read_text(cls, path: PathLike) -> str:
+    def read_text(cls, path: PathLike, encoding: str = "utf-8") -> str:
         """
         Similar to :meth:`read_bytes`, but then converts to UTF-8.
         """
-        return cls.read_bytes(path).decode(encoding="utf-8")
+        return cls.read_bytes(path).decode(encoding=encoding)
 
     @classmethod
     def read_bytes(cls, path: PathLike) -> bytes:

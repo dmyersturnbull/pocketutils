@@ -3,11 +3,10 @@ from __future__ import annotations
 import abc
 import logging
 from collections import UserDict
-from collections.abc import Callable, Iterable, Sequence
+from collections.abc import Callable
 from typing import Any, Generic, TypeVar
 
 # noinspection PyProtectedMember
-from pocketutils.core._internal import PathLike, PathLikeUtils
 from pocketutils.core._internal import look as _look
 from pocketutils.core.exceptions import ImmutableError
 

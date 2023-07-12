@@ -4,6 +4,8 @@ import binascii
 import hashlib
 from typing import Literal, SupportsBytes
 
+from pocketutils import DevNull
+
 try:
     import base2048
 except ImportError:
@@ -237,6 +239,19 @@ class IoTools:
         if to not in ENCODINGS:
             raise ValueError(f"Unknown encoding {to}")
         return ENCODINGS[to].decode(d)
+
+    @classmethod
+    def devnull(cls):
+        """
+        Yields a 'writer' that does nothing.
+
+        Example:
+            .. code-block::
+
+                with CommonTools.devnull() as devnull:
+                    devnull.write('hello')
+        """
+        yield DevNull()
 
 
 __all__ = ["IoTools"]

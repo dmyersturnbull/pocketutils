@@ -22,7 +22,9 @@ from pocketutils.tools.common_tools import *
 from pocketutils.tools.console_tools import *
 from pocketutils.tools.filesys_tools import *
 from pocketutils.tools.io_tools import *
+from pocketutils.tools.json_tools import JsonTools
 from pocketutils.tools.numeric_tools import *
+from pocketutils.tools.parse_tools import ParseTools
 from pocketutils.tools.path_tools import *
 from pocketutils.tools.program_tools import *
 from pocketutils.tools.reflection_tools import *
@@ -54,15 +56,17 @@ class Tools(
     CallTools,
     CommonTools,
     ConsoleTools,
+    FilesysTools,
+    IoTools,
+    JsonTools,
     NumericTools,
     PathTools,
+    ParseTools,
     ProgramTools,
-    StringTools,
-    FilesysTools,
-    UnitTools,
     ReflectionTools,
+    StringTools,
     SystemTools,
-    IoTools,
+    UnitTools,
 ):
     """
     A collection of utility static functions.

@@ -8,9 +8,6 @@ import os as _os
 from collections.abc import Collection as _Collection
 from functools import wraps as _wraps
 from pathlib import PurePath as _PurePath
-
-# noinspection PyUnresolvedReferences
-from subprocess import CalledProcessError as _CalledProcessError
 from typing import Any as _Any
 
 KeyLike = _Any

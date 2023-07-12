@@ -6,6 +6,7 @@ from typing import Any
 
 import orjson
 
+from pocketutils import SmartIo
 from pocketutils.core.dot_dict import NestedDotDict
 from pocketutils.core.exceptions import (
     DirDoesNotExistError,
@@ -124,17 +125,22 @@ class Resources:
     def toml(self, *nodes: PathLike) -> NestedDotDict:
         """Reads a TOML file under ``resources/``."""
         path = self.a_file(*nodes, suffixes=_toml_suffixes)
-        return NestedDotDict.parse_toml(FilesysTools.read_compressed_text(path))
+        return NestedDotDict.from_toml(SmartIo.read_text(path))
+
+    def yaml(self, *nodes: PathLike) -> NestedDotDict:
+        """Reads a JSON file under ``resources/``."""
+        path = self.a_file(*nodes, suffixes=_json_suffixes)
+        return NestedDotDict.from_yaml(SmartIo.read_text(path))
+
+    def ini(self, *nodes: PathLike) -> NestedDotDict:
+        """Reads a JSON file under ``resources/``."""
+        path = self.a_file(*nodes, suffixes=_json_suffixes)
+        return NestedDotDict.from_ini(SmartIo.read_text(path))
 
     def json(self, *nodes: PathLike) -> NestedDotDict:
         """Reads a JSON file under ``resources/``."""
         path = self.a_file(*nodes, suffixes=_json_suffixes)
-        return NestedDotDict.parse_json(FilesysTools.read_compressed_text(path))
-
-    def json_dict(self, *nodes: PathLike) -> MutableMapping:
-        """Reads a JSON file under ``resources/``."""
-        path = self.a_file(*nodes, suffixes=_json_suffixes)
-        return orjson.loads(FilesysTools.read_compressed_text(path))
+        return NestedDotDict.from_json(SmartIo.read_text(path))
 
 
 __all__ = ["Resources"]

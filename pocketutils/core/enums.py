@@ -1,6 +1,6 @@
 import enum
 import logging
-from typing import AbstractSet
+from collections.abc import Set
 
 from pocketutils.core.exceptions import XKeyError
 
@@ -105,7 +105,7 @@ class FlagEnum(enum.Flag):
             return None
 
     @classmethod
-    def of(cls, s: str | __qualname__ | AbstractSet[str | __qualname__]) -> __qualname__:
+    def of(cls, s: str | __qualname__ | Set[str | __qualname__]) -> __qualname__:
         """
         Returns a choice by name (or ``s`` itself), or a set of those.
         """

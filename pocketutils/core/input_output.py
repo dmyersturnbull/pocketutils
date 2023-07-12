@@ -3,11 +3,9 @@ from __future__ import annotations
 import abc
 import contextlib
 import logging
-from pathlib import Path
+from pathlib import Path, PurePath
 from typing import Any, TypeVar
 from urllib import request
-
-from pocketutils.core import PathLike
 
 T = TypeVar("T", covariant=True)
 Y = TypeVar("Y")
@@ -241,7 +239,7 @@ def silenced(no_stdout: bool = True, no_stderr: bool = True):
             yield
 
 
-def stream_download(url: str, path: PathLike):
+def stream_download(url: str, path: PurePath | str):
     with request.urlopen(url) as stream:
         with Path(path).open("wb") as out:
             data = stream.read(1024 * 1024)
@@ -257,5 +255,4 @@ __all__ = [
     "DelegatingWriter",
     "Capture",
     "OpenMode",
-    "PathLike",
 ]

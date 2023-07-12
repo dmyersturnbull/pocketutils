@@ -1,8 +1,8 @@
 import subprocess  # nosec
+from pathlib import PurePath
 
 import regex
 
-from pocketutils.core import PathLike
 from pocketutils.core.exceptions import ParsingError
 from pocketutils.tools.git_description import GitDescription
 
@@ -20,7 +20,7 @@ class ProgramTools:
     """
 
     @classmethod
-    def git_description(cls, git_repo_dir: PathLike = ".") -> GitDescription:
+    def git_description(cls, git_repo_dir: PurePath | str = ".") -> GitDescription:
         """
         Runs ``git describe`` and parses the output.
 

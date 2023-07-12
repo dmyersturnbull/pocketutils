@@ -53,8 +53,10 @@ defusedxml               = ">=0.7"
 orjson                   = ">=3.8"
 pint                     = ">=0.20"
 regex                    = ">=2021"
+"ruamel.yaml"            = ">=0.17, <1"
 tomlkit                  = ">=0.11"
 
+rich                     = {version=">=13", optional=true}
 brotli                   = {version=">=1", optional=true}
 loguru                   = {version=">=0.6", optional=true}
 lz4                      = {version=">=4", optional=true}

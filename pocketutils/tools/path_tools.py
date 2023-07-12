@@ -8,7 +8,6 @@ from typing import Any
 
 import regex
 
-from pocketutils.core import PathLike
 from pocketutils.core.exceptions import ContradictoryRequestError, IllegalPathError
 
 logger = logging.getLogger("pocketutils")
@@ -104,7 +103,7 @@ class PathTools:
     @classmethod
     def sanitize_path(
         cls,
-        path: PathLike,
+        path: PurePath | str,
         *,
         is_file: bool | None = None,
         fat: bool = False,
@@ -146,7 +145,7 @@ class PathTools:
     @classmethod
     def sanitize_nodes(
         cls,
-        bits: Sequence[PathLike],
+        bits: Sequence[PurePath | str],
         *,
         is_file: bool | None = None,
         fat: bool = False,
@@ -171,7 +170,7 @@ class PathTools:
     @classmethod
     def sanitize_node(
         cls,
-        bit: PathLike,
+        bit: PurePath | str,
         *,
         is_file: bool | None = None,
         is_root_or_drive: bool | None = None,
