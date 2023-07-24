@@ -1693,7 +1693,7 @@ files = [
 name = "pint"
 version = "0.22"
 description = "Physical quantities module"
-optional = true
+optional = false
 python-versions = ">=3.9"
 files = [
     {file = "Pint-0.22-py3-none-any.whl", hash = "sha256:6e2b3c5c2b4d9b516608bc860a417a39d66eb99c958f36540cf931d2c2e9f80f"},
@@ -2322,13 +2322,13 @@ snappy-manifolds = ">=1.1.2"
 
 [[package]]
 name = "sphinx"
-version = "7.0.1"
+version = "7.1.0"
 description = "Python documentation generator"
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "Sphinx-7.0.1.tar.gz", hash = "sha256:61e025f788c5977d9412587e733733a289e2b9fdc2fef8868ddfbfc4ccfe881d"},
-    {file = "sphinx-7.0.1-py3-none-any.whl", hash = "sha256:60c5e04756c1709a98845ed27a2eed7a556af3993afb66e77fec48189f742616"},
+    {file = "sphinx-7.1.0-py3-none-any.whl", hash = "sha256:9bdfb5a2b28351d4fdf40a63cd006dbad727f793b243e669fc950d7116c634af"},
+    {file = "sphinx-7.1.0.tar.gz", hash = "sha256:8f336d0221c3beb23006b3164ed1d46db9cebcce9cb41cdb9c5ecd4bcc509be0"},
 ]
 
 [package.dependencies]
@@ -2857,4 +2857,4 @@ all = ["brotli", "loguru", "lz4", "pint", "psutil", "snappy", "typer", "zstandar
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.11"
-content-hash = "0084004e8dce54ed5aff9446db788de41a6f02f5e529489156af30e44ec6bd75"
+content-hash = "92b53db01add5c8cea4770dd0d96994738974743c6a355dd4bdefc0fcd5c5dee"
