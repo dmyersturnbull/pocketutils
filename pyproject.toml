@@ -82,7 +82,7 @@ pytest-cov                    = "^4"
 sphinx                        = "^7"
 sphinx-autoapi                = "^2"
 sphinx-copybutton             = ">=0.5"
-furo                          = "=2023.5.20"
+furo                          = "=2023.7.26"
 
 
 [tool.poetry.extras]
