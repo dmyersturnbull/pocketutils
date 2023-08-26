@@ -1,10 +1,11 @@
-import pytest
+from typing import Self
 
+import pytest
 from pocketutils.core.iterators import SeqIterator, TieredIterator
 
 
 class TestIterators:
-    def test_seq_iterator(self):
+    def test_seq_iterator(self: Self) -> None:
         seq = SeqIterator([1, 2, 3])
         assert seq.position() == 0
         assert seq.remaining() == 3
@@ -22,32 +23,32 @@ class TestIterators:
         with pytest.raises(StopIteration):
             next(seq)
 
-    def test_tiered_iterator_0(self):
+    def test_tiered_iterator_0(self: Self) -> None:
         it = TieredIterator([])
         assert len(it) == 0
         assert list(it) == []
 
-    def test_tiered_iterator_1_empty(self):
+    def test_tiered_iterator_1_empty(self: Self) -> None:
         it = TieredIterator([[]])
         assert len(it) == 0
         assert list(it) == []
 
-    def test_tiered_iterator_2_empty(self):
+    def test_tiered_iterator_2_empty(self: Self) -> None:
         it = TieredIterator([[], [1]])
         assert len(it) == 0
         assert list(it) == []
 
-    def test_tiered_iterator_1(self):
+    def test_tiered_iterator_1(self: Self) -> None:
         it = TieredIterator([[1, 2, 3]])
         assert len(it) == 3
         assert list(it) == [(1,), (2,), (3,)]
 
-    def test_tiered_iterator_2(self):
+    def test_tiered_iterator_2(self: Self) -> None:
         it = TieredIterator([[1, 2], [5, 6, 7]])
         assert len(it) == 2 * 3
         assert list(it) == [(1, 5), (1, 6), (1, 7), (2, 5), (2, 6), (2, 7)]
 
-    def test_tiered_iterator_3(self):
+    def test_tiered_iterator_3(self: Self) -> None:
         it = TieredIterator([[1, 2], [5], ["a", "b"]])
         assert len(it) == 2 * 1 * 2
         assert list(it) == [(1, 5, "a"), (1, 5, "b"), (2, 5, "a"), (2, 5, "b")]

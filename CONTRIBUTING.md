@@ -1,8 +1,14 @@
+<!--
+SPDX-FileCopyrightText: Copyright 2020-2023, Contributors to CICD
+SPDX-PackageHomePage: https://github.com/dmyersturnbull/cicd
+SPDX-License-Identifier: Apache-2.0
+-->
+
 # Contributing
 
-[New issues](https://github.com/dmyersturnbull/pocketutils/issues) and pull requests are welcome.
-Pocketutils is licensed under the [Apache License, version 2.0](https://www.apache.org/licenses/LICENSE-2.0).
+Please refer to the
+[contributing guide](https://dmyersturnbull.github.io/contributor-guide/),
+[maintainer guide](https://dmyersturnbull.github.io/maintainer-guide/),
+and [coding conventions](https://dmyersturnbull.github.io/coding-conventions/).
 
-##### For pull requests:
-If you can, please update `CHANGELOG.md` and add your name to the contributors in `pyproject.toml`.
-Then run `tyrannosaurus sync`.
+To automatically bump the version and deploy, run the _Deploy_ workflow on GitHub.

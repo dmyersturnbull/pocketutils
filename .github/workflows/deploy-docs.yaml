@@ -1,0 +1,46 @@
+# SPDX-FileCopyrightText: Copyright 2020-2023, Contributors to pocketutils
+# SPDX-PackageHomePage: https://github.com/dmyersturnbull/pocketutils
+# SPDX-License-Identifier: Apache-2.0
+
+name: Deploy docs
+
+on:
+  push:
+    tags:
+      - latest # always match latest
+      - "v[1-9]+" # match only major releases
+      # - 'v[0-9]+.[0-9]+.[0-9]*'  # OR: match all semver
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.sha }}
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+jobs:
+  docs-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-python@v4
+        with:
+          python-version: "3.11"
+      - name: Deploy docs for ${{ github.ref_name }}
+        run: |
+          pip install hatch
+          git fetch origin gh-pages  # prevent conflicts
+          hatch run deploy-docs ${{ github.ref_name }} --update-aliases --push
+      - name: Checkout gh-pages
+        uses: actions/checkout@v3
+        with:
+          ref: gh-pages
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v2
+        with:
+          path: .
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v2

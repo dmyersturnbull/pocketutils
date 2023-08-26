@@ -1,0 +1,26 @@
+# SPDX-FileCopyrightText: Copyright 2020-2023, Contributors to pocketutils
+# SPDX-PackageHomePage: https://github.com/dmyersturnbull/pocketutils
+# SPDX-License-Identifier: Apache-2.0
+
+name: Sync tags
+
+on:
+  release:
+    types: [published, edited]
+
+permissions:
+  contents: write
+  statuses: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.sha }}
+  cancel-in-progress: true
+
+jobs:
+  tag-latest:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: Actions-R-Us/actions-tagger@latest
+        with:
+          publish_latest_tag: true
+          token: ${{ secrets.PAT }}

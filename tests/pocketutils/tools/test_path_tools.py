@@ -1,13 +1,13 @@
 import os
+from typing import Self
 
 import pytest
-
 from pocketutils.core.exceptions import IllegalPathError
 from pocketutils.tools.path_tools import PathTools
 
 
 class TestPathTools:
-    def test_sanitize_path_node_root(self):
+    def test_sanitize_path_node_root(self: Self) -> None:
         x = PathTools.sanitize_node
         for file in [None, False]:
             for root in [None, True]:
@@ -15,7 +15,7 @@ class TestPathTools:
                 assert x("C:\\", is_file=file, is_root_or_drive=root) == "C:\\"
                 assert x("/", is_file=file, is_root_or_drive=root) == "/"
 
-    def test_sanitize_path_node_nonroot(self):
+    def test_sanitize_path_node_nonroot(self: Self) -> None:
         x = PathTools.sanitize_node
         assert x("C:", is_root_or_drive=False) == "C_"
         assert x(" C: ", is_root_or_drive=False) == "C_"
@@ -24,7 +24,7 @@ class TestPathTools:
         assert x(".", is_root_or_drive=False) == "."
         assert x("..", is_root_or_drive=False) == ".."
 
-    def test_sanitize_path_abs(self):
+    def test_sanitize_path_abs(self: Self) -> None:
         def z(s, **kwargs):
             return str(PathTools.sanitize_path(s, **kwargs, warn=False))
 
@@ -38,9 +38,10 @@ class TestPathTools:
             assert z(r"C:\abc\\22") == r"C:\abc\22"
             assert z("C:\\abc\\./22") == r"C:\abc\22"
         else:
-            assert False, "OS {} is not supported"
+            msg = "OS {} is not supported"
+            raise AssertionError(msg)
 
-    def test_sanitize_path(self):
+    def test_sanitize_path(self: Self) -> None:
         def x(s, **kwargs):
             return str(PathTools.sanitize_path(s, **kwargs, warn=False)).replace("\\", "/")
 

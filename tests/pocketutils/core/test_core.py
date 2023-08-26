@@ -1,13 +1,12 @@
 from datetime import datetime
+from typing import Self
 
 import pytest
-
-from pocketutils.core import LazyWrap, PathLikeUtils, frozenlist
-from pocketutils.core.exceptions import ImmutableError
+from pocketutils.core import LazyWrap
 
 
 class TestCore:
-    def test_wrap(self):
+    def test_wrap(self: Self):
         DT = LazyWrap.new_type("datetime", datetime.now)
         dt = DT()
         assert str(dt) == "datetime[⌀]"
@@ -21,13 +20,6 @@ class TestCore:
         assert a == b
         a.get()
         assert a != b
-
-    def test_pathlike(self):
-        assert PathLikeUtils.isinstance("")
-        assert not PathLikeUtils.isinstance(5)
-
-    def test_opt_row(self):
-        pass  # TODO
 
 
 if __name__ == "__main__":

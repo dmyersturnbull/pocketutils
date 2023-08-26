@@ -1,0 +1,115 @@
+# SPDX-FileCopyrightText: Copyright 2020-2023, Contributors to pocketutils
+# SPDX-PackageHomePage: https://github.com/dmyersturnbull/pocketutils
+# SPDX-License-Identifier: Apache-2.0
+
+name: Test
+
+on:
+  workflow_call:
+    inputs:
+      ref:
+        type: string
+        description: Ref to checkout
+        default: main
+
+permissions:
+  contents: read
+  statuses: read
+  actions: read
+  security-events: write
+
+jobs:
+  test-matrix:
+    strategy:
+      matrix:
+        os: ["ubuntu-latest", "windows-latest", "macos-latest"]
+        # :tyranno: python: ${tool.hatch.envs.all.matrix.python~[0]~}
+        python: ["3.11", "3.12-dev"]
+    runs-on: ${{ matrix.os }}
+    name: Run tests for ${{ matrix.os }}/py${{ matrix.python }}
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          ref: ${{ inputs.ref }}
+      - uses: actions/setup-python@v4
+        with:
+          python-version: "${{ matrix.python }}"
+      - name: Test on ${{ matrix.os }}/py${{ matrix.python }}
+        run: |
+          pip install hatch
+          hatch run test
+      - name: Store coverage for ${{ matrix.os }}/py${{ matrix.python }}
+        uses: actions/upload-artifact@v3
+        with:
+          name: coverage-${{ matrix.os }}-${{ matrix.python }}
+          path: coverage.xml
+          if-no-files-found: error
+
+  test-docker:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          ref: ${{ inputs.ref }}
+      - name: "docker build on ${{ matrix.os }}"
+        run: docker build .
+
+  codeql:
+    name: Analyze with CodeQL
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
+    strategy:
+      fail-fast: false
+      matrix:
+        language: [python]
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+        with:
+          ref: ${{ inputs.ref }}
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v2
+        with:
+          languages: ${{ matrix.language }}
+      - name: Autobuild with CodeQL
+        uses: github/codeql-action/autobuild@v2
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v2
+        with:
+          category: "/language:${{matrix.language}}"
+
+  ruff:
+    name: Run Bandit with Ruff
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          ref: ${{ inputs.ref }}
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.11"
+      - name: Run Bandit
+        run: |
+          pip install hatch
+          hatch run bandit
+
+  docs:
+    name: Test building docs
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          ref: ${{ inputs.ref }}
+      - uses: actions/setup-python@v4
+        with:
+          python-version: "3.11"
+      - name: Install
+        run: |
+          pip install hatch
+          hatch run build-docs

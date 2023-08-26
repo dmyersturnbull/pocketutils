@@ -1,42 +1,18 @@
 from pathlib import Path
+from typing import Self
 
 import pytest
-
-from pocketutils.core.exceptions import ParsingError
 from pocketutils.tools.filesys_tools import FilesysTools
 
 
-def load(parts):
+def load(parts: str) -> Path:
     if isinstance(parts, str):
         parts = [parts]
     return Path(Path(__file__).parent.parent.parent / "resources" / "core", *parts)
 
 
 class TestFilesysTools:
-    def test_read_lines(self):
-        assert list(FilesysTools.read_lines_file(load("lines.lines"))) == [
-            "line1 = 5",
-            "line2=5",
-            "",
-            "#line3",
-            "line4 = a",
-        ]
-        assert list(FilesysTools.read_lines_file(load("lines.lines"), ignore_comments=True)) == [
-            "line1 = 5",
-            "line2=5",
-            "line4 = a",
-        ]
-
-    def test_read_properties(self):
-        f = FilesysTools.read_properties_file
-        expected = {"line1": "5", "line2": "5", "line4": "a"}
-        assert dict(f(load("lines.lines"))) == expected
-        with pytest.raises(ParsingError):
-            f(load("bad1.properties"))
-        with pytest.raises(ParsingError):
-            f(load("bad2.properties"))
-
-    def test_get_info(self):
+    def test_get_info(self: Self) -> None:
         file = load("lines.lines")
         info = FilesysTools.get_info(file)
         assert info.is_file

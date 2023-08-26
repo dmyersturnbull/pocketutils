@@ -1,13 +1,18 @@
+from dataclasses import dataclass
+from typing import Any, Self
+
 import numpy as np
 import pytest
-import regex
-
-from pocketutils.core.mocks import Mammal
 from pocketutils.tools.common_tools import CommonTools
 
 
+@dataclass(frozen=True, slots=True)
+class Mammal:
+    species: Any
+
+
 class TestCommon:
-    def test_try_none(self):
+    def test_try_none(self: Self):
         f = CommonTools.try_none
 
         def success():
@@ -25,7 +30,7 @@ class TestCommon:
             f(fail, exception=TypeError)
         assert f(fail, fail_val=-1) == -1
 
-    def test_or_raise(self):
+    def test_or_raise(self: Self):
         f = CommonTools.or_raise
         assert f(5) == 5
         with pytest.raises(LookupError):
@@ -36,7 +41,7 @@ class TestCommon:
         with pytest.raises(ValueError):
             f(None, or_else=ValueError)
 
-    def test_iterator_has_elements(self):
+    def test_iterator_has_elements(self: Self):
         f = CommonTools.iterator_has_elements
         assert not f(iter([]))
         assert f(iter([1]))
@@ -44,9 +49,10 @@ class TestCommon:
             # noinspection PyTypeChecker
             f(None)
         with pytest.raises(TypeError):
+            # noinspection PyTypeChecker
             f([1])
 
-    def test_is_null(self):
+    def test_is_null(self: Self):
         is_null = CommonTools.is_null
         assert not is_null("a")
         assert not is_null([])
@@ -58,7 +64,7 @@ class TestCommon:
         assert not is_null(np.inf)
         assert is_null(np.nan)
 
-    def test_is_empty(self):
+    def test_is_empty(self: Self):
         f = CommonTools.is_empty
         assert not f("a")
         assert f([])
@@ -67,13 +73,13 @@ class TestCommon:
         assert f("")
         assert f([])
         assert f({})
-        assert f(tuple())
+        assert f(())
         assert not f((5,))
         assert not f(0.0)
         assert not f(np.inf)
         assert f(np.nan)
 
-    def test_is_probable_null(self):
+    def test_is_probable_null(self: Self):
         f = CommonTools.is_probable_null
         assert f(None)
         assert not f(0)
@@ -83,7 +89,7 @@ class TestCommon:
         assert f(np.NaN)
         assert not f(np.Inf)
 
-    def test_unique(self):
+    def test_unique(self: Self):
         f = CommonTools.unique
         assert f([1, 1, 2, 1, 3, 2]) == [1, 2, 3]
         assert f([]) == []
@@ -91,7 +97,7 @@ class TestCommon:
             # noinspection PyTypeChecker
             f(None)
 
-    def test_first(self):
+    def test_first(self: Self):
         f = CommonTools.first
         assert f([2, 1]) == 2
         assert f([Mammal("cat"), Mammal("dog"), Mammal("cat")], "species") == "cat"
@@ -101,17 +107,10 @@ class TestCommon:
             # noinspection PyTypeChecker
             f(None)
 
-    def test_multidict(self):
+    def test_multidict(self: Self):
         f = CommonTools.multidict
-        assert (
-            str(dict(f([Mammal("cat"), Mammal("dog")], "species")))
-            == "{'cat': [<cat>|], 'dog': [<dog>|]}"
-        )
-
-    def test_mem_size(self):
-        r = CommonTools.mem_size(5)
-        pat = regex.compile("[0-9]{2}B", flags=regex.V1)
-        assert pat.fullmatch(r) is not None, f"byte size of 5 is {r}"
+        expected = "{'cat': [Mammal(species='cat')], 'dog': [Mammal(species='dog')]}"
+        assert str(dict(f([Mammal("cat"), Mammal("dog")], "species"))) == expected
 
 
 if __name__ == "__main__":

@@ -1,0 +1,73 @@
+# SPDX-FileCopyrightText: Copyright 2020-2023, Contributors to pocketutils
+# SPDX-PackageHomePage: https://github.com/dmyersturnbull/pocketutils
+# SPDX-License-Identifier: Apache-2.0
+
+name: Pull request
+
+on:
+  pull_request:
+    types: [opened, reopened, edited, ready_for_review]
+    branches:
+      - main
+      - "releases/**"
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.sha }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  statuses: read
+  actions: read
+  security-events: write
+  pull-requests: write
+  issues: write
+
+jobs:
+  check-title:
+    name: Validate PR title
+    runs-on: ubuntu-latest
+    steps:
+      - uses: hmarr/debug-action@v2
+      - id: check-semantic-pr-title
+        uses: amannn/action-semantic-pull-request@v5
+        with:
+          types: |
+            feat
+            fix
+            security
+            perf
+            build
+            docs
+            test
+            refactor
+            ci
+            style
+            chore
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+      - uses: marocchino/sticky-pull-request-comment@v2
+        name: Post Comment, Output on Pull Request
+        if: ${{ !cancelled() && steps.check-semantic-pr-title.outputs.error_message != null }}
+        with:
+          header: semantic-pull-request-error
+          message: |
+            Please edit your pull request title to follow [Conventional Commits specification](https://www.conventionalcommits.org).
+            Use one of the types `fix`, `feat`, `security`, `perf`, `build`, `test`, `refactor`, `ci`, `style`, `chore`.
+
+            _Details:_
+            ```
+            ${{ steps.check-semantic-pr-title.outputs.error_message }}
+            ```
+      - uses: marocchino/sticky-pull-request-comment@v2
+        name: Delete pull request lint comment
+        if: ${{ steps.semantic_pr_title.outputs.error_message == null }}
+        with:
+          header: semantic-pull-request-error
+          delete: true
+
+  test:
+    name: Test
+    uses: ./.github/workflows/_test.yaml
+    secrets: inherit
+    if: ${{ !github.event.pull_request.draft && github.event.pull_request.ready_for_review }}

@@ -1,8 +1,10 @@
+from typing import Self
+
 import pytest
 
 
 class TestWarningUtils:
-    def test(self):
+    def test(self: Self):
         pass
 
 

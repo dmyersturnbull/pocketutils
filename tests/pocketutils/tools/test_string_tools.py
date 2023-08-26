@@ -1,23 +1,29 @@
-import pytest
+from dataclasses import dataclass
+from typing import Any, Self
 
+import pytest
 from pocketutils.core.chars import Chars
-from pocketutils.core.mocks import Mammal
 from pocketutils.tools.string_tools import StringTools
 
 
+@dataclass(frozen=True, slots=True)
+class Mammal:
+    species: Any
+
+
 class TestStringTools:
-    def test_pretty_dict(self):
+    def test_pretty_dict(self: Self) -> None:
         f = StringTools.pretty_dict
         assert f({"☢": "☡"}) == '{\n  "☢": "☡"\n}'
 
-    def test_retab(self):
+    def test_retab(self: Self) -> None:
         f = StringTools.retab
         assert (
             f("abc 123\n" + " " * 5 + "abc\n" + " " * 6 + "\n", 3)
             == "abc 123\n" + "\t" + " " * 2 + "abc\n" + "\t" * 2 + "\n"
         )
 
-    def test_strip_empty_decimal(self):
+    def test_strip_empty_decimal(self: Self) -> None:
         f = StringTools.strip_empty_decimal
         assert f("5.2") == "5.2"
         assert f("5.0") == "5"
@@ -28,19 +34,19 @@ class TestStringTools:
             # noinspection PyTypeChecker
             f([1])
 
-    def test_truncate(self):
+    def test_truncate(self: Self) -> None:
         f = StringTools.truncate
-        assert "12…" == f("1234567", 3)
-        assert "…" == f("1234567", 1)
-        assert "…" == f("1234567", 0)
-        assert "…" == f("1234567", -1)
-        assert "12…" == f("1234567", 3)
-        assert "123" == f("123", 3)
-        assert "123" == f("123", 6)
+        assert f("1234567", 3) == "12…"
+        assert f("1234567", 1) == "…"
+        assert f("1234567", 0) == "…"
+        assert f("1234567", -1) == "…"
+        assert f("1234567", 3) == "12…"
+        assert f("123", 3) == "123"
+        assert f("123", 6) == "123"
         assert None is f(None, 4)
-        assert "xx" == f(None, 4, null="xx")
+        assert f(None, 4, null="xx") == "xx"
 
-    def fix_greek(self):
+    def fix_greek(self: Self) -> None:
         f = StringTools.fix_greek
         assert f("beta") == "\u03B2"
         assert f("theta") == "\u03B8"
@@ -49,20 +55,20 @@ class TestStringTools:
         assert f("BETA", lowercase=True) == "BETA"
         assert f("Beta", lowercase=True) == "\u03B2"
 
-    def test_tabs_to_list(self):
+    def test_tabs_to_list(self: Self) -> None:
         assert ["a", "b", "c\td", "e"] == StringTools.tabs_to_list('a\t"b"\t"c\td"\te')
 
-    def test_longest(self):
+    def test_longest(self: Self) -> None:
         f = StringTools.longest
         assert f(["1", "abc", "xyz", "2"]) == "abc"
 
-    def test_strip_brackets(self):
+    def test_strip_brackets(self: Self) -> None:
         f = StringTools.strip_brackets
         assert f("{{[(abcd]}}") == "(abcd"
         assert f("{[{abcd}]}") == "abcd"
         assert f("") == ""
 
-    def test_strip_paired(self):
+    def test_strip_paired(self: Self) -> None:
         f = StringTools.strip_paired
         assert f("{{[(abcd]}}", [("a", "b")]) == "{{[(abcd]}}"
         assert f("abcd", [("a", "b")]) == "abcd"
@@ -74,36 +80,36 @@ class TestStringTools:
     """
 
     @given(strategies.integers())
-    def test_subscript_ints(self, i: int):
+    def test_subscript_ints(self: Self, i: int):
         assert StringTools.unsubscript(StringTools.subscript(str(i))) == str(i)
 
     @given(strategies.text())
-    def test_subscript_strs(self, s: str):
+    def test_subscript_strs(self: Self, s: str):
         assert StringTools.unsubscript(StringTools.subscript(s)) == s
 
     @given(strategies.text())
-    def test_subscript_strs_rev(self, s: str):
+    def test_subscript_strs_rev(self: Self, s: str):
         assert StringTools.subscript(StringTools.unsubscript(s)) == s
 
     @given(strategies.integers())
-    def test_superscript_ints(self, i: int):
+    def test_superscript_ints(self: Self, i: int):
         assert StringTools.unsuperscript(StringTools.superscript(str(i))) == str(i)
 
     @given(strategies.text())
-    def test_superscript_strs(self, s: str):
+    def test_superscript_strs(self: Self, s: str):
         assert StringTools.unsuperscript(StringTools.superscript(s)) == s
 
     @given(strategies.text())
-    def test_superscript_strs_rev(self, s: str):
+    def test_superscript_strs_rev(self: Self, s: str):
         assert StringTools.superscript(StringTools.unsuperscript(s)) == s
 
     """
 
-    def test_pretty_float(self):
+    def test_pretty_float(self: Self) -> None:
         f = StringTools.pretty_float
         assert f(0.1) == "+0.1"
         assert f(-0.1) == Chars.minus + "0.1"
-        assert f(0.0000001) == "+e−07"
+        assert f(0.0000001) == "+e-07"
         assert f(0.0) == "0.0"
         assert f(0.1, n_sigfigs=1) == "+0.1"
         assert f(float("NaN")) == Chars.null
@@ -114,8 +120,8 @@ class TestStringTools:
         with pytest.raises(ValueError):
             f(0.0, n_sigfigs=0)
 
-    def test_pretty_function(self):
-        f = StringTools.pretty_function
+    def test_pretty_repr(self: Self) -> None:
+        f = StringTools.pretty_repr
         assert f(lambda: None) == "⟨λ(0)⟩"
         assert f(lambda q: None) == "⟨λ(1)⟩"
         assert f(None) == "⌀"
@@ -130,13 +136,13 @@ class TestStringTools:
             pass
 
         class Y:
-            def __str__(self):
+            def __str__(self: Self) -> str:
                 return "!!"
 
         assert f(X) == "⟨type:X⟩"
         assert f(X()) == "⟨X⟩"
         assert f(Y()) == "!!"
-        assert f(Mammal("cat")) == "⟨<cat>|⟩"
+        assert f(Mammal("cat")) == "Mammal(species='cat')"
 
 
 if __name__ == "__main__":

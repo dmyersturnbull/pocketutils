@@ -39,7 +39,7 @@ Tools.git_description("my_repo").tag  # <-- get git repo info
 Tools.pretty_function(lambda s: None)  # "<λ(1)> <-- decent name for any object
 Tools.roman_to_arabic("XIV")  # 14  <-- inverse function too
 Tools.delta_time_to_str(delta_sec=60 * 2 + 5)  # "02:05"  <-- handles days too
-Tools.round_to_sigfigs(135.3, 2)  # 140  <-- rounding to sigfigs-proper
+Tools.round_to_sigfigs(135.3, 2)  # "140"  <-- rounding to sigfigs
 Tools.pretty_float(-float("-inf"))  # "−∞"  <-- proper unicode, no trailing 0s
 Tools.stream_cmd_call(["cat", "big-file"], callback=fn)  # <-- buffer never fills
 Tools.strip_quotes("'hello'")  # "hello"

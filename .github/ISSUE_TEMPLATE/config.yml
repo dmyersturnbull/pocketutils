@@ -1,1 +1,6 @@
 blank_issues_enabled: true
+contact_links:
+  - name: Ask a question
+    # :tyranno: url: https://github.com/${.vendor}/${project.name}/discussions/new?category=q-a
+    url: https://github.com/dmyersturnbull/pocketutils/discussions/new?category=q-a
+    about: Get help with something

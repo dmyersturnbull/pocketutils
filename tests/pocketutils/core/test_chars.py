@@ -1,14 +1,15 @@
-import pytest
+from typing import Self
 
+import pytest
 from pocketutils.core.chars import Chars
 
 
 class TestChars:
-    def test_range(self):
-        assert Chars.range(1, 2) == "1–2"  # en dash
+    def test_range(self: Self) -> None:
+        assert Chars.range(1, 2) == "1-2"  # en dash
 
-    def test_shelled(self):
-        assert Chars.shelled("xyz") == "〔xyz〕"
+    def test_shelled(self: Self) -> None:
+        assert Chars.shelled("xyz") == "(xyz)"
 
 
 if __name__ == "__main__":
