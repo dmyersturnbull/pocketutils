@@ -1,9 +1,15 @@
+# SPDX-FileCopyrightText: Copyright 2020-2023, Contributors to pocketutils
+# SPDX-PackageHomePage: https://github.com/dmyersturnbull/pocketutils
+# SPDX-License-Identifier: Apache-2.0
+"""
+
+"""
+
 import enum
 import logging
-from collections.abc import Set
 from typing import Self
 
-from pocketutils.core.exceptions import XKeyError
+__all__ = ["TrueFalseEither", "DisjointEnum", "FlagEnum", "CleverEnum", "MultiTruth"]
 
 logger = logging.getLogger("pocketutils")
 
@@ -43,7 +49,7 @@ class FlagEnum(enum.Flag):
     A bit flag that behaves as a set, has a null set, and auto-sets values and names.
 
     Example:
-        ```python
+
         class Flavor(FlagEnum):
             NONE = ()
             BITTER = ()
@@ -51,11 +57,9 @@ class FlagEnum(enum.Flag):
             SOUR = ()
             UMAMI = ()
 
-
         bittersweet = Flavor.BITTER | Flavor.SWEET
         print(bittersweet.value)  # 1 + 2 == 3
         print(bittersweet.name)  # "bitter|sweet"
-        ```
 
     Note:
         The *first element* must always be the null set ("no flags")
@@ -80,7 +84,7 @@ class FlagEnum(enum.Flag):
             return None
 
     @classmethod
-    def of(cls: type[Self], s: str | Self | Set[str | Self]) -> Self:
+    def of(cls: type[Self], s: str | Self | set[str | Self] | frozenset[str | Self]) -> Self:
         """
         Returns a choice by name (or `s` itself), or a set of those.
         """
@@ -97,7 +101,7 @@ class FlagEnum(enum.Flag):
 @enum.unique
 class TrueFalseEither(DisjointEnum):
     """
-    A :class:`pocketutils.core.enums.DisjointEnum` of true, false, or unknown.
+    A `DisjointEnum`[pocketutils.core.enums.DisjointEnum] of true, false, or unknown.
     """
 
     TRUE = enum.auto()
@@ -112,7 +116,7 @@ class TrueFalseEither(DisjointEnum):
 @enum.unique
 class MultiTruth(FlagEnum):
     """
-    A :class:`pocketutils.core.enums.FlagEnum` for true, false, true+false, and neither.
+    A [`FlagEnum`](pocketutils.core.enums.FlagEnum) for true, false, true+false, and neither.
     """
 
     FALSE = enum.auto()
@@ -127,18 +131,16 @@ class CleverEnum(DisjointEnum):
     which can return a fallback value when there is no match.
 
     Example:
-        ```python
+
         class Thing(CleverEnum):
             BUILDING = ()
             OFFICE_SUPPLY = ()
             POWER_OUTLET = ()
 
-
         x = Thing.of("power outlet")
-        ```
 
     Example:
-        ```python
+
         class Color(CleverEnum):
             RED = ()
             GREEN = ()
@@ -152,23 +154,25 @@ class CleverEnum(DisjointEnum):
                 #   the default implementation
                 logger.warning(f"Color {s} unknown; using {cls.OTHER}")
                 return cls.OTHER
-        ```
 
     Note:
 
-        If :meth:`_if_not_found` is overridden, it should return a member value.
+        If [`_if_not_found`](pocketutils.core.enums.CleverEnum._if_not_found`) is overridden,
+        it should return a member value.
         (In particular, it should never return `None`.)
 
     Note:
 
         To use with non-uppercase enum values (e.g. `Color.red` instead of `Color.RED`),
-        override :meth:`_fix_lookup` with this::
+        override :meth:`_fix_lookup` with this:
 
+        ```python
             @classmethod
             def _fix_lookup(cls: type[Self], s: str) -> str:
                 return s.strip().replace(" ", "_").replace("-", "_").lower()
                 #                                                      ^
                 #                                                    changed
+        ```
     """
 
     @classmethod
@@ -181,11 +185,8 @@ class CleverEnum(DisjointEnum):
     @classmethod
     def _if_not_found(cls: type[Self], s: str | Self) -> Self:
         msg = f"No member for value '{s}'"
-        raise XKeyError(msg, key=s) from None
+        raise KeyError(msg) from None
 
     @classmethod
     def _fix_lookup(cls: type[Self], s: str) -> str:
         return s
-
-
-__all__ = ["TrueFalseEither", "DisjointEnum", "FlagEnum", "CleverEnum", "MultiTruth"]

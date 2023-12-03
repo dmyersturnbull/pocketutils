@@ -1,43 +1,252 @@
+# SPDX-FileCopyrightText: Copyright 2020-2023, Contributors to pocketutils
+# SPDX-PackageHomePage: https://github.com/dmyersturnbull/pocketutils
+# SPDX-License-Identifier: Apache-2.0
+"""
+
+"""
+
 from __future__ import annotations
 
+import abc
 import io
+import json
 import pickle
-import sys
-from collections import UserDict, defaultdict
+from collections import defaultdict
 from configparser import ConfigParser
+from dataclasses import dataclass
 from datetime import date, datetime
-from typing import TYPE_CHECKING, Any, ClassVar, Self, TypeVar, Unpack
-
-import tomlkit
-from orjson import orjson
-from ruamel.yaml import YAML
+from typing import TYPE_CHECKING, Any, Self, TypeVar, Unpack
 
 if TYPE_CHECKING:
-    from collections.abc import Callable, Generator, Mapping
+    from collections.abc import Callable, Iterable, Mapping, MutableMapping
 
-yaml = YAML(typ="safe")
-TomlLeaf = None | list | int | str | float | date | datetime
-TomlBranch = dict[str, TomlLeaf]
-T = TypeVar("T")
-
-
-def _json_encode_default(obj: Any) -> Any:
-    if isinstance(obj, NestedDotDict):
-        # noinspection PyProtectedMember
-        return dict(obj)
+_Single = None | str | int | float | date | datetime
+TomlLeaf = list[_Single] | _Single
+# TomlBranch = dict[str, TomlLeaf | "TomlBranch"]
+TomlBranch = dict[str, TomlLeaf | dict]
+T = TypeVar("T", bound=TomlLeaf | TomlBranch)
 
 
-def _check(dct: TomlBranch | TomlLeaf) -> None:
-    if isinstance(dct, dict):
-        bad = [k for k in dct if "." in k]
-        if len(bad) > 0:
-            msg = f"Key(s) contain '.': {bad}"
-            raise ValueError(msg)
-        for v in dct.values():
-            _check(v)
+class _Utils:
+    @classmethod
+    def json_encode_default(cls: type[Self], obj: Any) -> Any:
+        if isinstance(obj, NestedDotDict):
+            return dict(obj)
+
+    @classmethod
+    def dots_to_dict(cls: type[Self], items: Mapping[str, TomlLeaf]) -> dict[str, TomlLeaf | TomlBranch]:
+        """
+        Make sub-dictionaries from substrings in `items` delimited by `.`.
+        Used for TOML.
+
+        Example:
+
+            Utils.dots_to_dict({"genus.species": "fruit bat"}) == {"genus": {"species": "fruit bat"}}
+
+        See Also:
+            [`dict_to_dots`](pocketutils.core.dot_dict._Utils.dicts_to_dots)
+        """
+        dct = {}
+        cls._un_leaf(dct, items)
+        return dct
+
+    @classmethod
+    def dict_to_dots(cls: type[Self], items: Mapping[str, TomlLeaf | TomlBranch]) -> dict[str, TomlLeaf]:
+        """
+        Performs the inverse of [`dict_to_dots`](pocketutils.core.dot_dict._Utils.dots_to_dicts].
+
+        Example:
+
+            Utils.dict_to_dots({"genus": {"species": "fruit bat"}}) == {"genus.species": "fruit bat"}
+        """
+        return dict(cls._re_leaf("", items))
+
+    @classmethod
+    def _un_leaf(cls: type[Self], to: MutableMapping[str, Any], items: Mapping[str, Any]) -> None:
+        for k, v in items.items():
+            if "." not in k:
+                to[k] = v
+            else:
+                k0, k1 = k.split(".", 1)
+                if k0 not in to:
+                    to[k0] = {}
+                cls._un_leaf(to[k0], {k1: v})
+
+    @classmethod
+    def _re_leaf(cls: type[Self], at: str, items: Mapping[str, Any]) -> Iterable[tuple[str, Any]]:
+        for k, v in items.items():
+            me = at + "." + k if len(at) > 0 else k
+            if hasattr(v, "items") and hasattr(v, "keys") and hasattr(v, "values"):
+                yield from cls._re_leaf(me, v)
+            else:
+                yield me, v
+
+    @classmethod
+    def check(cls: type[Self], dct: Mapping | TomlBranch | TomlLeaf) -> TomlLeaf | TomlBranch:
+        if hasattr(dct, "items") and hasattr(dct, "keys") and hasattr(dct, "values"):
+            bad = [k for k in dct if "." in k]
+            if len(bad) > 0:
+                msg = f"Key(s) contain '.': {bad}"
+                raise ValueError(msg)
+            return dict({k: cls.check(v) for k, v in dct.items()})
+        return dct
 
 
-class NestedDotDict(UserDict):
+@dataclass(frozen=True, slots=True)
+class AbstractYamlMixin(metaclass=abc.ABCMeta):
+    @classmethod
+    def from_yaml(cls: type[Self], data: str) -> Self:
+        raise NotImplementedError()
+
+    def to_yaml(self: Self, **kwargs: Unpack[Mapping[str, Any]]) -> str:
+        """
+        Returns YAML text.
+        """
+        raise NotImplementedError()
+
+
+@dataclass(frozen=True, slots=True)
+class RuamelYamlMixin(AbstractYamlMixin):
+    @classmethod
+    def from_yaml(cls: type[Self], data: str) -> Self:
+        from ruamel.yaml import YAML
+
+        yaml = YAML(typ="safe")
+        return cls(yaml.load(data))
+
+    def to_yaml(self: Self, **kwargs: Unpack[Mapping[str, Any]]) -> str:
+        from ruamel.yaml import YAML
+
+        yaml = YAML(typ="safe")
+        return yaml.dump(self, **kwargs)
+
+
+@dataclass(frozen=True, slots=True)
+class AbstractJsonMixin(metaclass=abc.ABCMeta):
+    @classmethod
+    def from_json(cls: type[Self], data: str) -> Self:
+        raise NotImplementedError()
+
+    def to_json(self: Self) -> str:
+        """
+        Returns JSON text.
+        """
+        raise NotImplementedError()
+
+
+@dataclass(frozen=True, slots=True)
+class OrjsonJsonMixin(AbstractJsonMixin):
+    @classmethod
+    def from_json(cls: type[Self], data: str) -> Self:
+        import orjson
+
+        return cls(orjson.loads(data))
+
+    def to_json(self: Self) -> str:
+        import orjson
+
+        encoded = orjson.dumps(self, default=_Utils.json_encode_default)
+        return encoded.decode(encoding="utf-8")
+
+
+@dataclass(frozen=True, slots=True)
+class AbstractTomlMixin(metaclass=abc.ABCMeta):
+    @classmethod
+    def from_toml(cls: type[Self], data: str) -> Self:
+        raise NotImplementedError()
+
+    def to_toml(self: Self) -> str:
+        """
+        Returns TOML text.
+        """
+        raise NotImplementedError()
+
+
+@dataclass(frozen=True, slots=True)
+class TomllibTomlMixin(AbstractTomlMixin):
+    @classmethod
+    def from_toml(cls: type[Self], data: str) -> Self:
+        import tomllib
+
+        return cls(tomllib.loads(data))
+
+    def to_toml(self: Self) -> str:
+        raise NotImplementedError()
+
+
+@dataclass(frozen=True, slots=True)
+class TomlkitTomlMixin(AbstractTomlMixin):
+    @classmethod
+    def from_toml(cls: type[Self], data: str) -> Self:
+        import tomlkit
+
+        return cls(tomlkit.loads(data))
+
+    def to_toml(self: Self) -> str:
+        import tomlkit
+
+        return tomlkit.dumps(self)
+
+
+@dataclass(frozen=True, slots=True)
+class BuiltinJsonMixin(AbstractJsonMixin):
+    @classmethod
+    def from_json(cls: type[Self], data: str) -> Self:
+        import json
+
+        return cls(json.loads(data))
+
+    def to_json(self: Self) -> str:
+        import json
+
+        return json.dumps(self, ensure_ascii=False)
+
+
+@dataclass(frozen=True, slots=True)
+class PickleMixin(metaclass=abc.ABCMeta):
+    @classmethod
+    def from_pickle(cls: type[Self], data: bytes) -> Self:
+        if not isinstance(data, bytes):
+            data = bytes(data)
+        return cls(pickle.loads(data))
+
+    def to_pickle(self: Self) -> bytes:
+        """
+        Writes to a pickle file.
+        """
+        return pickle.dumps(self, protocol=self.PICKLE_PROTOCOL)
+
+
+@dataclass(frozen=True, slots=True)
+class AbstractIniMixin(metaclass=abc.ABCMeta):
+    @classmethod
+    def from_ini(cls: type[Self], data: str) -> Self:
+        raise NotImplementedError()
+
+    def to_ini(self: Self) -> str:
+        """
+        Returns INI text.
+        """
+        raise NotImplementedError()
+
+
+@dataclass(frozen=True, slots=True)
+class BuiltinIniMixin(AbstractIniMixin):
+    @classmethod
+    def from_ini(cls: type[Self], data: str) -> Self:
+        parser = ConfigParser()
+        parser.read_string(data)
+        return cls(parser)
+
+    def to_ini(self: Self) -> str:
+        config = ConfigParser()
+        config.read_dict(self)
+        writer = io.StringIO()
+        config.write(writer)
+        return writer.getvalue()
+
+
+class AbstractDotDict(dict[str, TomlLeaf | TomlBranch]):
     """
     A thin wrapper around a nested dict, a wrapper for TOML.
 
@@ -46,8 +255,6 @@ class NestedDotDict(UserDict):
     For example, `wrapped["pet.species.name"]`.
     """
 
-    PICKLE_PROTOCOL: ClassVar[int] = 5
-
     def __init__(self: Self, x: dict[str, TomlLeaf | TomlBranch] | Self) -> None:
         """
         Constructor.
@@ -55,93 +262,29 @@ class NestedDotDict(UserDict):
         Raises:
             ValueError: If a key (in this dict or a sub-dict) is not a str or contains a dot
         """
-        if not isinstance(x, NestedDotDict | dict):
+        if not isinstance(x, AbstractDotDict | dict):
             msg = f"Not a dict; actually {type(x)} (value: '{x}')"
             raise TypeError(msg)
-        _check(x)
+        _Utils.check(x)
         super().__init__(x)
 
     @classmethod
-    def from_toml(cls: type[Self], data: str) -> Self:
-        return cls(tomlkit.loads(data))
-
-    @classmethod
-    def from_yaml(cls: type[Self], data: str) -> Self:
-        return cls(yaml.load(data))
-
-    @classmethod
-    def from_ini(cls: type[Self], data: str) -> Self:
-        parser = ConfigParser()
-        parser.read_string(data)
-        return cls(parser)
-
-    @classmethod
-    def from_json(cls: type[Self], data: str) -> Self:
-        return cls(orjson.loads(data))
-
-    @classmethod
-    def parse_pickle(cls: type[Self], data: bytes) -> Self:
-        if not isinstance(data, bytes):
-            data = bytes(data)
-        return cls(pickle.loads(data))
-
-    def to_json(self: Self, *, indent: bool = False) -> str:
-        """
-        Returns JSON text.
-        """
-        kwargs = {"option": orjson.OPT_INDENT_2} if indent else {}
-        encoded = orjson.dumps(self, default=_json_encode_default, **kwargs)
-        return encoded.decode(encoding="utf-8")
-
-    def to_yaml(self: Self, **kwargs: Unpack[Mapping[str, Any]]) -> str:
-        """
-        Returns JSON text.
-        """
-        return yaml.dump(self, **kwargs)
-
-    def to_ini(self: Self) -> str:
-        """
-        Returns TOML text.
-        """
-        config = ConfigParser()
-        config.read_dict(self)
-        writer = io.StringIO()
-        config.write(writer)
-        return writer.getvalue()
-
-    def to_toml(self: Self) -> str:
-        """
-        Returns TOML text.
-        """
-        return tomlkit.dumps(self)
-
-    def to_pickle(self: Self) -> bytes:
-        """
-        Writes to a pickle file.
-        """
-        return pickle.dumps(self, protocol=self.PICKLE_PROTOCOL)
-
-    def n_elements_total(self: Self) -> int:
-        i = 0
-        for _ in self.walk():
-            i += 1
-        return i
-
-    def n_bytes_total(self: Self) -> int:
-        return sum([sys.getsizeof(x) for x in self.walk()])
+    def from_leaves(cls: type[Self], x: Mapping[str, TomlLeaf] | Self) -> Self:
+        return cls(_Utils.dots_to_dict(x))
 
     def transform_leaves(self: Self, fn: Callable[[str, TomlLeaf], TomlLeaf]) -> Self:
         x = {k: fn(k, v) for k, v in self.leaves()}
         return self.__class__(x)
 
-    def walk(self: Self) -> Generator[TomlLeaf | TomlBranch, None, None]:
+    def walk(self: Self) -> Iterable[TomlLeaf | TomlBranch]:
         for value in self.values():
             if isinstance(value, dict):
                 yield from self.__class__(value).walk()
-            elif isinstance(value, list):
-                yield from value
             else:
                 yield value
+
+    def nodes(self: Self) -> dict[str, TomlBranch | TomlLeaf]:
+        return {**self.branches(), **self.leaves()}
 
     def branches(self: Self) -> dict[str, TomlBranch]:
         """
@@ -153,8 +296,8 @@ class NestedDotDict(UserDict):
         Returns:
             `dotted-key:str -> (non-dotted-key:str -> value)`
         """
-        dicts = defaultdict()
-        for k, v in self.leaves():
+        dicts = defaultdict(dict)
+        for k, v in self.leaves().items():
             k0, _, k1 = str(k).rpartition(".")
             dicts[k0][k1] = v
         return dicts
@@ -202,7 +345,7 @@ class NestedDotDict(UserDict):
             raise TypeError(msg)
         return z
 
-    def req_as(self: Self, items: str, as_type: type[T]) -> T | None:
+    def req_as(self: Self, items: str, as_type: type[T]) -> T:
         """
         Gets the key `items` from the dict.
 
@@ -276,13 +419,14 @@ class NestedDotDict(UserDict):
         Gets a value from a required key, operating on `.`-joined strings.
 
         Example:
+
             d = WrappedToml(dict(a=dict(b=1)))
             assert d["a.b"] == 1
         """
         if "." in items:
             i0, _, i_ = items.partition(".")
             z = self[i0]
-            if not isinstance(z, dict | NestedDotDict):
+            if not isinstance(z, dict | AbstractDotDict):
                 msg = f"No key {items} (ends at {i0})"
                 raise KeyError(msg)
             return self.__class__(z)[i_]
@@ -295,8 +439,7 @@ class NestedDotDict(UserDict):
         Returns:
             A multi-line string
         """
-        option = orjson.OPT_SORT_KEYS | orjson.OPT_INDENT_2 | orjson.OPT_UTC_Z
-        return orjson.dumps(self.leaves(), option=option).decode(encoding="utf-8")
+        return json.dumps(self, ensure_ascii=True, indent=2)
 
     def _to_date(self: Self, s) -> date:
         if isinstance(s, date):
@@ -320,6 +463,37 @@ class NestedDotDict(UserDict):
         else:
             msg = f"Invalid type {type(s)} for {s}"
             raise TypeError(msg)
+
+
+try:
+    import orjson
+
+    _Json = OrjsonJsonMixin
+except ImportError:
+    _Json = BuiltinJsonMixin
+
+try:
+    import orjson
+
+    _Toml = TomlkitTomlMixin
+except ImportError:
+    _Toml = TomllibTomlMixin
+
+try:
+    import ruamel
+
+    _Yaml = RuamelYamlMixin
+except ImportError:
+    _Yaml = None
+
+if _Yaml is None:
+
+    class NestedDotDict(AbstractDotDict, _Json, _Toml, BuiltinIniMixin, PickleMixin):
+        pass
+else:
+
+    class NestedDotDict(AbstractDotDict, _Json, _Toml, _Yaml, BuiltinIniMixin, PickleMixin):
+        pass
 
 
 __all__ = ["NestedDotDict", "TomlLeaf", "TomlBranch"]

@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: Copyright 2020-2023, Contributors to pocketutils
+# SPDX-PackageHomePage: https://github.com/dmyersturnbull/pocketutils
+# SPDX-License-Identifier: Apache-2.0
 from datetime import datetime
 from typing import Self
 
@@ -8,7 +11,7 @@ from pocketutils.tools.unit_tools import UnitTools
 
 class TestUnitTools:
     def test_delta_time_to_str(self: Self) -> None:
-        f = UnitTools.delta_time_to_str
+        f = UnitTools.pretty_timedelta
         assert f(15) == "15s"
         assert f(313) == "5.22min"
         assert f(15, space=Chars.narrownbsp) == "15" + Chars.narrownbsp + "s"
@@ -36,10 +39,17 @@ class TestUnitTools:
         assert f(datetime(2021, 10, 1), datetime(2021, 9, 30, 23)) == "2021-09-30 23:00"
         assert f(datetime(2021, 9, 27, 1), datetime(2021, 10, 1)) == "2021-10-01"
         assert f(datetime(2021, 10, 1), datetime(2021, 9, 25)) == "2021-09-25"
-        assert f(datetime(2021, 1, 1), datetime(2021, 1, 1, 0, 0, 0, 0), skip_today=True) == "00:00:00.000000"
+        assert (
+            f(
+                datetime(2021, 1, 1),
+                datetime(2021, 1, 1, 0, 0, 0, 0),
+                no_date_if_today=True,
+            )
+            == "00:00:00.000000"
+        )
 
     def test_ms_to_minsec(self: Self) -> None:
-        f = UnitTools.ms_to_minsec
+        f = UnitTools.milliseconds_to_min_sec
         assert f(15) == "15ms"
         assert f(15 * 1000) == "00:15"
         assert f(15 * 60 * 1000) == "15:00"

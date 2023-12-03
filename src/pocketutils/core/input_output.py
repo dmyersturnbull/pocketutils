@@ -1,17 +1,27 @@
+# SPDX-FileCopyrightText: Copyright 2020-2023, Contributors to pocketutils
+# SPDX-PackageHomePage: https://github.com/dmyersturnbull/pocketutils
+# SPDX-License-Identifier: Apache-2.0
+"""
+
+"""
+
 from __future__ import annotations
 
 import abc
 import contextlib
 import functools
 import logging
+from dataclasses import dataclass
+from types import TracebackType
 from typing import TYPE_CHECKING, Any, Generic, Self, TypeVar, final
+
+from pocketutils import ValueIllegalError
 
 if TYPE_CHECKING:
     from io import StringIO
 
+
 T_co = TypeVar("T_co", covariant=True)
-Y = TypeVar("Y")
-Z = TypeVar("Z")
 logger = logging.getLogger("pocketutils")
 
 
@@ -32,7 +42,7 @@ class Writeable(Generic[T_co], metaclass=abc.ABCMeta):
     def __enter__(self: Self) -> Self:
         return self
 
-    def __exit__(self: Self, exc_type, exc_value, traceback) -> None:
+    def __exit__(self: Self, exc_type: BaseException, exc_value: BaseException, traceback: TracebackType) -> None:
         self.close()
 
 
@@ -52,7 +62,7 @@ class DevNull(Writeable[T_co]):
     def __enter__(self: Self) -> Self:
         return self
 
-    def __exit__(self: Self, exc_type, exc_value, traceback) -> None:
+    def __exit__(self: Self, exc_type: BaseException, exc_value: BaseException, traceback: TracebackType) -> None:
         pass
 
 
@@ -67,6 +77,12 @@ class LogWriter(Writeable[str]):
             level = level.upper()
         self.level = logging.getLevelName(level)
 
+    def __enter__(self: Self) -> Self:
+        return self
+
+    def __exit__(self: Self, exc_type: BaseException, exc_value: BaseException, traceback: TracebackType) -> None:
+        self.close()
+
     def write(self: Self, msg: str) -> int:
         getattr(logger, self.level)(msg)
         return len(msg)
@@ -77,17 +93,17 @@ class LogWriter(Writeable[str]):
     def close(self: Self) -> None:
         pass
 
-    def __enter__(self: Self) -> Self:
-        return self
-
-    def __exit__(self: Self, exc_type, exc_value, traceback) -> None:
-        self.close()
-
 
 class DelegatingWriter(Writeable):
     # we CANNOT override TextIOBase: It causes hangs
     def __init__(self: Self, *writers: Writeable) -> None:
         self._writers = writers
+
+    def __enter__(self: Self) -> Self:
+        return self
+
+    def __exit__(self: Self, exc_type: BaseException, exc_value: BaseException, traceback: TracebackType) -> None:
+        self.close()
 
     def write(self: Self, s: T_co) -> int:
         x = 0
@@ -103,21 +119,24 @@ class DelegatingWriter(Writeable):
         for writer in self._writers:
             writer.close()
 
-    def __enter__(self: Self) -> Self:
-        return self
 
-    def __exit__(self: Self, exc_type, exc_value, traceback) -> None:
-        self.close()
-
-
+@dataclass(frozen=True, slots=True)
 class Capture:
     """
     A lazy string-like object that wraps around a StringIO result.
     It's too hard to fully subclass a string while keeping it lazy.
     """
 
-    def __init__(self: Self, cio: StringIO) -> None:
-        self.__cio = cio
+    cio: StringIO
+
+    def __len__(self: Self) -> int:
+        return len(repr(self))
+
+    def __str__(self: Self) -> str:
+        return self.cio.getvalue()
+
+    def __repr__(self: Self) -> str:
+        return self.cio.getvalue()
 
     @property
     def lines(self: Self) -> list[str]:
@@ -125,19 +144,10 @@ class Capture:
 
     @property
     def value(self: Self) -> str:
-        return self.__cio.getvalue()
-
-    def __repr__(self: Self) -> str:
-        return self.__cio.getvalue()
-
-    def __str__(self: Self) -> str:
-        return self.__cio.getvalue()
-
-    def __len__(self: Self) -> int:
-        return len(repr(self))
+        return self.cio.getvalue()
 
     def split(self: Self, x: str) -> list[str]:
-        return self.__cio.getvalue().split(x)
+        return self.cio.getvalue().split(x)
 
 
 @functools.total_ordering
@@ -160,9 +170,9 @@ class OpenMode(str):
         for c in s:
             if c not in {"r", "w", "x", "a", "t", "b", "+", "U"}:
                 msg = f"Invalid flag '{c}' in open mode '{s}'"
-                raise ValueError(msg)
+                raise ValueIllegalError(msg, value=s)
         if ("r" in s) + ("w" in s) + ("x" in s) + ("a" in s) > 1:
-            raise ValueError(f"Too many 'r'/'w'/'x'/'a' flags in '{s}'")
+            raise ValueIllegalError(f"Too many 'r'/'w'/'x'/'a' flags in '{s}'", value=s)
         return str.__new__(cls, s)
 
     @property
@@ -246,4 +256,7 @@ __all__ = [
     "DelegatingWriter",
     "Capture",
     "OpenMode",
+    "return_none_1_param",
+    "return_none_2_params",
+    "return_none_3_params",
 ]

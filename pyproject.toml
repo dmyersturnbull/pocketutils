@@ -1,5 +1,5 @@
-# SPDX-FileCopyrightText: Copyright 2020-2023, Contributors to CICD
-# SPDX-PackageHomePage: https://github.com/dmyersturnbull/cicd
+# SPDX-FileCopyrightText: Copyright 2020-2023, Contributors to pocketutils
+# SPDX-PackageHomePage: https://github.com/dmyersturnbull/pocketutils
 # SPDX-License-Identifier: Apache-2.0
 
 ###################
@@ -17,7 +17,7 @@ build-backend = "hatchling.build"
 [project]
 
 name = "pocketutils"
-version = "0.10.0-alpha0"
+version = "0.10.0-a0"
 requires-python = "~=3.11"
 readme = {file = "README.md", content-type = "text/markdown"}
 description = "Adorable little Python code for you to copy or import."
@@ -31,7 +31,7 @@ authors = [
 license = "Apache-2.0"
 homepage = "https://github.com/dmyersturnbull/pocketutils"
 repository = "https://github.com/dmyersturnbull/pocketutils"
-documentation = "https://pocketutils.readthedocs.io"
+documentation = "https://dmyersturnbull.github.io/pocketutils"
 classifiers = [
   "Development Status :: 3 - Alpha",
   "Natural Language :: English",
@@ -41,46 +41,45 @@ classifiers = [
   "Topic :: Software Development :: Libraries :: Python Modules",
 ]
 dependencies = [
-  "defusedxml >=0.7",
-  "orjson >=3.8",
-  "pint >=0.20",
-  "regex >=2021",
-  "tomlkit >=0.11",
-  "platformdirs >=3.10",
-  "ruamel.yaml >=0.17",
+  "regex >=2023"
 ]
 [project.optional-dependencies]
-io = [
-  "brotli >=1",
+compression = [
+  "Brotli >=1",
   "lz4 >=4",
   "snappy >=3",
   "zstandard >=0.20",
-  "base2048 >=0.1.0",
-  "httpx >=0.20",
+]
+encoding = [
+  "base2048 >=0.1.0"
+]
+formats = [
+  "orjson >=3.8",
+  "tomlkit >=0.11",
+  "ruamel.yaml >=0.17"
+]
+units = [
+  "pint >=0.20"
 ]
 misc = [
-  "loguru >=0.7",
   "psutil >=5",
+  "httpx >=0.20",
 ]
-#===== Scripts =====#
-[project.scripts]
-# :tyranno: ${project.name} = "${project.name}.__main__:cli"
-tyranno = "cicd.__main__:cli"  # :TYRANNO-FIXME:
 
 #===== URLs =====#
 [project.urls]
 # :tyranno: "https://github.com/${.frag}"
-Homepage = "https://github.com/dmyersturnbull/cicd"
+Homepage = "https://github.com/dmyersturnbull/pocketutils"
 # :tyranno: "https://github.com/${.frag}"
-Source = "https://github.com/dmyersturnbull/cicd"
+Source = "https://github.com/dmyersturnbull/pocketutils"
 # :tyranno: https://${.vendor}.github.io/${project.name}
-Documentation = "https://dmyersturnbull.github.io/cicd"
+Documentation = "https://dmyersturnbull.github.io/pocketutils"
 # :tyranno: ${.home}/issues
-Tracker = "https://github.com/dmyersturnbull/cicd/issues"
+Tracker = "https://github.com/dmyersturnbull/pocketutils/issues"
 # :tyranno: https://pypi.org/project/${project.name}
-Download = "https://pypi.org/project/cicd/"
+Download = "https://pypi.org/project/pocketutils/"
 # :tyranno: ${.home}/blob/main/CHANGELOG.md
-Changelog = "https://github.com/dmyersturnbull/cicd/blob/main/CHANGELOG.md"
+Changelog = "https://github.com/dmyersturnbull/pocketutils/blob/main/CHANGELOG.md"
 
 ###################
 # Hatch
@@ -89,17 +88,15 @@ Changelog = "https://github.com/dmyersturnbull/cicd/blob/main/CHANGELOG.md"
 [tool.hatch.envs.default]
 dependencies = [
   "pre-commit >=3.3",
-  "hypothesis >=6.0",
   "pytest  >=7.0",
   "tzdata >=2023",
   "coverage[toml] >=7.2",
   "pytest-cov >=4.0",
-  "mypy >=1.4",
   "numpy >=1.25",
   "loguru >=0.7",
   "psutil >=5",
   "pandas >=2.0",
-  "ruff >=0.0.280",
+  "ruff >=0.1.4",
   "mkdocs >=1.5",
   "mike >=1.1",
   "mkdocs-material >=9.1",
@@ -107,6 +104,7 @@ dependencies = [
   "mkdocstrings[python] >=0.20",
   "dramatiq[watch] >=1.14",
   "mkdocs-table-reader-plugin >=2.0",
+  "mkdocs-include-markdown-plugin >=6.0"
 ]
 #skip-install = true
 
@@ -125,10 +123,7 @@ obliterate-docs = [
 set-default-docs = "mike set-default --config-file mkdocs.yaml latest"
 fmt = "pre-commit run --all-files"
 bandit = "ruff --select S {args:.}"
-lint = [
-  "pre-commit run --all-files",
-  "mypy {args:src/pocketutils tests}"
-]
+lint = "pre-commit run --all-files"
 
 
 ###################
@@ -184,6 +179,8 @@ exclude = [
   "ARG",      # flake8-unused (unused parameters are almost always intentional, like when overriding)
   "FBT",      # flake8-boolean-trap (debatable, and might not have a choice)
   "ICN",      # flake8-import-conventionals (isort does this)
+  "ISC001",   # conflicts with formatter
+  "COM812",   # conflicts with formatter
 ]
 ignore = [
   "INP001",   # missing __init__ -- false positives
@@ -281,29 +278,6 @@ exclude_lines = [
   "if __name__ == .__main__.:",
   "if TYPE_CHECKING:",
 ]
-
-
-###################
-# Black
-###################
-[tool.black]
-# :tyranno: line-length = ${tool.ruff.line-length}
-line-length = 120
-
-
-###################
-# MyPy
-###################
-[tool.mypy]
-disallow_untyped_defs = false
-disallow_incomplete_defs = false
-follow_imports = "normal"
-ignore_missing_imports = true
-pretty = true
-show_column_numbers = true
-show_error_codes = true
-warn_no_return = false
-warn_unused_ignores = true
 
 
 ###################
@@ -484,59 +458,3 @@ message = "Closed issues, separated by commas: (press [enter] to skip)\n"
 type = "input"
 name = "trailers"
 message = "Git trailers, separated by '||'. Each must be in the form '<key>: <value>'; e.g., 'Reviewed-by: John Johnson <john@git.com>': (press [enter] to skip)\n"
-
-
-###################
-# Tyranno
-###################
-
-#===== Tyranno targets to sync =====#
-[tool.tyranno.targets]
-add-defaults = true
-add          = []
-exclude      = []
-
-#===== Tyranno sync from web =====#
-[tool.tyranno.web]
-uris = [
-  "https://github.com/dmyersturnbull/tyranno/blob/main/.gitignore",
-  "https://github.com/dmyersturnbull/tyranno/blob/main/.dockerignore",
-  "https://github.com/dmyersturnbull/tyranno/blob/main/.editorconfig",
-  "https://github.com/dmyersturnbull/tyranno/blob/main/.gitattributes",
-  "https://github.com/dmyersturnbull/tyranno/blob/main/.prettierignore",
-  "https://github.com/dmyersturnbull/tyranno/blob/main/.scrutinizer.yaml",
-  "https://github.com/dmyersturnbull/tyranno/blob/main/.pre-commit-config.yaml",
-  "https://github.com/dmyersturnbull/suretime/blob/main/.github/dependabot.yaml",
-  "https://github.com/dmyersturnbull/suretime/tree/main/.github/workflows/",
-  "https://github.com/dmyersturnbull/suretime/tree/main/.github/DISCUSSION_TEMPLATE/",
-  "https://github.com/dmyersturnbull/suretime/tree/main/.github/ISSUE_TEMPLATE/",
-  "https://github.com/dmyersturnbull/suretime/tree/main/.github/PULL_REQUEST_TEMPLATE/",
-]
-
-#[[tool.tyranno.web.manual]]
-#path = ""
-#uri = ""
-
-#===== Tyranno auto-add SPDX headers =====#
-[tool.tyranno.headers]
-text = "${.header}"
-add = ["**/*"]
-exclude = []
-
-#===== Tyranno 'clean' command =====#
-[tool.tyranno.trash]
-add-defaults   = true
-add            = []
-exclude        = []
-
-#===== Tyranno main data =====#
-[tool.tyranno.data]
-src-dir           = "src"
-vendor            = "dmyersturnbull"
-frag              = "${.vendor}/${project.name}"
-copyright         = "Copyright $2020–${~|year(now_utc())~}, Contributors to ${project.name}"
-header            = """
-SPDX-FileCopyrightText: ${.copyright}
-SPDX-PackageHomePage: ${project.urls.Homepage}
-SPDX-License-Identifier: Apache-2.0
-"""

@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: Copyright 2020-2023, Contributors to pocketutils
+# SPDX-PackageHomePage: https://github.com/dmyersturnbull/pocketutils
+# SPDX-License-Identifier: Apache-2.0
 from datetime import date
 from typing import Self
 
@@ -111,16 +114,14 @@ class TestDotDict:
         assert t.leaves() == {"a.b": 1, "b": 2, "c.a.a": 3}
 
     def test_size(self: Self) -> None:
+        t = NestedDotDict({})
+        assert len(t.nodes()) == 0
+        t = NestedDotDict({"x": "y"})
+        assert len(t.nodes()) == 2
         t = NestedDotDict({"a": {"b": 1}, "b": 2, "c": {"a": {"a": 3}}})
-        assert t.n_elements_total() == 3
+        assert len(t.nodes()) == 6
         t = NestedDotDict({"a": {"b": 1}, "b": [1, 2, 3], "c": {"a": {"a": 3}}})
-        assert t.n_elements_total() == 5
-
-    def test_bytes(self: Self) -> None:
-        t = NestedDotDict({"a": {"b": 1}, "b": 2, "c": {"a": {"a": 3}}})
-        assert t.n_bytes_total() == 84
-        t = NestedDotDict({"a": {"b": 1}, "b": [1, 2, 3], "c": {"a": {"a": 3}}})
-        assert t.n_bytes_total() == 140
+        assert len(t.nodes()) == 6
 
     def test_req_as(self: Self) -> None:
         t = NestedDotDict({"zoo": {"animals": "jackets"}, "what": 0.1})

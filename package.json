@@ -1,0 +1,10 @@
+{
+  "devDependencies": {
+    "prettier-plugin-toml": "^1.0.0"
+  },
+  "prettier": {
+    "plugins": [
+      "prettier-plugin-toml"
+    ]
+  }
+}

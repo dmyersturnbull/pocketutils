@@ -1,8 +1,11 @@
+# SPDX-FileCopyrightText: Copyright 2020-2023, Contributors to pocketutils
+# SPDX-PackageHomePage: https://github.com/dmyersturnbull/pocketutils
+# SPDX-License-Identifier: Apache-2.0
 import os
 from typing import Self
 
 import pytest
-from pocketutils.core.exceptions import IllegalPathError
+from pocketutils import ValueIllegalError
 from pocketutils.tools.path_tools import PathTools
 
 
@@ -53,7 +56,7 @@ class TestPathTools:
         assert str(x("..\\5")) == "../5"
         assert str(x("xyz...", is_file=False)) == "xyz"
         assert str(x("abc\\.\\xyz\\n.", is_file=False)) == "abc/xyz/n"
-        with pytest.raises(IllegalPathError):
+        with pytest.raises(ValueIllegalError):
             x("x" * 255)
         assert str(x("NUL")) == "_NUL_"
         assert str(x("nul")) == "_nul_"

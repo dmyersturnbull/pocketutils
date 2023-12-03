@@ -15,17 +15,20 @@
 Adorable little Python functions for you to copy or import,
 [Apache](https://spdx.org/licenses/Apache-2.0.html)-licensed.
 
-`pip install pocketutils[all]`
+`pip install pocketutils[compression,encoding,formats,units,misc]`
 
 ### Basic usage
 
 ```python
+import sys
+from datetime import timedelta
 from pocketutils import Tools, SmartIo, FrozeList, FrozeSet, FrozeDict
 
 my_dict = FrozeDict({"5": "10"})
 hash(my_dict)
 assert my_dict == my_dict
-inside_a_set = {my_dict}
+assert not (my_dict < my_dict)  # orderable!
+inside_a_set = {my_dict}  # hashable!
 
 SmartIo.read_bytes("compressed.xz")  # infers compress by filename extension
 data = SmartIo.read_text("text.zst")  # zstd, lz4, brotli, snappy, xz, ...
@@ -35,13 +38,13 @@ Tools.zip_strict([1, 2, 3], [5, 6])  # error <-- lengths must match
 Tools.strip_brackets("( (xy)")  # "(xy" <-- strips paired only
 Tools.sanitize_path("x\ty")  # "xy"  <-- very robust cross-platform sanitization
 Tools.delete_surefire("my_file")  # <-- Attempts to fix permissions if needed
-Tools.git_description("my_repo").tag  # <-- get git repo info
+Tools.git_description("my_repo")  # <-- get git repo info
 Tools.pretty_function(lambda s: None)  # "<λ(1)> <-- decent name for any object
 Tools.roman_to_arabic("XIV")  # 14  <-- inverse function too
-Tools.delta_time_to_str(delta_sec=60 * 2 + 5)  # "02:05"  <-- handles days too
+Tools.pretty_timedelta(delta_sec=timedelta(seconds=60 * 2 + 5))  # "02:05"  <-- handles days too
 Tools.round_to_sigfigs(135.3, 2)  # "140"  <-- rounding to sigfigs
 Tools.pretty_float(-float("-inf"))  # "−∞"  <-- proper unicode, no trailing 0s
-Tools.stream_cmd_call(["cat", "big-file"], callback=fn)  # <-- buffer never fills
+Tools.stream_cmd_call(["cat", "big-file"])  # <-- buffer never fills
 Tools.strip_quotes("'hello'")  # "hello"
 Tools.truncate("looong string", n=10)  # "looong st…"
 Tools.parse_bool("true")  # True
@@ -50,8 +53,7 @@ Tools.look(item, "purchase.buyer.first_name")  # None if purchase or buyer is No
 Tools.friendly_size(n_bytes=2 * 14)  # "16.38 kb"
 Tools.is_probable_null("NaN")  # True
 Tools.is_true_iterable("kitten")  # False
-Tools.or_null(some_function)  # None if it fails
-Tools.or_raise(None)  # raises an error (of your choice)
+Tools.or_null(lambda: None)  # None if it fails
 Tools.trash("unwanted_file.txt")  # move to os-specific trash
 Tools.pretty_dict({"contents": {"greeting": "hi"}})  # indented
 Tools.save_diagnostics(Tools.get_env_info())  # record diagnostic info
@@ -61,7 +63,7 @@ Tools.only([1, 2])  # error -- multiple items
 Tools.first(iter([]))  # None <-- better than try: next(iter(x)) except:...
 Tools.trace_signals(sink=sys.stderr)  # log traceback on all signals
 Tools.trace_exit(sink=sys.stderr)  # log traceback on exit
-Tools.required_args(some_function)  # reflection
+Tools.required_args(lambda a, b, c: None)  # reflection
 # lots of others
 ```
 
@@ -73,7 +75,7 @@ from pocketutils import FilesysTools
 FilesysTools.delete_surefire("bad-path")
 ```
 
-[See the docs 📚](https://pocketutils.readthedocs.io/en/stable/), or just
+[See the docs 📚](https://github.io/dmyersturnbull/pocketutils), or just
 [browse the code](https://github.com/dmyersturnbull/pocketutils/tree/main/pocketutils).
 [New issues](https://github.com/dmyersturnbull/pocketutils/issues) and pull requests are welcome.
 Please refer to the [contributing guide](https://github.com/dmyersturnbull/pocketutils/blob/main/CONTRIBUTING.md)

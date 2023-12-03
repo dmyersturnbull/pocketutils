@@ -1,12 +1,12 @@
-# SPDX-FileCopyrightText: Copyright 2020-2023, Contributors to CICD
-# SPDX-PackageHomePage: https://github.com/dmyersturnbull/cicd
+# SPDX-FileCopyrightText: Copyright 2020-2023, Contributors to pocketutils
+# SPDX-PackageHomePage: https://github.com/dmyersturnbull/pocketutils
 # SPDX-License-Identifier: Apache-2.0
 
 # Check out https://pre-commit.com/ for documentation
-minimum_pre_commit_version: 3.3.3
+minimum_pre_commit_version: 3.5.0
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v4.4.0
+    rev: v4.5.0
     hooks:
       - id: check-case-conflict
       - id: check-merge-conflict
@@ -28,25 +28,7 @@ repos:
       - id: commitizen
         stages: ["commit-msg"]
     repo: https://github.com/commitizen-tools/commitizen
-    rev: v3.6.0
-
-  # --- Linters ---
-  - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.0.280
-    hooks:
-      - id: ruff
-        args: [--fix-only]
-        types_or: [python, pyi, jupyter]
-
-  - repo: https://github.com/psf/black
-    rev: 23.7.0
-    hooks:
-      - id: black
-
-  - repo: https://github.com/asottile/blacken-docs
-    rev: 1.14.0
-    hooks:
-      - id: blacken-docs
+    rev: v3.12.0
 
   # --- Strip output from .ipynb files ---
   - repo: https://github.com/kynan/nbstripout
@@ -54,23 +36,20 @@ repos:
     hooks:
       - id: nbstripout
 
-  # run black on Jupyter notebooks
-  - repo: https://github.com/nbQA-dev/nbQA
-    rev: 1.7.0
+  # --- Linters ---
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.1.4
     hooks:
-      - id: nbqa-ruff
+      - id: ruff
+        args: [--fix-only]
+        types_or: [python, pyi, jupyter]
+      - id: ruff-format
 
-  - repo: https://github.com/pre-commit/mirrors-prettier
-    rev: v2.7.1
-    hooks:
-      - id: prettier
-        stages: [commit]
-        # :tyranno: [--print-width, "${tool.ruff.line-length}"]
-        args: [--print-width, "120"]
-        exclude: ^recipes/.*
-
-  - repo: https://github.com/macisamuele/language-formatters-pre-commit-hooks
-    rev: v2.9.0
-    hooks:
-      - id: pretty-format-ini
-        args: [--autofix]
+  #- repo: https://github.com/pre-commit/mirrors-prettier
+  #  rev: v3.0.3
+  #  hooks:
+  #    - id: prettier
+  #      stages: [commit]
+  #      # :tyranno: [--print-width, "${tool.ruff.line-length}"]
+  #      args: [--print-width, "120"]
+  #      exclude: ^recipes/.*

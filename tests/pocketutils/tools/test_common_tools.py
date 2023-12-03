@@ -1,8 +1,13 @@
+# SPDX-FileCopyrightText: Copyright 2020-2023, Contributors to pocketutils
+# SPDX-PackageHomePage: https://github.com/dmyersturnbull/pocketutils
+# SPDX-License-Identifier: Apache-2.0
 from dataclasses import dataclass
 from typing import Any, Self
 
 import numpy as np
 import pytest
+from pocketutils.core.exceptions import MultipleMatchesError, NoMatchesError
+from pocketutils.core.mocks import MockCallable, MockWritable, WritableCallable
 from pocketutils.tools.common_tools import CommonTools
 
 
@@ -11,35 +16,56 @@ class Mammal:
     species: Any
 
 
+outside_lambda_1 = lambda: True
+outside_lambda_2 = lambda x: x
+
+
+def non_lambda():
+    pass
+
+
 class TestCommon:
-    def test_try_none(self: Self):
-        f = CommonTools.try_none
+    def test_only(self: Self) -> None:
+        only = CommonTools.only
+        with pytest.raises(TypeError):
+            # noinspection PyTypeChecker
+            only(1)
+        assert only("a") == "a"
+        assert only(["a"]) == "a"
+        assert only({"ab"}) == "ab"
+        with pytest.raises(MultipleMatchesError):
+            only(["a", "b"])
+        with pytest.raises(NoMatchesError):
+            only([])
 
-        def success():
-            return None
+    def test_look(self: Self) -> None:
+        f = CommonTools.look
+        with pytest.raises(TypeError):
+            # noinspection PyTypeChecker
+            f(1, 1)
+        assert f(Mammal("cat"), "species") == "cat"
+        assert f(Mammal("cat"), "owner") is None
+        # assert f(Mammal(Mammal('cat')), 'species') == Mammal('cat')
+        assert f(Mammal(Mammal("cat")), "species.species") == "cat"
+        assert str(f(Mammal(Mammal("cat")), "species")) == "Mammal(species='cat')"
+        assert f(Mammal(Mammal("cat")), lambda m: m.species.species) == "cat"
 
-        def fail():
-            raise ValueError()
+    def test_get_log_function(self: Self) -> None:
+        from pocketutils.core import logger
 
-        assert f(fail) is None
-        assert f(success) is None
-        assert f(lambda: 5) == 5
-        assert f(fail, exception=ValueError) is None
-        assert f(fail, exception=Exception) is None
-        with pytest.raises(ValueError):
-            f(fail, exception=TypeError)
-        assert f(fail, fail_val=-1) == -1
-
-    def test_or_raise(self: Self):
-        f = CommonTools.or_raise
-        assert f(5) == 5
-        with pytest.raises(LookupError):
-            f(None)
-        assert f(5, lambda s: "abc") == "abc"
-        with pytest.raises(AttributeError):
-            f(5, lambda s: s.dne)
-        with pytest.raises(ValueError):
-            f(None, or_else=ValueError)
+        f = CommonTools.get_log_fn
+        assert f("INFO") == logger.info
+        assert f("WARNING") == logger.warning
+        assert f(30) == logger.warning
+        w = MockWritable()
+        f(w)("testing")
+        assert w.data == "write:testing"
+        w = MockCallable()
+        f(w)("testing")
+        assert w.data == "call:testing"
+        w = WritableCallable()
+        f(w)("testing")
+        assert w.data == "call:testing"
 
     def test_iterator_has_elements(self: Self):
         f = CommonTools.iterator_has_elements
@@ -100,7 +126,7 @@ class TestCommon:
     def test_first(self: Self):
         f = CommonTools.first
         assert f([2, 1]) == 2
-        assert f([Mammal("cat"), Mammal("dog"), Mammal("cat")], "species") == "cat"
+        assert f([Mammal("cat"), Mammal("dog"), Mammal("cat")]) == Mammal("cat")
         assert f("21") == "2"
         assert f([]) is None
         with pytest.raises(TypeError):
@@ -111,6 +137,10 @@ class TestCommon:
         f = CommonTools.multidict
         expected = "{'cat': [Mammal(species='cat')], 'dog': [Mammal(species='dog')]}"
         assert str(dict(f([Mammal("cat"), Mammal("dog")], "species"))) == expected
+
+    def test_longest(self: Self) -> None:
+        f = CommonTools.longest
+        assert f(["1", "abc", "xyz", "2"]) == "abc"
 
 
 if __name__ == "__main__":

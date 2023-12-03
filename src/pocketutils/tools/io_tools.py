@@ -1,7 +1,18 @@
+# SPDX-FileCopyrightText: Copyright 2020-2023, Contributors to pocketutils
+# SPDX-PackageHomePage: https://github.com/dmyersturnbull/pocketutils
+# SPDX-License-Identifier: Apache-2.0
+"""
+
+"""
+
 import abc
 import base64
 import binascii
+import functools
 import hashlib
+import os
+import sys
+from dataclasses import dataclass
 from typing import Literal, Self, SupportsBytes
 
 from pocketutils.core.input_output import DevNull
@@ -10,6 +21,8 @@ try:
     import base2048
 except ImportError:
     base2048 = None
+
+__all__ = ["IoUtils", "IoTools"]
 
 
 Encoding = (
@@ -46,7 +59,26 @@ HashAlgorithm = (
 )
 
 
+@functools.total_ordering
 class Enc(metaclass=abc.ABCMeta):
+    def __reduce__(self: Self) -> str:
+        return self.name
+
+    def __hash__(self: Self) -> int:
+        return hash(self.name)
+
+    def __eq__(self: Self, other: Self) -> bool:
+        return self.name == other.name
+
+    def __lt__(self: Self, other: Self) -> bool:
+        return self.name < other.name
+
+    def __str__(self: Self) -> str:
+        return self.name
+
+    def __repr__(self: Self) -> str:
+        return self.name
+
     @property
     def name(self: Self) -> str:
         return self.__class__.__name__.lower()
@@ -205,10 +237,55 @@ ENCODINGS = {
 }
 
 
-class IoTools:
-    @classmethod
+@dataclass(slots=True, frozen=True)
+class IoUtils:
+    def get_encoding(self: Self, encoding: str = "utf-8") -> str:
+        """
+        Returns a text encoding from a more flexible string.
+        Ignores hyphens and lowercases the string.
+        Permits these nonstandard shorthands:
+
+          - `"platform"`: use `sys.getdefaultencoding()` on the fly
+          - `"utf-8(bom)"`: use `"utf-8-sig"` on Windows; `"utf-8"` otherwise
+          - `"utf-16(bom)"`: use `"utf-16-sig"` on Windows; `"utf-16"` otherwise
+          - `"utf-32(bom)"`: use `"utf-32-sig"` on Windows; `"utf-32"` otherwise
+        """
+        encoding = encoding.lower().replace("-", "")
+        if encoding == "platform":
+            encoding = sys.getdefaultencoding()
+        if encoding == "utf-8(bom)":
+            encoding = "utf-8-sig" if os.name == "nt" else "utf-8"
+        if encoding == "utf-16(bom)":
+            encoding = "utf-16-sig" if os.name == "nt" else "utf-16"
+        if encoding == "utf-32(bom)":
+            encoding = "utf-32-sig" if os.name == "nt" else "utf-32"
+        return encoding
+
+    def get_encoding_errors(self: Self, errors: str | None) -> str | None:
+        """
+        Returns the value passed as`errors=` in `open`.
+
+        Raises:
+            ValueError: If invalid
+        """
+        if errors is None:
+            return "strict"
+        if errors in (
+            "strict",
+            "ignore",
+            "replace",
+            "xmlcharrefreplace",
+            "backslashreplace",
+            "namereplace",
+            "surrogateescape",
+            "surrogatepass",
+        ):
+            return errors
+        msg = f"Invalid value {errors} for errors"
+        raise ValueError(msg)
+
     def hash_digest(
-        cls: type[Self],
+        self: Self,
         data: SupportsBytes | str,
         algorithm: HashAlgorithm,
         *,
@@ -228,32 +305,28 @@ class IoTools:
             m.update(x)
             return m.digest()
 
-    @classmethod
-    def encode(cls: type[Self], d: bytes, enc: Encoding = "base64") -> str:
+    def encode(self: Self, d: bytes, enc: Encoding = "base64") -> str:
         if enc not in ENCODINGS:
             msg = f"Unknown encoding {enc}"
             raise ValueError(msg)
         return ENCODINGS[enc].encode(d)
 
-    @classmethod
-    def decode(cls: type[Self], d: bytes, enc: Encoding = "base64") -> bytes:
+    def decode(self: Self, d: bytes, enc: Encoding = "base64") -> bytes:
         if enc not in ENCODINGS:
             msg = f"Unknown encoding {enc}"
             raise ValueError(msg)
         return ENCODINGS[enc].decode(d)
 
-    @classmethod
-    def devnull(cls: type[Self]) -> DevNull:
+    def devnull(self: Self) -> DevNull:
         """
         Yields a 'writer' that does nothing.
 
         Example:
-            ``python
-                with CommonTools.devnull() as devnull:
-                    devnull.write('hello')
-            ``
+
+            with CommonTools.devnull() as devnull:
+                devnull.write('hello')
         """
         yield DevNull()
 
 
-__all__ = ["IoTools"]
+IoTools = IoUtils()

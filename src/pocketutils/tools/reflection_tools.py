@@ -1,21 +1,29 @@
+# SPDX-FileCopyrightText: Copyright 2020-2023, Contributors to pocketutils
+# SPDX-PackageHomePage: https://github.com/dmyersturnbull/pocketutils
+# SPDX-License-Identifier: Apache-2.0
+"""
+
+"""
+
 import inspect
 import sys
 import typing
 from collections.abc import Callable, Generator, Mapping
+from dataclasses import dataclass
+from inspect import Parameter
 from types import MappingProxyType
 from typing import Any, Self, TypeVar
 
-from pocketutils.core.exceptions import InjectionError
+__all__ = ["ReflectionUtils", "ReflectionTools"]
 
-T = TypeVar("T")
 T_co = TypeVar("T_co", covariant=True)
 
 
-class ReflectionTools:
-    @classmethod
-    def get_generic_arg(cls: type[Self], clazz: type[T_co], bound: type[T_co] | None = None) -> type[T_co]:
+@dataclass(slots=True, frozen=True)
+class ReflectionUtils:
+    def get_generic_arg(self: Self, clazz: type[T_co], bound: type[T_co] | None = None) -> type[T_co]:
         """
-        Finds the generic argument (specific TypeVar) of a :class:`~typing.Generic` class.
+        Finds the generic argument (specific TypeVar) of a `typing.Generic` class.
         **Assumes that `clazz` only has one type parameter. Always returns the first.**
 
         Args:
@@ -32,30 +40,26 @@ class ReflectionTools:
         try:
             param = typing.get_args(bases[0])[0]
         except KeyError:
-            msg = f"Failed to get generic type on {cls}"
+            msg = f"Failed to get generic type on {clazz}"
             raise AssertionError(msg)
         if not issubclass(param, bound):
             msg = f"{param} is not a {bound}"
             raise AssertionError(msg)
         return param
 
-    @classmethod
-    def subclass_dict(cls: type[Self], clazz: type[T_co], concrete: bool = False) -> Mapping[str, type[T_co]]:
-        return {c.__name__: c for c in cls.subclasses(clazz, concrete=concrete)}
+    def subclass_dict(self: Self, clazz: type[T_co], concrete: bool = False) -> Mapping[str, type[T_co]]:
+        return {c.__name__: c for c in self.subclasses(clazz, concrete=concrete)}
 
-    @classmethod
-    def subclasses(cls: type[Self], clazz: type[T_co], concrete: bool = False) -> Generator[type[T_co], None, None]:
+    def subclasses(self: Self, clazz: type[T_co], concrete: bool = False) -> Generator[type[T_co], None, None]:
         for subclass in clazz.__subclasses__():
-            yield from cls.subclasses(subclass, concrete=concrete)
+            yield from self.subclasses(subclass, concrete=concrete)
             if not concrete or not inspect.isabstract(subclass) and not subclass.__name__.startswith("_"):
                 yield subclass
 
-    @classmethod
-    def default_arg_values(cls: type[Self], func: Callable[..., Any]) -> Mapping[str, Any | None]:
-        return {k: v.default for k, v in cls.optional_args(func).items()}
+    def default_arg_values(self: Self, func: Callable[..., Any]) -> Mapping[str, Any | None]:
+        return {k: v.default for k, v in self.optional_args(func).items()}
 
-    @classmethod
-    def required_args(cls: type[Self], func: Callable[..., Any]) -> Mapping[str, MappingProxyType]:
+    def required_args(self: Self, func: Callable[..., Any]) -> Mapping[str, MappingProxyType]:
         """
         Finds parameters that lack default values.
 
@@ -66,10 +70,9 @@ class ReflectionTools:
             A dict mapping parameter names to instances of `MappingProxyType`,
             just as `inspect.signature(func).parameters` does.
         """
-        return cls._args(func, True)
+        return self._args(func, True)
 
-    @classmethod
-    def optional_args(cls: type[Self], func: Callable[..., Any]) -> Mapping[str, MappingProxyType]:
+    def optional_args(self: Self, func: Callable[..., Any]) -> Mapping[str, Parameter]:
         """
         Finds parameters that have default values.
 
@@ -80,10 +83,9 @@ class ReflectionTools:
             A dict mapping parameter names to instances of `MappingProxyType`,
             just as `inspect.signature(func).parameters` does.
         """
-        return cls._args(func, False)
+        return self._args(func, False)
 
-    @classmethod
-    def injection(cls: type[Self], fully_qualified: str, clazz: type[T]) -> type[T]:
+    def injection(self: Self, fully_qualified: str, clazz: type[T_co]) -> type[T_co]:
         """
         Gets a **class** by its fully-resolved class name.
 
@@ -104,18 +106,15 @@ class ReflectionTools:
             return getattr(sys.modules[mod], clz)
         except AttributeError:
             msg = f"Did not find {clazz} by fully-qualified class name {fully_qualified}"
-            raise InjectionError(
-                msg,
-            ) from None
+            raise LookupError(msg) from None
 
-    @classmethod
-    def _args(cls: type[Self], func: Callable[..., Any], req: bool) -> dict[str, inspect.Parameter]:
+    def _args(self: Self, func: Callable[..., Any], req: bool) -> dict[str, Parameter]:
         signature = inspect.signature(func)
         return {
             k: v
             for k, v in signature.parameters.items()
-            if req and v.default is inspect.Parameter.empty or not req and v.default is not inspect.Parameter.empty
+            if req and v.default is Parameter.empty or not req and v.default is not Parameter.empty
         }
 
 
-__all__ = ["ReflectionTools"]
+ReflectionTools = ReflectionUtils()

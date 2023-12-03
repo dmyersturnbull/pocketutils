@@ -1,17 +1,22 @@
+# SPDX-FileCopyrightText: Copyright 2020-2023, Contributors to pocketutils
+# SPDX-PackageHomePage: https://github.com/dmyersturnbull/pocketutils
+# SPDX-License-Identifier: Apache-2.0
+
 import contextlib
 import logging
-import os
 import subprocess  # nosec
-import textwrap
-import warnings
 from collections.abc import Callable, Generator, Mapping, Sequence
 from copy import copy
+from dataclasses import dataclass
 from pathlib import PurePath
 from queue import Queue
+from subprocess import CalledProcessError, CompletedProcess
 from threading import Thread
-from typing import Any, Self, Unpack
+from typing import IO, Any, AnyStr, Self, Unpack
 
 from pocketutils.core.input_output import DevNull
+
+__all__ = ["CallUtils", "CallTools"]
 
 logger = logging.getLogger("pocketutils")
 
@@ -21,14 +26,10 @@ def null_context():
     yield
 
 
-class CallTools:
-    @classmethod
+@dataclass(slots=True, frozen=True)
+class CallUtils:
     @contextlib.contextmanager
-    def silenced(
-        cls: type[Self],
-        no_stdout: bool = True,
-        no_stderr: bool = True,
-    ) -> Generator[None, None, None]:
+    def silenced(self: Self, no_stdout: bool = True, no_stderr: bool = True) -> Generator[None, None, None]:
         """
         Context manager that suppresses stdout and stderr.
         """
@@ -38,27 +39,12 @@ class CallTools:
             with contextlib.redirect_stderr(DevNull()) if no_stderr else null_context():
                 yield
 
-    @classmethod
-    def call_cmd(cls: type[Self], *cmd: str, **kwargs: Unpack[Mapping[str, Any]]) -> subprocess.CompletedProcess:
-        """
-        Calls `subprocess.run` with capture_output=True.
-        Logs a debug statement with the command beforehand.
-            cmd: A sequence to call
-            kwargs: Passed to `subprocess.run`
-        """
-        warnings.warn("call_cmd will be removed; use subprocess.check_output instead")
-        logger.debug("Calling '{}'".format(" ".join(cmd)))
-        args = [str(c) for c in cmd]
-        kwargs = dict(capture_output=True, check=True, **kwargs)
-        return subprocess.run(*args, **kwargs)  # nosec
-
-    @classmethod
     def call_cmd_utf(
-        cls: type[Self],
+        self: Self,
         *cmd: str,
-        log: logging.Logger = logger,
+        log_fn: Callable[[str], Any] | None = logger.debug,
         **kwargs: Unpack[Mapping[str, Any]],
-    ) -> subprocess.CompletedProcess:
+    ) -> CompletedProcess:
         """
         Like `call_cmd` for utf-8 only.
         Set `text=True` and `encoding=utf-8`,
@@ -69,36 +55,26 @@ class CallTools:
         See Also:
             `subprocess.check_output`, which only returns stdout
         """
-        log.debug("Calling '{}'".format(" ".join(cmd)))
+        log_fn("Calling '{}'".format(" ".join(cmd)))
         kwargs = copy(kwargs)
         if "cwd" in kwargs and isinstance(kwargs["path"], PurePath):
             kwargs["cwd"] = str(kwargs["cwd"])
-        try:
-            calling = dict(
-                *[str(c) for c in cmd],
-                capture_output=True,
-                check=True,
-                text=True,
-                encoding="utf-8",
-                **kwargs,
-            )
-            x = subprocess.run(**calling)  # nosec
-            log.debug(f"stdout: '{x.stdout}'")
-            log.debug(f"stderr: '{x.stderr}'")
-            x.stdout = x.stdout.strip()
-            x.stderr = x.stderr.strip()
-            return x
-        except subprocess.CalledProcessError as e:
-            cls.log_called_process_error(e, log_fn=log.error)
-            raise
+        calling = dict(
+            *[str(c) for c in cmd],
+            capture_output=True,
+            check=True,
+            text=True,
+            encoding="utf-8",
+            **kwargs,
+        )
+        x = subprocess.run(**calling)  # nosec
+        log_fn(f"stdout: '{x.stdout}'")
+        log_fn(f"stderr: '{x.stderr}'")
+        x.stdout = x.stdout.strip()
+        x.stderr = x.stderr.strip()
+        return x
 
-    @classmethod
-    def log_called_process_error(
-        cls: type[Self],
-        e: subprocess.CalledProcessError,
-        *,
-        log_fn: Callable[[str], None],
-    ) -> None:
+    def log_called_process_error(self: Self, e: CalledProcessError, *, log_fn: Callable[[str], None]) -> None:
         """
         Outputs some formatted text describing the error with its full stdout and stderr.
 
@@ -110,15 +86,14 @@ class CallTools:
         out = None
         if e.stdout is not None:
             out = e.stdout.decode(encoding="utf-8") if isinstance(e.stdout, bytes) else e.stdout
-        log_fn("《no stdout》" if out is None else f"stdout: {out}")
+        log_fn("<no stdout>" if out is None else f"stdout: {out}")
         err = None
         if e.stderr is not None:
             err = e.stderr.decode(encoding="utf-8") if isinstance(e.stderr, bytes) else e.stderr
-        log_fn("《no stderr》" if err is None else f"stderr: {err}")
+        log_fn("<no stderr>" if err is None else f"stderr: {err}")
 
-    @classmethod
     def stream_cmd_call(
-        cls: type[Self],
+        self: Self,
         cmd: Sequence[str],
         *,
         callback: Callable[[bool, bytes], None] | None = None,
@@ -142,15 +117,15 @@ class CallTools:
             CalledProcessError: If the exit code is nonzero
         """
         if callback is None:
-            callback = cls.smart_log
+            callback = self.smart_log
         cmd = [str(p) for p in cmd]
         logger.debug("Streaming '{}'".format(" ".join(cmd)))
         calling = dict(stdout=subprocess.PIPE, stderr=subprocess.PIPE, **kwargs)
         p = subprocess.Popen(cmd, **calling)  # nosec
         try:
             q = Queue()
-            Thread(target=cls._reader, args=[False, p.stdout, q]).start()
-            Thread(target=cls._reader, args=[True, p.stderr, q]).start()
+            Thread(target=self._reader, args=[False, p.stdout, q]).start()
+            Thread(target=self._reader, args=[True, p.stderr, q]).start()
             for _ in range(2):
                 for source, line in iter(q.get, None):
                     callback(source, line)
@@ -158,16 +133,10 @@ class CallTools:
         finally:
             p.kill()
         if exit_code != 0:
-            raise subprocess.CalledProcessError(
-                exit_code,
-                " ".join(cmd),
-                "<<unknown>>",
-                "<<unknown>>",
-            )
+            raise CalledProcessError(exit_code, " ".join(cmd), "<unknown>", "<unknown>")
 
-    @classmethod
     def smart_log(
-        cls: type[Self],
+        self: Self,
         is_stderr: bool,
         line: bytes,
         *,
@@ -203,34 +172,13 @@ class CallTools:
         else:
             logger.debug(prefix + line)
 
-    @classmethod
-    def _disp(cls: type[Self], out, ell, name):
-        out = out.strip()
-        if "\n" in out:
-            ell(name + ":\n<<=====\n" + out + "\n=====>>")
-        elif len(out) > 0:
-            ell(name + ": <<===== " + out + " =====>>")
-        else:
-            ell(name + ": <no output>")
-
-    @classmethod
-    def _log(cls: type[Self], out, err, ell):
-        cls._disp(out, ell, "stdout")
-        cls._disp(err, ell, "stderr")
-
-    @classmethod
-    def _reader(cls: type[Self], pipe_type, pipe, queue):
+    def _reader(self: Self, is_stderr: bool, pipe: IO[AnyStr], queue: Queue):
         try:
             with pipe:
                 for line in iter(pipe.readline, b""):
-                    queue.put((pipe_type, line))
+                    queue.put((is_stderr, line))
         finally:
             queue.put(None)
 
-    @classmethod
-    def _wrap(cls: type[Self], s: str, ell: int) -> str:
-        wrapped = textwrap.wrap(s.strip(), ell - 4)
-        return textwrap.indent(os.linesep.join(wrapped), "    ")
 
-
-__all__ = ["CallTools"]
+CallTools = CallUtils()

@@ -1,11 +1,9 @@
+# SPDX-FileCopyrightText: Copyright 2020-2023, Contributors to pocketutils
+# SPDX-PackageHomePage: https://github.com/dmyersturnbull/pocketutils
+# SPDX-License-Identifier: Apache-2.0
 """
-Metadata for this project.
+Pocketutils.
 """
-
-import logging
-from importlib.metadata import PackageNotFoundError
-from importlib.metadata import metadata as __load
-from pathlib import Path
 
 from pocketutils.core import *
 from pocketutils.core.chars import *
@@ -16,57 +14,40 @@ from pocketutils.core.exceptions import *
 from pocketutils.core.frozen_types import *
 from pocketutils.core.input_output import *
 from pocketutils.core.iterators import *
+from pocketutils.core.smartio import *
 from pocketutils.tools.call_tools import *
 from pocketutils.tools.common_tools import *
 from pocketutils.tools.console_tools import *
 from pocketutils.tools.filesys_tools import *
+from pocketutils.tools.git_tools import *
 from pocketutils.tools.io_tools import *
-from pocketutils.tools.json_tools import JsonTools
+from pocketutils.tools.json_tools import JsonUtils
 from pocketutils.tools.numeric_tools import *
-from pocketutils.tools.parse_tools import ParseTools
 from pocketutils.tools.path_tools import *
-from pocketutils.tools.program_tools import *
 from pocketutils.tools.reflection_tools import *
 from pocketutils.tools.string_tools import *
 from pocketutils.tools.sys_tools import *
 from pocketutils.tools.unit_tools import *
 
-pkg = Path(__file__).absolute().parent.name
-logger = logging.getLogger(pkg)
-metadata = None
-try:
-    metadata = __load(pkg)
-    __status__ = "Development"
-    __copyright__ = "Copyright 2016-2023"
-    __date__ = "2020-09-01"
-    __uri__ = metadata["home-page"]
-    __title__ = metadata["name"]
-    __summary__ = metadata["summary"]
-    __license__ = metadata["license"]
-    __version__ = metadata["version"]
-    __author__ = metadata["author"]
-    __maintainer__ = metadata["maintainer"]
-    __contact__ = metadata["maintainer"]
-except PackageNotFoundError:  # pragma: no cover
-    logger.error(f"Could not load package metadata for {pkg}. Is it installed?")
 
-
-class Tools(
-    CallTools,
-    CommonTools,
-    ConsoleTools,
-    FilesysTools,
-    IoTools,
-    JsonTools,
-    NumericTools,
-    PathTools,
-    ParseTools,
-    ProgramTools,
-    ReflectionTools,
-    StringTools,
-    SystemTools,
-    UnitTools,
+class Utils(
+    CallUtils,
+    CommonUtils,
+    ConsoleUtils,
+    FilesysUtils,
+    IoUtils,
+    JsonUtils,
+    NumericUtils,
+    PathUtils,
+    GitUtils,
+    ReflectionUtils,
+    StringUtils,
+    SystemUtils,
+    UnitUtils,
 ):
     """
-    A collection of utility static functions.
+    A collection of utility methods.
     """
+
+
+Tools = Utils()

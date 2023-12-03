@@ -1,30 +1,40 @@
+# SPDX-FileCopyrightText: Copyright 2020-2023, Contributors to pocketutils
+# SPDX-PackageHomePage: https://github.com/dmyersturnbull/pocketutils
+# SPDX-License-Identifier: Apache-2.0
+"""
+
+"""
+
 import logging
 import operator
+import re
 import sys
 from collections import defaultdict, deque
-from collections.abc import ByteString, Callable, Generator, Iterable, Iterator, Mapping, Sequence
+from collections.abc import Callable, Generator, Hashable, Iterable, Iterator, Mapping, Sequence
 from contextlib import contextmanager
+from dataclasses import dataclass
+from types import LambdaType
 from typing import Any, Literal, Self, TypeVar
 
 from pocketutils import FrozeDict, FrozeList, FrozeSet
-from pocketutils.core.exceptions import (
-    MultipleMatchesError,
-    RefusingRequestError,
-    XKeyError,
-    XTypeError,
-)
+from pocketutils.core.exceptions import MultipleMatchesError, NoMatchesError, ValueIllegalError
 from pocketutils.core.input_output import Writeable, return_none_1_param
 
-Y = TypeVar("Y")
+__all__ = ["CommonUtils", "CommonTools", "Writeable"]
+
 T = TypeVar("T")
-Z = TypeVar("Z")
-Q = TypeVar("Q")
+V_co = TypeVar("V_co", covariant=True)
+K_contra = TypeVar("K_contra", contravariant=True)
 logger = logging.getLogger("pocketutils")
+lambda_regex = re.compile(r"^<function (?:[A-Za-z_][A-Za-z0-9_.]*)?(?:<locals>\.)?<lambda> at 0x[A-F0-9]+>$")
 
 
-class CommonTools:
-    @classmethod
-    def freeze(cls: type[Self], v: Any) -> Any:
+@dataclass(slots=True, frozen=True)
+class CommonUtils:
+    def freeze(
+        self: Self,
+        v: Sequence[V_co] | set[V_co] | dict[K_contra, V_co] | frozenset[V_co] | Hashable,
+    ) -> FrozeList[V_co] | FrozeSet[V_co] | FrozeDict[K_contra, V_co] | Hashable:
         """
         Returns `v` or a hashable view of it.
         Note that the returned types must be hashable but might not be ordered.
@@ -36,9 +46,9 @@ class CommonTools:
 
         Returns:
             Either `v` itself,
-            a :class:`typeddfs.utils.FrozeSet` (subclass of :class:`collections.abc.Set`),
-            a :class:`typeddfs.utils.FrozeList` (subclass of :class:`collections.abc.Sequence`),
-            or a :class:`typeddfs.utils.FrozeDict` (subclass of :class:`collections.abc.Mapping`).
+            [`FrozeSet`](pocketutils.core.frozen_types.FrozeSet) (subclass of `collections.abc.Set`),
+            a [`FrozeList`](pocketutils.core.frozen_types.FrozeList) (subclass of `collections.abc.Sequence`),
+            or a [`FrozeDict`](pocketutils.core.frozen_types.FrozeDict) (subclass of `collections.abc.Mapping`).
             int, float, str, np.generic, and tuple are always returned as-is.
 
         Raises:
@@ -60,16 +70,17 @@ class CommonTools:
                 raise TypeError(msg)
             case Sequence():
                 return FrozeList(v)
-            case FrozeSet():
-                return FrozeList(v)
+            case set():
+                return FrozeSet(v)
+            case frozenset():
+                return FrozeSet(v)
             case Mapping():
                 return FrozeDict(v)
             case _:
                 hash(v)  # raise an AttributeError if not hashable
                 return v
 
-    @classmethod
-    def nice_size(cls: type[Self], n_bytes: int, *, space: str = "") -> str:
+    def nice_size(self: Self, n_bytes: int, *, space: str = "") -> str:
         """
         Uses IEC 1998 units, such as KiB (1024).
             n_bytes: Number of bytes
@@ -92,13 +103,11 @@ class CommonTools:
             scale, suffix = 1, "B"
         return str(n_bytes // scale) + space + suffix
 
-    @classmethod
-    def limit(cls: type[Self], items: Iterable[Q], n: int) -> Generator[Q, None, None]:
+    def limit(self: Self, items: Iterable[V_co], n: int) -> Iterator[V_co]:
         for _i, x in zip(range(n), items):
             yield x
 
-    @classmethod
-    def is_float(cls: type[Self], s: Any) -> bool:
+    def is_float(self: Self, s: Any) -> bool:
         """
         Returns whether `float(s)` succeeds.
         """
@@ -108,116 +117,89 @@ class CommonTools:
         except ValueError:
             return False
 
-    @classmethod
-    def try_none(
-        cls: type[Self],
-        function: Callable[[], T],
-        fail_val: T | None = None,
-        exception=Exception,
-    ) -> T | None:
+    def try_or_none(
+        self: Self,
+        function: Callable[[], V_co],
+        or_else: V_co | None = None,
+        exception: type[Exception] = Exception,
+    ) -> V_co | None:
         """
         Returns the value of a function or None if it raised an exception.
 
         Args:
             function: Try calling this function
-            fail_val: Return this value
+            or_else: Return this value
             exception: Restrict caught exceptions to subclasses of this type
         """
         # noinspection PyBroadException
         try:
             return function()
         except exception:
-            return fail_val
+            return or_else
 
-    @classmethod
-    def succeeds(cls: type[Self], function: Callable[[], Any], exception=Exception) -> bool:
+    def succeeds(self: Self, function: Callable[[], Any], exception: type[BaseException] = Exception) -> bool:
         """Returns True iff `function` does not raise an error."""
-        return cls.try_none(function, exception=exception) is not None
+        try:
+            function()
+        except exception:
+            return False
+        return True
 
-    @classmethod
-    def or_null(cls: type[Self], x: Any, dtype=lambda s: s, or_else: Any = None) -> Any | None:
-        """
-        Return `None` if the operation `dtype` on `x` failed; returns the result otherwise.
-        """
-        return or_else if cls.is_null(x) else dtype(x)
-
-    @classmethod
-    def or_raise(
-        cls: type[Self],
-        x: Any,
-        dtype=lambda s: s,
-        or_else: BaseException | type[BaseException] | None = None,
-    ) -> Any:
-        """
-        Returns `dtype(x)` if `x` is not None, or raises `or_else`.
-        """
-        if or_else is None:
-            or_else = LookupError(f"Value is {x}")
-        elif isinstance(or_else, type):
-            or_else = or_else(f"Value is {x}")
-        if cls.is_null(x):
-            raise or_else
-        return dtype(x)
-
-    @classmethod
-    def iterator_has_elements(cls: type[Self], x: Iterator[Any]) -> bool:
+    def iterator_has_elements(self: Self, it: Iterator) -> bool:
         """
         Returns False iff `next(x)` raises a `StopIteration`.
         WARNING: Tries to call `next(x)`, progressing iterators. Don't use `x` after calling this.
         Note that calling `iterator_has_elements([5])` will raise a `TypeError`
 
         Args:
-            x: Must be an Iterator
+            it: Must be an Iterator
         """
-        return cls.succeeds(lambda: next(x), StopIteration)
+        return self.succeeds(lambda: next(it), StopIteration)
 
-    @classmethod
-    def is_null(cls: type[Self], x: Any) -> bool:
+    def is_null(self: Self, v: V_co) -> bool:
         """
         Returns True for None, NaN, and NaT (not a time) values from Numpy, Pandas, and Python.
         Not perfect; may return false positive True for types declared outside Numpy and Pandas.
         """
-        if x is None:
+        if v is None:
             return True
-        if isinstance(x, str):
+        if isinstance(v, str):
             return False
-        return str(x) in [
+        return str(v) in [
             "nan",  # float('NaN') and Numpy float NaN
             "NaN",  # Pandas NaN and decimal.Decimal NaN
             "<NA>",  # Pandas pd.NA
             "NaT",  # Numpy datetime and timedelta NaT
         ]
 
-    @classmethod
-    def is_empty(cls: type[Self], x: Any) -> bool:
+    def is_empty(self: Self, v: V_co) -> bool:
         """
         Returns True if x is None, NaN according to Pandas, or contains 0 items.
 
         That is, if and only if:
-            - :meth:`is_null`
+            - `self.is_null(x)`
             - x is something with 0 length
             - x is iterable and has 0 elements (will call `__iter__`)
 
         Raises:
             RefusingRequestError If `x` is an Iterator. Calling this would empty the iterator, which is dangerous.
         """
-        if isinstance(x, Iterator):
+        if isinstance(v, Iterator):
             msg = "Do not call is_empty on an iterator."
-            raise RefusingRequestError(msg)
+            raise TypeError(msg)
         try:
-            if cls.is_null(x):
+            if self.is_null(v):
                 return True
         except (ValueError, TypeError):
             pass
-        return hasattr(x, "__len__") and len(x) == 0 or hasattr(x, "__iter__") and len(list(iter(x))) == 0
+        return hasattr(v, "__len__") and len(v) == 0 or hasattr(v, "__iter__") and len(list(iter(v))) == 0
 
-    @classmethod
-    def is_probable_null(cls: type[Self], x: Any) -> bool:
+    def is_probable_null(self: Self, v: V_co) -> bool:
         """
         Returns True if `x` is None, NaN according to Pandas, 0 length, or a string representation.
 
         Specifically, returns True if and only if:
-            - :meth:`is_null`
+            - `is_null`
             - x is something with 0 length
             - x is iterable and has 0 elements (will call `__iter__`)
             - a str(x) is 'nan', 'na', 'n/a', 'null', or 'none'; case-insensitive
@@ -230,10 +212,9 @@ class CommonTools:
             TypeError If `x` is an Iterator.
                       Calling this would empty the iterator, which is dangerous.
         """
-        return cls.is_empty(x) or str(x).lower() in ["nan", "n/a", "na", "null", "none"]
+        return self.is_empty(v) or str(v).lower() in {"nan", "n/a", "na", "null", "none", "<NA>", "NaT"}
 
-    @classmethod
-    def unique(cls: type[Self], sequence: Iterable[T]) -> Sequence[T]:
+    def unique(self: Self, sequence: Iterable[V_co]) -> Sequence[V_co]:
         """
         Returns the unique items in `sequence`, in the order they appear in the iteration.
 
@@ -246,8 +227,7 @@ class CommonTools:
         seen = set()
         return [x for x in sequence if not (x in seen or seen.add(x))]
 
-    @classmethod
-    def first(cls: type[Self], collection: Iterable[Any], attr: str | None = None) -> Any:
+    def first(self: Self, collection: Iterable[V_co]) -> V_co:
         """
         Gets the first element.
 
@@ -255,8 +235,6 @@ class CommonTools:
 
         Args:
             collection: Any iterable
-            attr: The name of the attribute that might be defined on the elements,
-                or None to indicate the elements themselves should be used
 
         Returns:
             Either `None` or the value, according to the rules:
@@ -266,31 +244,28 @@ class CommonTools:
         """
         try:
             # note: calling iter on an iterator creates a view only
-            x = next(iter(collection))
-            return x if attr is None else cls.look(x, attr)
+            return next(iter(collection))
         except StopIteration:
             return None
 
-    @classmethod
-    def iter_rowcol(cls: type[Self], n_rows: int, n_cols: int) -> Generator[tuple[int, int], None, None]:
+    def iter_row_col(self: Self, rows: int, cols: int) -> Iterator[tuple[int, int]]:
         """
         An iterator over (row column) pairs for a row-first grid traversal.
 
         Example:
-            .. code-block::
-                it = CommonTools.iter_rowcol(5, 3)
-                [next(it) for _ in range(5)]  # [(0,0),(0,1),(0,2),(1,0),(1,1)]
-        """
-        for i in range(n_rows * n_cols):
-            yield i // n_cols, i % n_cols
 
-    @classmethod
+            it = CommonTools.iter_rowcol(5, 3)
+            [next(it) for _ in range(5)]  # [(0,0),(0,1),(0,2),(1,0),(1,1)]
+        """
+        for i in range(rows * cols):
+            yield i // cols, i % cols
+
     def multidict(
-        cls: type[Self],
-        sequence: Iterable[Z],
-        key_attr: str | Iterable[str] | Callable[[Y], Z],
+        self: Self,
+        sequence: Iterable[V_co],
+        key_attr: str | Iterable[str] | Callable[[K_contra], V_co],
         skip_none: bool = False,
-    ) -> Mapping[Y, Sequence[Z]]:
+    ) -> Mapping[K_contra, Sequence[V_co]]:
         """
         Builds a mapping from keys to multiple values.
         Builds a mapping of some attribute in `sequence` to
@@ -303,16 +278,15 @@ class CommonTools:
         """
         dct = defaultdict(list)
         for item in sequence:
-            v = cls.look(item, key_attr)
+            v = self.look(item, key_attr)
             if not skip_none and v is None:
                 msg = f"No {key_attr} in {item}"
-                raise XKeyError(msg, key=key_attr)
+                raise KeyError(msg)
             if v is not None:
                 dct[v].append(item)
         return dct
 
-    @classmethod
-    def parse_bool(cls: type[Self], s: str) -> bool:
+    def parse_bool(self: Self, s: str) -> bool:
         """
         Parses a 'true'/'false' string to a bool, ignoring case.
 
@@ -326,10 +300,9 @@ class CommonTools:
         if s.lower() == "true":
             return True
         msg = f"{s} is not true/false"
-        raise ValueError(msg)
+        raise ValueIllegalError(msg, value=s)
 
-    @classmethod
-    def parse_bool_flex(cls: type[Self], s: str) -> bool:
+    def parse_bool_flex(self: Self, s: str) -> bool:
         """
         Parses a 'true'/'false'/'yes'/'no'/... string to a bool, ignoring case.
 
@@ -341,47 +314,38 @@ class CommonTools:
             XValueError: If neither true nor false
         """
         mp = {
-            **{v: True for v in {"true", "t", "yes", "y", "1"}},
-            **{v: False for v in {"false", "f", "no", "n", "0"}},
+            **{v: True for v in ("true", "t", "yes", "y", "1")},
+            **{v: False for v in ("false", "f", "no", "n", "0")},
         }
         v = mp.get(s.lower())
         if v is None:
             msg = f"{s.lower()} is not in {','.join(mp.keys())}"
-            raise ValueError(msg)
+            raise ValueIllegalError(msg, value=s)
         return v
 
-    @classmethod
-    def is_lambda(cls, function: Any) -> bool:
+    def is_lambda(self: Self, function: Any) -> bool:
         """
         Returns whether this is a lambda function. Will return False for non-callables.
         """
-        # noinspection PyPep8Naming
-        LAMBDA = lambda: 0  # noqa: E731
-        if not hasattr(function, "__name__"):
-            return False  # not a function
-        return (
-            isinstance(function, type(LAMBDA))
-            and function.__name__ == LAMBDA.__name__
-            or str(function).startswith("<function <lambda> at ")
-            and str(function).endswith(">")
-        )
+        return isinstance(function, LambdaType)
 
-    @classmethod
     def only(
-        cls: type[Self],
-        sequence: Iterable[Any],
-        condition: str | Callable[[Any], bool] | None = None,
+        self: Self,
+        sequence: Iterable[T],
+        condition: str | Callable[[T], bool] | None = None,
         *,
-        name: str = "collection",
-    ) -> Any:
+        exception_if_none: Exception = NoMatchesError(),
+        exception_if_multiple: Exception = MultipleMatchesError(),
+    ) -> T:
         """
         Returns either the SINGLE (ONLY) UNIQUE ITEM in the sequence or raises an exception.
         Each item must have __hash__ defined on it.
 
         Args:
             sequence: A list of any items (untyped)
-            condition: If nonnull, consider only those matching this condition
-            name: Just a name for the collection to use in an error message
+            condition: If nonnull, consider only those matching this condition (using `self.look`)
+            exception_if_none: Exception to raise if none match
+            exception_if_multiple: Exception to raise if multiple match
 
         Returns:
             The first item the sequence.
@@ -391,12 +355,12 @@ class CommonTools:
             MultipleMatchesError If there is more than one unique item.
         """
 
-        def _only(sq):
+        def _only(sq: Iterable[T]):
             st = set(sq)
             if len(st) > 1:
-                raise MultipleMatchesError("More then 1 item in " + str(name))
+                raise exception_if_multiple
             if len(st) == 0:
-                raise LookupError("Empty " + str(name))
+                raise exception_if_none
             return next(iter(st))
 
         if condition and isinstance(condition, str):
@@ -404,16 +368,14 @@ class CommonTools:
                 [
                     s
                     for s in sequence
-                    if (not getattr(s, condition[1:]) if condition.startswith("!") else getattr(s, condition))
+                    if (not self.look(s, condition[1:]) if condition.startswith("!") else self.look(s, condition))
                 ],
             )
         elif condition:
             return _only([s for s in sequence if condition(s)])
-        else:
-            return _only(sequence)
+        return _only(sequence)
 
-    @classmethod
-    def forever(cls: type[Self]) -> Iterator[int]:
+    def forever(self: Self) -> Iterator[int]:
         """
         Yields i for i in range(0, infinity).
         Useful for simplifying a i = 0; while True: i += 1 block.
@@ -423,62 +385,54 @@ class CommonTools:
             yield i
             i += 1
 
-    @classmethod
-    def to_true_iterable(cls: type[Self], s: Any) -> Iterable[Any]:
+    def is_true_iterable(self: Self, v: Any) -> bool:
         """
-        See :meth:`is_true_iterable`.
-
-        Examples:
-            - `to_true_iterable('abc')         # ['abc']`
-            - `to_true_iterable(['ab', 'cd')]  # ['ab', 'cd']`
-        """
-        if cls.is_true_iterable(s):
-            return s
-        else:
-            return [s]
-
-    @classmethod
-    def is_true_iterable(cls: type[Self], s: Any) -> bool:
-        """
-        Returns whether `s` is a probably "proper" iterable.
-        In other words, iterable but not a string or bytes.
+        Returns whether `s` is an iterable but not `str` and not `bytes`.
 
         Warning:
-            This is not fully reliable.
             Types that do not define `__iter__` but are iterable
             via `__getitem__` will not be included.
         """
-        return s is not None and isinstance(s, Iterable) and not isinstance(s, str) and not isinstance(s, ByteString)
+        return (
+            v is not None
+            and isinstance(v, Iterable)
+            and not isinstance(v, str)
+            and not isinstance(v, bytes | bytearray | memoryview)
+        )
 
-    @classmethod
     @contextmanager
-    def null_context(cls: type[Self]) -> Generator[None, None, None]:
+    def null_context(self: Self) -> Generator[None, None, None]:
         """
         Returns an empty context (literally just yields).
         Useful to simplify when a generator needs to be used depending on a switch.
-        Ex::
+
+        Example:
+
             if verbose_flag:
                 do_something()
             else:
                 with Tools.silenced():
                     do_something()
-        Can become::
-            with (Tools.null_context() if verbose else Tools.silenced()):
-                do_something()
+
+        Can become:
+
+        ```python
+        with (Tools.null_context() if verbose else Tools.silenced()):
+            do_something()
+        ```
         """
         yield
 
-    @classmethod
-    def look(cls: type[Self], obj: Y, attrs: str | Iterable[str] | Callable[[Y], Z]) -> Z | None:
+    def look(self: Self, obj: T, attrs: str | Iterable[str] | Callable[[T], V_co]) -> V_co | None:
         """
         Follows a dotted syntax for getting an item nested in class attributes.
         Returns the value of a chain of attributes on object `obj`,
         or None any object in that chain is None or lacks the next attribute.
 
         Example:
-            Get a kitten's breed::
 
-                BaseTools.look(kitten), 'breed.name')  # either None or a string
+            # Get a kitten's breed
+            BaseTools.look(kitten), 'breed.name')  # either None or a string
 
         Args:
             obj: Any object
@@ -490,9 +444,6 @@ class CommonTools:
 
         Returns:
             Either None or the type of the attribute
-
-        Raises:
-            TypeError:
         """
         if attrs is None:
             return obj
@@ -510,54 +461,33 @@ class CommonTools:
         except AttributeError:
             return None
 
-    @classmethod
-    def make_writer(cls: type[Self], writer: Writeable | Callable[[str], Any]) -> Writeable:
+    def make_writer(self: Self, writer: Writeable | Callable[[str], Any]) -> Writeable:
         if Writeable.isinstance(writer):
             return writer
         elif callable(writer):
 
-            class W_(Writeable):
-                def write(self: Self, msg):
+            class W(Writeable[V_co]):
+                def write(self: Self, msg: V_co) -> int:
                     writer(msg)
+                    return len(msg)
 
-                def flush(self: Self):
+                def flush(self: Self) -> None:
                     pass
 
-                def close(self: Self):
+                def close(self: Self) -> None:
                     pass
 
-            return W_()
-        msg = f"{type(writer)} cannot be wrapped into a Writeable"
-        raise XTypeError(msg)
+            return W()
+        msg_ = f"{type(writer)} cannot be wrapped into a Writeable"
+        raise TypeError(msg_)
 
-    @classmethod
-    def get_log_function(
-        cls: type[Self],
-        log: (
-            Literal["stdout"]
-            | Literal["stderr"]
-            | Literal["DEBUG"]
-            | Literal["INFO"]
-            | Literal["WARNING"]
-            | Literal["ERROR"]
-            | Literal["FATAL"]
-            | Literal["debug"]
-            | Literal["info"]
-            | Literal["warning"]
-            | Literal["error"]
-            | Literal["fatal"]
-            | Literal[10]
-            | Literal[20]
-            | Literal[30]
-            | Literal[40]
-            | Literal[50]
-            | Writeable
-            | Callable[[str], Any]
-            | None
-        ),
+    def get_log_fn(
+        self: Self,
+        log: (Literal["stdout"] | str | int | Writeable | Callable[[str], Any] | None),
     ) -> Callable[[str], Any]:
         """
         Gets a logging function from user input.
+
         The rules are:
             - If None, uses logger.info
             - If 'print' or 'stdout',  use sys.stdout.write
@@ -586,16 +516,18 @@ class CommonTools:
         elif hasattr(log, "write"):
             return log.write
         msg = f"Log type {type(log)} not known"
-        raise XTypeError(msg, actual=str(type(log)))
+        raise ValueIllegalError(msg, value=log)
 
-    @classmethod
-    def sentinel(cls: type[Self], name: str) -> Any:
+    def sentinel(self: Self, name: str) -> Any:
         class _Sentinel:
-            def __eq__(self: Self, other):
+            def __eq__(self: Self, other: Self) -> bool:
                 return self is other
 
-            def __reduce__(self: Self):
+            def __reduce__(self: Self) -> str:
                 return name  # returning string is for singletons
+
+            def __hash__(self: Self) -> int:
+                return hash(name)
 
             def __str__(self: Self) -> str:
                 return name
@@ -605,11 +537,15 @@ class CommonTools:
 
         return _Sentinel()
 
-    def __repr__(self: Self) -> str:
-        return self.__class__.__name__
+    def longest(self: Self, parts: Iterable[V_co]) -> V_co:
+        """
+        Returns an element with the highest `len`.
+        """
+        mx = ""
+        for _i, x in enumerate(parts):
+            if len(x) > len(mx):
+                mx = x
+        return mx
 
-    def __str__(self: Self) -> str:
-        return self.__class__.__name__
 
-
-__all__ = ["CommonTools", "Writeable"]
+CommonTools = CommonUtils()

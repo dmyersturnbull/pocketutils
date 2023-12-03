@@ -1,3 +1,10 @@
+# SPDX-FileCopyrightText: Copyright 2020-2023, Contributors to pocketutils
+# SPDX-PackageHomePage: https://github.com/dmyersturnbull/pocketutils
+# SPDX-License-Identifier: Apache-2.0
+"""
+
+"""
+
 from __future__ import annotations
 
 import abc
@@ -7,6 +14,7 @@ from typing import TYPE_CHECKING, Any, Generic, Self, TypeVar, Unpack
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterable, Mapping
+
 
 T_co = TypeVar("T_co", covariant=True)
 

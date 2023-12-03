@@ -1,210 +1,197 @@
+# SPDX-FileCopyrightText: Copyright 2020-2023, Contributors to pocketutils
+# SPDX-PackageHomePage: https://github.com/dmyersturnbull/pocketutils
+# SPDX-License-Identifier: Apache-2.0
 """
 The motivation here is simply that Python lacks some standard exceptions that I consider important.
 Projects can/should subclass from these in addition to the normal Python ones.
 """
+
 from __future__ import annotations
 
+import errno as _errno
 import os as _os
-from collections.abc import Collection as _Collection
-from collections.abc import Mapping
-from functools import wraps as _wraps
-from pathlib import PurePath as _PurePath
-from typing import Any, Self, Unpack
 from typing import Any as _Any
-
-KeyLike = _Any
-PathLike = _PurePath | str, _os.PathLike
-
-
-###################################################################################################
-#                                                                                                 #
-#                                             utilities                                           #
-#                                                                                                 #
-###################################################################################################
+from typing import Self
+from typing import Unpack as _Unpack
 
 
-class ErrorUtils:
-    """Utilities for creating and modifying errors."""
-
-    @staticmethod
-    def args(**names):
-        """
-        Decorator.
-        Add a __init__ that calls the superclass and takes any argument in names.
-        The __init__ will set: (self.name=value if name is passed else None) for all name in names.
-
-        Args:
-            names: A map from str to Type
-        """
-        if any(s == "info" or s.startswith("__") and s.endswith("__") for s in names):
-            msg = f"Failed on {names}"
-            raise AssertionError(msg)
-
-        @_wraps(names)
-        def dec(cls: type[Self]) -> str:
-            def _doc(doc: str) -> str:
-                if doc is None:
-                    doc = ""
-                elif not doc.endswith("."):
-                    doc += "."
-                return (
-                    doc
-                    + "\n"
-                    + "Supports attributes:\n"
-                    + "\n".join(
-                        [
-                            "    • " + name + ": " + str(dtype).replace("<class '", "").replace("'>", "")
-                            for name, dtype in names.items()
-                        ],
-                    )
-                )
-
-            def _init(self: Self, *args, **kwargs) -> None:
-                kwargs = dict(kwargs)
-                # when we call super(), we need to know which class we're on and which should be called next
-                # note that self will always be the first class
-                thisclass = kwargs.pop("__thisclass") if "__thisclass" in kwargs else self.__class__
-                for name in names:
-                    if name in kwargs:
-                        value = kwargs.pop(name)
-                        # TODO in the future, we can warn when type-checks fail; impossible in current Python
-                        setattr(self, name, value)
-                    else:
-                        setattr(self, name, None)
-                    nextclass = thisclass.__mro__[1]
-                    # noinspection PyArgumentList
-                    # be careful! use `thisclass` as an argument (not self)
-                    super(thisclass, self).__init__(*args, __thisclass=nextclass, **kwargs)
-
-            cls.__init__ = _init
-            cls.__doc__ = _doc(cls.__doc__)
-            return cls
-
-        return dec
+class InsecureWarning(UserWarning):
+    """A warning about an operation that is potentially insecure but is proceeding regardless."""
 
 
-class _FnUtils:
-    """
-    Abstract class for warnings and errors that can contain extra attributes.
-    """
-
-    def eq(self: Self, other: Self) -> bool:
-        return (
-            type(self) == type(other)
-            and str(self) == str(other)
-            and all(getattr(self, name) == getattr(other, name) for name in self.__dict__)
-        )
-
-    def info(self: Self) -> str:
-        return (
-            self.__class__.__name__
-            + ":"
-            + str(self)
-            + "("
-            + ",".join([k + "=" + str(v) for k, v in sorted(self.__dict__.items())])
-            + ")"
-        )
-
-
-###################################################################################################
-#                                                                                                 #
-#                                           warning types                                         #
-#                                                                                                 #
-###################################################################################################
-
-
-# NOTE: line 2nd col at 50 chars, no matter what
-# This indentation makes it easy to see new definitions
-# If not possible, adjust only for that line
-# Don't adjust existing lines from 50 to avoid git tracking
-
-
-class XException(Exception):
-    """Abstract exception whose subclasses can define extra attributes using ErrorTools.args."""
-
-    def __init__(self: Self, *args, **kwargs: Unpack[Mapping[str, Any]]) -> None:
-        pass
-
-    info = _FnUtils.info
-    __eq__ = _FnUtils.eq
-
-
-class XWarning(UserWarning):
-    """Abstract user warning whose subclasses can define extra attributes using ErrorTools.args."""
-
-    def __init__(self: Self, *args, **kwargs: Unpack[Mapping[str, Any]]) -> None:
-        pass
-
-    info = _FnUtils.info
-    __eq__ = _FnUtils.eq
-
-
-class _OpWarning(XWarning):
-    """A warning related to problematic requests."""
-
-
-class DangerousRequestWarning(_OpWarning):
-    """A warning about an operation that is dangerous but is proceeding regardless."""
-
-
-class StrangeRequestWarning(_OpWarning):
-    """A warning about a potential result being wrong because weird arguments were passed."""
-
-
-class IgnoringRequestWarning(_OpWarning):
+class RequestIgnoredError(UserWarning):
     """A request or passed argument was ignored."""
 
 
-class _MissingWarning(XWarning):
-    """A request related to something missing."""
+class RequestStrangeWarning(UserWarning):
+    """A warning about a potential result being wrong because a request was strange."""
 
 
-@ErrorUtils.args(package=str)
-class ImportFailedWarning(_MissingWarning):
-    """Could not import a recommended package."""
-
-
-@ErrorUtils.args(key=KeyLike)
-class ConfigWarning(_MissingWarning):
-    """Did not find a recommended config entry, etc."""
-
-
-class AlgorithmWarning(XWarning):
+class ResultStrangeWarning(UserWarning):
     """A warning about a potential result being wrong."""
 
 
-@ErrorUtils.args(data_key=KeyLike)
-class DataWarning(XWarning):
-    """External data is suspicious / might contain an error."""
+class TypedOSError(OSError):
+    def __init__(
+        self: Self,
+        *,
+        errno: int | None = None,
+        winerror: int | None = None,
+        strerror: str | None = None,
+        filename: str | None = None,
+        filename2: str | None = None,
+    ) -> None:
+        super().__init__(errno, winerror, strerror, filename, filename2)
 
 
-###################################################################################################
-#                                                                                                 #
-#                                            error types                                          #
-#                                                                                                 #
-###################################################################################################
+class TypedIOError(OSError):
+    def __init__(
+        self: Self,
+        *,
+        errno: int | None = _errno.EIO,
+        winerror: int | None = None,
+        strerror: str | None = _os.strerror(_errno.EIO),
+        filename: str | None = None,
+        filename2: str | None = None,
+    ) -> None:
+        super().__init__(errno, winerror, strerror, filename, filename2)
 
 
-class Error(XException):
+class PathMissingError(FileNotFoundError):
+    def __init__(
+        self: Self,
+        *,
+        errno: int | None = _errno.EEXIST,
+        winerror: int | None = None,
+        strerror: str | None = _os.strerror(_errno.ENOENT),
+        filename: str | None = None,
+        filename2: str | None = None,
+    ) -> None:
+        super().__init__(errno, winerror, strerror, filename, filename2)
+
+
+class PathExistsError(FileExistsError):
+    def __init__(
+        self: Self,
+        *,
+        errno: int | None = _errno.EEXIST,
+        winerror: int | None = None,
+        strerror: str | None = _os.strerror(_errno.EEXIST),
+        filename: str | None = None,
+        filename2: str | None = None,
+    ) -> None:
+        super().__init__(errno, winerror, strerror, filename, filename2)
+
+
+class AccessDeniedError(PermissionError):
+    def __init__(
+        self: Self,
+        *,
+        errno: int | None = _errno.EACCES,
+        winerror: int | None = None,
+        strerror: str | None = _os.strerror(_errno.EACCES),
+        filename: str | None = None,
+        filename2: str | None = None,
+    ) -> None:
+        super().__init__(errno, winerror, strerror, filename, filename2)
+
+
+class TypedIsADirectoryError(IsADirectoryError):
+    def __init__(
+        self: Self,
+        *,
+        errno: int | None = _errno.ENOTDIR,
+        winerror: int | None = None,
+        strerror: str | None = _os.strerror(_errno.ENOTDIR),
+        filename: str | None = None,
+        filename2: str | None = None,
+    ) -> None:
+        super().__init__(errno, winerror, strerror, filename, filename2)
+
+
+class TypedNotADirectoryError(NotADirectoryError):
+    def __init__(
+        self: Self,
+        *,
+        errno: int | None = _errno.ENOTDIR,
+        winerror: int | None = None,
+        strerror: str | None = _os.strerror(_errno.ENOTDIR),
+        filename: str | None = None,
+        filename2: str | None = None,
+    ) -> None:
+        super().__init__(errno, winerror, strerror, filename, filename2)
+
+
+class DeviceMissingError(OSError):
+    def __init__(
+        self: Self,
+        *,
+        errno: int | None = _errno.ENODEV,
+        winerror: int | None = None,
+        strerror: str | None = _os.strerror(_errno.ENODEV),
+        filename: str | None = None,
+        filename2: str | None = None,
+    ) -> None:
+        super().__init__(errno, winerror, strerror, filename, filename2)
+
+
+class Error(Exception):
     """
-    Abstract exception that could reasonably be recovered from.
-    Subclass names should end with 'Error'.
+    Abstract exception with a message.
+    """
+
+    def __init__(self: Self, message: str | None = None, **kwargs: _Unpack[str, _Any]) -> None:
+        self.message = message
+        super().__init__(message, list(kwargs.values()))
+        self._args = list(kwargs.values())
+
+    def __str__(self) -> str:
+        return repr(self)
+
+    def __repr__(self: Self) -> str:
+        args = str(dict(zip(["message"] + self._args, self.args)))[1:-1]
+        extras = ", ".join(self.args[len(self._args) + 1 :])
+        return self.__class__.__qualname__ + "{" + args + (" (" + extras + ")" if len(extras) > 0 else "") + "}"
+
+
+class ExpectedError(Error):
+    """
+    Non-specific exception to short-circuit behavior but meaning 'all ok'.
+    Consider subclassing it.
     """
 
 
-class NaturalExpectedError(Error):
-    """Non-specific exception to short-circuit behavior but meaning 'all ok'."""
+class UserError(Error):
+    """An error caused by input from a user of an application."""
 
 
-class IllegalStateError(Error, AssertionError):
+class MultipleMatchesError(Error):
     """
-    An assertion failed marking invalid state, potentially recoverable.
-    See Also:
-         :class:`OpStateError`
+    Multiple records match when only 1 was expected.
+    Also applies if 0 or 1 records are permitted.
     """
 
 
-class UnsupportedOpError(Error):
+class NoMatchesError(Error):
+    """
+    No records match when at least 1 was expected.
+    """
+
+
+class AlgorithmError(Error):
+    """
+    An incompletely understood failure.
+    For example, try/except around a complex algorithm and reraise as `AlgorithmError`.
+    """
+
+
+class StateIllegalError(Error):
+    """
+    A high-level assertion detected an invalid state.
+    """
+
+
+class OperationNotSupportedError(Error):
     """
     Used as a replacement for NotImplementedError, where the method *should not* be implemented.
     This also differs from `NotImplemented` in that is permanent
@@ -212,41 +199,13 @@ class UnsupportedOpError(Error):
     """
 
 
-class NotConstructableError(UnsupportedOpError):
-    """
-    Constructing this object is not supported.
-    It's probably a singleton, static utils, or has factory methods.
-    """
-
-
-@ErrorUtils.args(class_name=str)
-class ImmutableError(UnsupportedOpError):
-    """Tried to mutate an immutable object."""
-
-
-class OpStateError(UnsupportedOpError):
-    """
-    The operation cannot be performed on an object in this state.
-    See Also:
-         :class:`IllegalStateError`
-    """
-
-
-@ErrorUtils.args(n=int)
-class MultipleMatchesError(Error):
-    """
-    Multiple records match when only 1 was expected.
-    Also applies if 0 or records are permitted.
-    Has argument `n` containing the number.
-    """
+#
+# "Security" errors
+#
 
 
 class SecurityError(Error):
     """Security error."""
-
-
-class IdentificationError(SecurityError):
-    """Identification error."""
 
 
 class AuthenticationError(SecurityError):
@@ -257,311 +216,348 @@ class AuthorizationError(SecurityError):
     """Authorization error."""
 
 
-class UserError(Error):
-    """An error caused by input from a user of an application."""
+#
+# "Resource" errors
+#
 
 
-@ErrorUtils.args(cmd=str)
-class BadCommandError(UserError):
-    """The user passed an invalid command, such as at the command-line."""
-
-
-class ConfigError(UserError):
-    """Error while interpreting a config file from the user."""
-
-
-class MissingConfigKeyError(UserError):
-    """Missing a required key."""
-
-
-class RefusingRequestError(UserError):
-    """The user requested an operation that is understood but is being refused."""
-
-
-@ErrorUtils.args(key=KeyLike)
 class ResourceError(Error):
-    """A problem finding or loading a resource (file, network connection, hardware, etc.)."""
+    """A problem finding or loading a resource that the application needs."""
 
+    def __init__(
+        self: Self,
+        message: str | None = None,
+        *,
+        resource: str | None = None,
+        **kwargs: _Unpack[str, _Any],
+    ) -> None:
+        super().__init__(message, resource=resource, **kwargs)
+        self.resource = resource
 
-@ErrorUtils.args(expected=str, actual=str)
-class HashValidationError(ResourceError):
-    """A resource checksum did not validate."""
 
+class ResourceMissingError(ResourceError):
+    """Could not find a resource by name (e.g., a config file)."""
 
-class LockedError(ResourceError):
-    """A resource was found but is locked (ex a hardware component in use)."""
 
+class ResourceInvalidError(ResourceError):
+    """Resource found but invalid; e.g., error parsing a config file."""
 
-class MissingEnvVarError(ResourceError):
-    """Missing a required environment variable."""
 
-
-class IncompatibleDataError(ResourceError):
-    """An operation cannot be applied to data with this property value."""
-
-
-class MismatchedDataError(ResourceError):
-    """A property of the data is different between multiple elements."""
-
-
-class MissingResourceError(ResourceError):
-    """Could not find a resource (general case)."""
-
-
-class LookupFailedError(MissingResourceError):
-    """Could not find a resource by name."""
-
-
-class InjectionError(LookupFailedError):
-    """Could not find a class or method name for dependency injection."""
-
-
-class DbLookupError(LookupFailedError):
-    """Could not find an entry in an external database."""
-
-
-class RequestError(Error):
-    """A generic error related to arguments."""
-
-
-@ErrorUtils.args(key=KeyLike)
-class RefusingError(RequestError):
-    """
-    General-case refusal to run an operation, not clearly caused by an application user.
-
-    See Also:
-        RefusingRequestError
-    """
-
-
-class AmbiguousRequestError(RequestError):
-    """Insufficient information was passed to resolve the operation."""
-
-
-class ContradictoryRequestError(RequestError):
-    """Contradictory information was passed."""
-
-
-@ErrorUtils.args(key=KeyLike)
-class ReservedError(RequestError):
-    """A key is reserved by the code and cannot be used."""
-
-
-@ErrorUtils.args(key=KeyLike)
-class AlreadyUsedError(RequestError):
-    """A key was specified twice."""
-
-
-class _SizeError(Error):
-    """Too small or large for the operation."""
-
-
-@ErrorUtils.args(length=int, minimum=int, maximum=int)
-class LengthError(_SizeError):
-    """The length is too large or too small."""
-
-
-@ErrorUtils.args(lengths=_Collection[int])
-class LengthMismatchError(_SizeError):
-    """The objects (2 or more) have different lengths."""
-
-
-@ErrorUtils.args(expected=int, actual=int)
-class WrongDimensionError(_SizeError):
-    """The object has the wrong number of dimensions (ex matrix instead of vector)"""
-
-
-class EmptyCollectionError(_SizeError):
-    """The object has no elements."""
-
-
-@ErrorUtils.args(expected=str, actual=str)
-class XTypeError(Error, TypeError):
-    """A TypeError containing the expected and actual types."""
-
-
-@ErrorUtils.args(value=_Any)
-class XValueError(Error, ValueError):
-    """A ValueError containing the value."""
-
-
-@ErrorUtils.args(pattern=str)
-class StringPatternError(XValueError):
-    """A string did not match a required regular expression."""
-
-
-@ErrorUtils.args(minimum=int, maximum=int)
-class OutOfRangeError(XValueError):
-    """A numerical value is outside a required range."""
-
-
-class ZeroDistanceError(XValueError):
-    """Two (or more) values are the same by distance."""
-
-
-class NullValueError(XValueError):
-    """A value of None, NaN, or similar was given."""
-
-
-@ErrorUtils.args(value=KeyLike)
-class _NumericError(Error):
-    """An error with a (simple) numeric operation."""
-
-
-class NumericConversionError(_NumericError):
-    """Could not convert one numeric type to another."""
-
-
-class InexactRoundError(_NumericError):
-    """A floating-point number could not be cast to an integer."""
-
-
-@ErrorUtils.args(key=KeyLike)
-class XKeyError(Error, KeyError):
-    """KeyError that contains the failed key."""
-
-
-# parsing files or similar resources
-@ErrorUtils.args(resource=_Any)
-class _ParsingLikeError(Error):
-    """Failed to parse."""
-
-
-class ParsingError(Error):
-    """Syntax error when parsing."""
-
-
-@ErrorUtils.args(item=KeyLike)
-class UnrecognizedKeyError(_ParsingLikeError):
-    """A configuration entry was set, but the code doesn't recognize that name."""
-
-
-@ErrorUtils.args(item=KeyLike)
-class AbstractWrappedError(Error):
-    pass
-
-
-class DataIntegrityError(AbstractWrappedError):
+class ResourceIncompleteError(ResourceInvalidError):
     """Data is missing, incomplete, or invalid. More complex than a missing value."""
 
 
-class AlgorithmError(AbstractWrappedError):
-    """A wrapper for some less meaningful error."""
+class ResourceLockedError(ResourceError):
+    """A resource was found but is locked (ex a hardware component in use)."""
 
 
-class ConstructionError(AbstractWrappedError):
-    """A wrapper for some less meaningful error."""
+#
+# "Request" errors
+#
 
 
-class _IoError(Error, IOError):
-    """Error related to the filesystem or I/O."""
+class RequestError(Error):
+    """An error related to an invalid command, function, args, etc."""
 
 
-@ErrorUtils.args(device=KeyLike)
-class HardwareError(_IoError):
-    """Error related to hardware such as an Arduino."""
+class RequestRefusedError(RequestError):
+    """
+    Refusal to handle a request.
+    """
 
 
-class DeviceConnectionError(HardwareError):
-    """Could not connect to the device."""
+class RequestAmbiguousError(RequestError):
+    """Insufficient information was passed to resolve the operation."""
 
 
-class MissingDeviceError(HardwareError):
-    """Could not find the needed device."""
+class RequestContradictoryError(RequestError):
+    """Contradictory information was passed."""
 
 
-@ErrorUtils.args(key=KeyLike, value=_Any)
-class BadWriteError(HardwareError):
-    """Could not write to a hardware device (typically to a pin)."""
+#
+# "Key" errors
+#
 
 
-@ErrorUtils.args(key=KeyLike)
-class _LoadSaveError(_IoError):
-    """Error loading or saving a file."""
+class KeyReservedError(Error):
+    """A key is reserved by the code and cannot be used."""
+
+    def __init__(
+        self: Self,
+        message: str | None = None,
+        *,
+        key: str | None = None,
+        keys: set[str] | frozenset[str] | None = None,
+        **kwargs: _Unpack[str, _Any],
+    ) -> None:
+        super().__init__(message, key=key, keys=keys, **kwargs)
+        self.key = key
+        self.keys = keys
 
 
-class LoadError(_LoadSaveError):
-    """Failed to load a file."""
+class KeyReusedError(Error):
+    """One or more keys were specified twice."""
+
+    def __init__(
+        self: Self,
+        message: str | None = None,
+        *,
+        key: str | None = None,
+        keys: set[str] | frozenset[str] | None = None,
+        original_value: _Any = None,
+        **kwargs: _Unpack[str, _Any],
+    ) -> None:
+        super().__init__(message, key=key, keys=keys, original_value=original_value, **kwargs)
+        self.key = key
+        self.keys = keys
+        self.original_value = original_value
 
 
-class SaveError(_LoadSaveError):
-    """Failed to save a file."""
+#
+# "Value" errors
+#
 
 
-class FilenameSuffixError(_LoadSaveError):
+class ValueIllegalError(Error):
+    """A high-level error about a invalid value."""
+
+    def __init__(
+        self: Self,
+        message: str | None = None,
+        *,
+        value: _Any = None,
+        values: set[_Any] | frozenset[_Any] | None = None,
+        **kwargs: _Unpack[str, _Any],
+    ) -> None:
+        super().__init__(message, value=value, values=values, **kwargs)
+        self.value = value
+        self.values = values
+
+
+class LengthMismatchError(ValueIllegalError):
+    """The objects (2 or more) have different lengths."""
+
+
+class ValueEmptyError(ValueIllegalError):
+    """The object has no elements."""
+
+
+class ValueNullError(ValueIllegalError):
+    """A value of None, NaN, or similar was given."""
+
+
+class ValueNotNumericError(ValueIllegalError):
+    """Could not convert one numeric type to another."""
+
+
+class ValueNotIntegerError(ValueIllegalError):
+    """A floating-point number could not be cast to an integer."""
+
+
+class ValueOutOfRangeError(ValueIllegalError):
+    """A numerical value is outside a required range."""
+
+    def __init__(
+        self: Self,
+        message: str | None = None,
+        *,
+        value: _Any = None,
+        values: set[_Any] | frozenset[_Any] | None = None,
+        minimum: _Any = None,
+        maximum: _Any = None,
+        **kwargs: _Unpack[str, _Any],
+    ) -> None:
+        super().__init__(message, value=value, values=values, minimum=minimum, maximum=maximum, **kwargs)
+        self.value = value
+        self.values = values
+
+
+#
+# "Device" errors
+#
+
+
+class DeviceError(Error):
+    """Error related to hardware such as a printer."""
+
+    def __init__(
+        self: Self,
+        message: str | None = None,
+        *,
+        device: str | None = None,
+        **kwargs: _Unpack[str, _Any],
+    ) -> None:
+        super().__init__(message, device=device, **kwargs)
+        self.device = device
+
+
+class DeviceConnectionFailedError(DeviceError):
+    """Found a device but could not connect."""
+
+
+class DeviceReadFailedError(DeviceError):
+    """Failed to read from a device (IOError subclass)."""
+
+
+class DeviceWriteFailedError(DeviceError):
+    """Failed to write to a device (IOError subclass)."""
+
+
+#
+# IO-like errors
+#
+
+
+class NetworkError(Error):
+    """
+    Couldn't read or write on a network.
+    """
+
+    def __init__(
+        self: Self,
+        message: str | None = None,
+        *,
+        uri: str | None = None,
+        **kwargs: _Unpack[str, _Any],
+    ) -> None:
+        self.uri = uri
+        super().__init__(message, uri=uri, **kwargs)
+
+
+class DownloadFailedError(NetworkError):
+    """Failed to download a file (IOError subclass)."""
+
+
+class UploadFailedError(NetworkError):
+    """Failed to upload a file (IOError subclass)."""
+
+
+class FilenameSuffixInvalidError(Error):
     """
     A filename extension was not recognized.
+
+    Attributes:
+        suffix: The unrecognized suffix
+        filename: The bad filename
     """
 
+    def __init__(
+        self: Self,
+        message: str | None = None,
+        *,
+        suffix: str | None = None,
+        filename: str | None = None,
+        **kwargs: _Unpack[str, _Any],
+    ) -> None:
+        super().__init__(message, suffix=suffix, filename=filename, **kwargs)
+        self.message = message
+        self.suffix = suffix
+        self.filename = filename
 
-class CacheLoadError(_LoadSaveError):
-    """Failed to load a file from a cache."""
 
-
-class CacheSaveError(_LoadSaveError):
-    """Failed to save a file to a cache."""
-
-
-class DownloadError(_LoadSaveError):
-    """Failed to download a file."""
-
-
-class DownloadTimeoutError(DownloadError, TimeoutError):
+class ValueNotUniqueError(Error):
     """
-    User-supplied files.
-    """
+    There is more than 1 unique value.
 
-
-class UploadError(_LoadSaveError):
-    """Failed to upload a file."""
-
-
-@ErrorUtils.args(path=PathLike)
-class PathError(_IoError):
-    """Error involving a path on the filesystem."""
-
-
-class IllegalPathError(PathError, ValueError):
-    """Not a valid path (e.g. not ok on the filesystem)."""
-
-
-class InvalidFileType(PathError):
-    """Not a valid file type."""
-
-
-class FileDoesNotExistError(PathError):
-    """A file is expected, but the path does not exist."""
-
-
-class DirDoesNotExistError(PathError):
-    """A directory is expected, but the path does not exist."""
-
-
-class PathExistsError(PathError):
-    """The path already exists."""
-
-
-class XFileExistsError(PathError, FileExistsError):
-    """The file already exists."""
-
-
-class PathIsNotAFileError(PathExistsError):
-    """The path already exists and is not a file."""
-
-
-class PathIsNotADirError(PathExistsError):
-    """The path already exists and is not a directory."""
-
-
-@ErrorUtils.args(path=PathLike)
-class ReadPermissionsError(OSError):
-    """
-    Couldn't read from a file.
+    Attributes:
+        message: Message
+        key: The key used for lookup
+        values: The set of values
     """
 
+    def __init__(
+        self: Self,
+        message: str | None = None,
+        *,
+        key: str | None = None,
+        values: set[str] | None = None,
+        **kwargs: _Unpack[str, _Any],
+    ) -> None:
+        super().__init__(message, key=key, values=values, **kwargs)
+        self.key = key
+        self.values = values
 
-@ErrorUtils.args(path=PathLike)
-class WritePermissionsError(OSError):
+
+class ReadFailedError(Error):
     """
-    Couldn't write to a file.
+    Couldn't read from a resource (file, network, database, etc.).
+
+    Arguments:
+        message: Message
+        filename: The resource path, URI, etc.
     """
+
+    def __init__(
+        self: Self,
+        message: str | None = None,
+        *,
+        filename: str | None = None,
+        **kwargs: _Unpack[str, _Any],
+    ) -> None:
+        super().__init__(message, filename=filename, **kwargs)
+        self.filename = filename
+
+
+class WriteFailedError(Error):
+    """
+    Couldn't write to a resource (file, network, database, etc.).
+
+    Arguments:
+        message: Message
+        filename: The resource path, URI, etc.
+    """
+
+    def __init__(
+        self: Self,
+        message: str | None = None,
+        *,
+        filename: str | None = None,
+        **kwargs: _Unpack[str, _Any],
+    ) -> None:
+        super().__init__(message, filename=filename, **kwargs)
+        self.filename = filename
+
+
+class HashFailedError(Error):
+    """
+    Could not compute a hash or read/write a hash file.
+
+    Attributes:
+        message: Message
+        filename: The filename
+    """
+
+    def __init__(
+        self: Self,
+        message: str | None = None,
+        *,
+        filename: str | None = None,
+        **kwargs: _Unpack[str, _Any],
+    ) -> None:
+        super().__init__(message, filename=filename, **kwargs)
+        self.filename = filename
+
+
+class HashIncorrectError(Error):
+    """
+    The hashes did not validate (expected != actual).
+
+    Attributes:
+        filename: The hash filename
+        actual: The actual hex-encoded hash
+        expected: The expected hex-encoded hash
+    """
+
+    def __init__(
+        self: Self,
+        message: str | None = None,
+        *,
+        filename: str | None = None,
+        actual: str | None = None,
+        expected: str | None = None,
+        **kwargs: _Unpack[str, _Any],
+    ) -> None:
+        super().__init__(message, filename=filename, actual=actual, expected=expected, **kwargs)
+        self.filename = filename
+        self.actual = actual
+        self.expected = expected

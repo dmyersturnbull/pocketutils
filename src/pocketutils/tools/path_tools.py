@@ -1,17 +1,25 @@
+# SPDX-FileCopyrightText: Copyright 2020-2023, Contributors to pocketutils
+# SPDX-PackageHomePage: https://github.com/dmyersturnbull/pocketutils
+# SPDX-License-Identifier: Apache-2.0
+"""
+
+"""
+
 import logging
 import os
+import re
 import sys
 from collections.abc import Callable, Sequence
 from copy import copy
+from dataclasses import dataclass
 from pathlib import Path, PurePath
 from typing import Any, Self
 
-import regex
+from pocketutils import ValueIllegalError
 
-from pocketutils.core.exceptions import ContradictoryRequestError, IllegalPathError
+__all__ = ["PathUtils", "PathTools"]
 
 logger = logging.getLogger("pocketutils")
-
 
 _bad_chars = {
     "<",
@@ -24,7 +32,7 @@ _bad_chars = {
     "\\",
     "/",
     *{chr(c) for c in range(128, 128 + 33)},
-    *{chr(c) for c in range(0, 32)},
+    *{chr(c) for c in range(32)},
     "\t",
 }
 
@@ -63,13 +71,12 @@ _bad_strs = {
 _bad_strs_fat = {*_bad_strs, *{"$IDLE$", "CONFIG$", "KEYBD$", "SCREEN$", "CLOCK$", "LST"}}
 
 
-class PathTools:
-    @classmethod
-    def is_path_like(cls: type[Self], value: Any):
+@dataclass(slots=True, frozen=True)
+class PathUtils:
+    def is_path_like(self: Self, value: Any) -> bool:
         return isinstance(value, str | PurePath | os.PathLike)
 
-    @classmethod
-    def up_dir(cls: type[Self], n: int, *parts) -> Path:
+    def up_dir(self: Self, n: int, *parts) -> Path:
         """
         Get an absolute path `n` parents from `os.getcwd()`.
         Does not sanitize.
@@ -84,12 +91,11 @@ class PathTools:
             base = base / part
         return base.resolve()
 
-    @classmethod
-    def guess_trash(cls: type[Self]) -> Path:
+    def guess_trash(self: Self) -> Path:
         """
         Chooses a reasonable path for trash based on the OS.
-        This is not reliable. For a more sophisticated solution,
-        see https://github.com/hsoft/send2trash
+        This is not reliable.
+        For a more sophisticated solution, see https://github.com/hsoft/send2trash
         However, even that can fail.
         """
         plat = sys.platform.lower()
@@ -100,9 +106,8 @@ class PathTools:
         else:
             return Path.home() / ".trash"
 
-    @classmethod
     def sanitize_path(
-        cls: type[Self],
+        self: Self,
         path: PurePath | str,
         *,
         is_file: bool | None = None,
@@ -127,14 +132,12 @@ class PathTools:
         path = str(path)
         if path.startswith("\\\\?"):
             msg = f"Long UNC Windows paths (\\\\? prefix) are not supported (path '{path}')"
-            raise IllegalPathError(
-                msg,
-            )
+            raise ValueIllegalError(msg, value=str(path))
         bits = str(path).strip().replace("\\", "/").split("/")
-        new_nodes = list(cls.sanitize_nodes(bits, is_file=is_file, fat=fat, trim=trim))
+        new_nodes = list(self.sanitize_nodes(bits, is_file=is_file, fat=fat, trim=trim))
         # unfortunately POSIX turns Path('C:\', '5') into C:\/5
         # this isn't an ideal way to fix it, but it works
-        pat = regex.compile(r"^([A-Z]:)(?:\\)?$", flags=regex.V1)
+        pat = re.compile(r"^([A-Z]:)\\?$")
         if os.name == "posix" and len(new_nodes) > 0 and pat.fullmatch(new_nodes[0]):
             new_nodes[0] = new_nodes[0].rstrip("\\")
             new_nodes.insert(0, "/")
@@ -143,9 +146,8 @@ class PathTools:
             w(f"Sanitized filename {path} → {new_path}")
         return Path(new_path)
 
-    @classmethod
     def sanitize_nodes(
-        cls: type[Self],
+        self: Self,
         bits: Sequence[PurePath | str],
         *,
         is_file: bool | None = None,
@@ -155,7 +157,7 @@ class PathTools:
         fixed_bits = [
             bit + os.sep
             if i == 0 and bit.strip() in ["", ".", ".."]
-            else cls.sanitize_node(
+            else self.sanitize_node(
                 bit,
                 is_file=(False if i < len(bits) - 1 else is_file),
                 trim=trim,
@@ -168,9 +170,8 @@ class PathTools:
         ]
         return [bit for i, bit in enumerate(fixed_bits) if i == 0 or bit not in ["", "."]]
 
-    @classmethod
     def sanitize_node(
-        cls: type[Self],
+        self: Self,
         bit: PurePath | str,
         *,
         is_file: bool | None = None,
@@ -195,14 +196,11 @@ class PathTools:
             is_root_or_drive: True if known to be the root ('/') or a drive ('C:\'), None if unknown
             fat: Also make compatible with FAT filesystems
             trim: Truncate to 254 chars (otherwise fails)
-
-        Returns:
-            A string
         """
         # since is_file and is_root_or_drive are both Optional[bool], let's be explicit and use 'is' for clarity
         if is_file is True and is_root_or_drive is True:
             msg = "is_file and is_root_or_drive are both true"
-            raise ContradictoryRequestError(msg)
+            raise ValueIllegalError(msg)
         if is_file is True and is_root_or_drive is None:
             is_root_or_drive = False
         if is_root_or_drive is True and is_file is None:
@@ -216,7 +214,7 @@ class PathTools:
             # \ is allowed in Windows
             if bit in ["/", "\\"]:
                 return bit
-            m = regex.compile(r"^([A-Z]:)(?:\\)?$", flags=regex.V1).fullmatch(bit)
+            m = re.compile(r"^([A-Z]:)(?:\\)?$").fullmatch(bit)
             # this is interesting
             # for bit=='C:' and is_root_or_drive=None,
             # it could be either a drive letter
@@ -231,7 +229,7 @@ class PathTools:
                 return m.group(1) + "\\"
             if is_root_or_drive is True:
                 msg = f"Node '{bit}' is not the root or a drive letter"
-                raise IllegalPathError(msg)
+                raise ValueIllegalError(msg, value=bit)
         # just dots is invalid
         if set(bit.replace(" ", "")) == "." and bit not in ["..", "."]:
             bit = "_" + bit + "_"
@@ -260,8 +258,8 @@ class PathTools:
             bit = bit[:254]
         elif len(bit) > 254:
             msg = f"Node '{source_bit}' has more than 254 characters"
-            raise IllegalPathError(msg)
+            raise ValueIllegalError(msg, value=bit)
         return bit
 
 
-__all__ = ["PathTools"]
+PathTools = PathUtils()

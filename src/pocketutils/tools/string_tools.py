@@ -1,76 +1,46 @@
+# SPDX-FileCopyrightText: Copyright 2020-2023, Contributors to pocketutils
+# SPDX-PackageHomePage: https://github.com/dmyersturnbull/pocketutils
+# SPDX-License-Identifier: Apache-2.0
+"""
+
+"""
+
 import re
-from collections.abc import ByteString, Callable, Iterable, Mapping, Sequence
+from collections.abc import Callable, Iterable, Mapping, Sequence
+from dataclasses import dataclass
 from typing import Any, Self, TypeVar
 
 import orjson
 import regex
 
-from pocketutils.core.exceptions import OutOfRangeError, XTypeError, XValueError
+from pocketutils.core.exceptions import ValueIllegalError, ValueOutOfRangeError
 
-T = TypeVar("T")
-V = TypeVar("V")
-_control_chars = regex.compile(r"\p{C}", flags=regex.V1)
+__all__ = ["StringUtils", "StringTools"]
+
+K_contra = TypeVar("K_contra", contravariant=True)
+V_co = TypeVar("V_co", covariant=True)
+_control_chars = regex.compile(r"\p{C}", flags=regex.VERSION1)
 
 
 def is_true_iterable(s: Any) -> bool:
-    return s is not None and isinstance(s, Iterable) and not isinstance(s, str) and not isinstance(s, ByteString)
-
-
-def _is_lambda(function: Any) -> bool:
-    # noinspection PyPep8Naming
-    LAMBDA = lambda: 0  # noqa: E731
-    if not hasattr(function, "__name__"):
-        return False  # not a function
     return (
-        isinstance(function, type(LAMBDA))
-        and function.__name__ == LAMBDA.__name__
-        or str(function).startswith("<function <lambda> at ")
-        and str(function).endswith(">")
+        s is not None
+        and isinstance(s, Iterable)
+        and not isinstance(s, str)
+        and not isinstance(s, bytes | bytearray | memoryview)
     )
 
 
-class StringTools:
-    @classmethod
-    def pretty_dict(cls: type[Self], dct: Mapping[Any, Any]) -> str:
+@dataclass(slots=True, frozen=True)
+class StringUtils:
+    def pretty_dict(self: Self, dct: Mapping[Any, Any]) -> str:
         """
         Returns a pretty-printed dict, complete with indentation. Will fail on non-JSON-serializable datatypes.
         """
         # return Pretty.condensed(dct)
         return orjson.dumps(dct, option=orjson.OPT_INDENT_2).decode(encoding="utf-8")
 
-    @classmethod
-    def extract_group(
-        cls: type[Self],
-        pattern: str | re.Pattern | regex.Pattern,
-        value: str | None,
-        *,
-        group: int = 0,
-    ) -> str | None:
-        """
-        Extracts a capture group from a regex full-match.
-        Returns None if there was no match.
-        **Always** uses https://pypi.org/project/regex with `flags=regex.V1`.
-
-        Args:
-            pattern: Regex pattern
-            value: The target string
-            group: The group number
-
-        Returns The capture group, or None
-        """
-        if isinstance(pattern, re.Pattern):
-            pattern = regex.compile(pattern.pattern, flags=regex.V1)
-        elif isinstance(pattern, str):
-            pattern = regex.compile(pattern, flags=regex.V1)
-        elif isinstance(pattern, regex.Pattern) and not pattern.flags & regex.V1:
-            pattern = regex.compile(pattern.pattern, flags=regex.V1)
-        match = pattern.fullmatch(value)
-        if match is None:
-            return None
-        return match.group(group)
-
-    @classmethod
-    def join_to_str(cls: type[Self], *items: Any, last: str, sep: str = ", ") -> str:
+    def join_to_str(self: Self, *items: Any, last: str, sep: str = ", ") -> str:
         """
         Joins items to something like "cat, dog, and pigeon" or "cat, dog, or pigeon".
 
@@ -86,28 +56,14 @@ class StringTools:
             - `join_to_str(["cat", "dog"], last="and")  # cat and dog`
             - `join_to_str(["cat", "dog", "elephant"], last="", sep="/")  # cat/dog/elephant`
         """
-        if last.strip().isalpha() or last.strip() == "and/or":
-            last = last.strip() + " "
-        items = [str(s).strip("'" + '"' + " ") for s in items]
-        if len(items) > 2:
-            return sep.join(items[:-1]) + sep + last + items[-1]
-        else:
-            return (" " + last + " ").join(items)
 
-    @classmethod
-    def strip_control_chars(cls: type[Self], s: str) -> str:
+    def strip_control_chars(self: Self, s: str) -> str:
         """
         Strips all characters under the Unicode 'Cc' category.
         """
         return _control_chars.sub("", s)
 
-    @classmethod
-    def roman_to_arabic(
-        cls: type[Self],
-        roman: str,
-        min_val: int | None = None,
-        max_val: int | None = None,
-    ) -> int:
+    def roman_to_arabic(self: Self, roman: str, min_val: int | None = None, max_val: int | None = None) -> int:
         """
         Converts roman numerals to an integer.
 
@@ -142,58 +98,19 @@ class StringTools:
             value = sum(int(num) for num in roman)
         except (ValueError, StopIteration):
             msg = f"Cannot parse roman numerals '{roman}'"
-            raise XValueError(msg, value=roman)
+            raise ValueIllegalError(msg, value=roman)
         if min_val is not None and value < min_val or max_val is not None and value > max_val:
             msg = f"Value {roman} (int={value}) is out of range ({min_val}, {max_val})"
-            raise XValueError(
-                msg,
-                value=roman,
-            )
+            raise ValueIllegalError(msg, value=roman)
         return value
 
-    @classmethod
-    def retab(cls: type[Self], s: str, n_spaces: int) -> str:
-        """
-        Converts indentation with spaces to tab indentation.
-
-        Args:
-            s: The string to convert
-            n_spaces: A tab is this number of spaces
-        """
-
-        def fix(m):
-            n = len(m.group(1)) // n_spaces
-            return "\t" * n + " " * (len(m.group(1)) % n_spaces)
-
-        return regex.sub("^( +)", fix, s, flags=regex.V1 | regex.MULTILINE)
-
-    @classmethod
-    def strip_empty_decimal(cls: type[Self], num: float | str) -> str:
-        """
-        Replaces prefix . with 0. and strips trailing .0 and trailing .
-        """
-        try:
-            float(num)
-        except TypeError:
-            if not isinstance(num, str):
-                msg = "Must be either str or float-like"
-                raise TypeError(msg) from None
-        t = str(num)
-        if t.startswith("."):
-            t = "0" + t
-        if "." in t:
-            return t.rstrip("0").rstrip(".")
-        else:
-            return t
-
-    @classmethod
-    def tabs_to_list(cls: type[Self], s: str) -> Sequence[str]:
+    def tabs_to_list(self: Self, s: str) -> Sequence[str]:
         """
         Splits by tabs, but preserving quoted tabs, stripping quotes.
         In other words, will not split within a quoted substring.
         Double and single quotes are handled.
         """
-        pat = regex.compile(r"""((?:[^\t"']|"[^"]*"|'[^']*')+)""", flags=regex.V1)
+        pat = re.compile(r"""((?:[^\t"']|"[^"]*"|'[^']*')+)""")
 
         # Don't strip double 2x quotes: ex ""55"" should be "55", not 55
         def strip(i: str) -> str:
@@ -205,14 +122,7 @@ class StringTools:
 
         return [strip(i) for i in pat.findall(s)]
 
-    @classmethod
-    def truncate(
-        cls: type[Self],
-        s: str | None,
-        n: int = 40,
-        *,
-        null: str | None = None,
-    ) -> str | None:
+    def truncate(self: Self, s: str | None, n: int = 40, *, null: str | None = None) -> str | None:
         """
         Truncates a string and adds ellipses, if needed.
 
@@ -236,40 +146,7 @@ class StringTools:
             return s[:nx] + "…"
         return s
 
-    # these are provided to avoid having to call with labdas or functools.partial
-    @classmethod
-    def truncating(
-        cls: type[Self],
-        n: int = 40,
-        always_dots: bool = False,
-        *,
-        null: str | None = None,
-    ) -> Callable[[str], str]:
-        # pretty much functools.partial
-        def trunc(s: str) -> str:
-            return cls.truncate(s, n, null=null)
-
-        trunc.__name__ = f"truncate({n},{'…' if always_dots else ''})"
-        return trunc
-
-    @classmethod
-    def longest(cls: type[Self], parts: Iterable[T]) -> T:
-        """
-        Returns an element with the highest `len`.
-        """
-        mx = ""
-        for _i, x in enumerate(parts):
-            if len(x) > len(mx):
-                mx = x
-        return mx
-
-    @classmethod
-    def strip_any_ends(
-        cls: type[Self],
-        s: str,
-        prefixes: str | Sequence[str],
-        suffixes: str | Sequence[str],
-    ) -> str:
+    def strip_any_ends(self: Self, s: str, prefixes: str | Sequence[str], suffixes: str | Sequence[str]) -> str:
         """
         Flexible variant that strips any number of prefixes and any number of suffixes.
         Also less type-safe than more specific variants.
@@ -286,8 +163,7 @@ class StringTools:
                 s = s[: -len(suf)]
         return s
 
-    @classmethod
-    def strip_brackets(cls: type[Self], text: str) -> str:
+    def strip_brackets(self: Self, text: str) -> str:
         """
         Strips any and all pairs of brackets from start and end of a string, but only if they're paired.
 
@@ -309,8 +185,7 @@ class StringTools:
         ]
         return StringTools.strip_paired(text, pieces)
 
-    @classmethod
-    def strip_quotes(cls: type[Self], text: str) -> str:
+    def strip_quotes(self: Self, text: str) -> str:
         """
         Strips any and all pairs of quotes from start and end of a string, but only if they're paired.
 
@@ -319,15 +194,14 @@ class StringTools:
         """
         pieces = [
             "`",
-            "``",
+            "`",
             "”“",
             "''",
             '""',
         ]
         return StringTools.strip_paired(text, pieces)
 
-    @classmethod
-    def strip_brackets_and_quotes(cls: type[Self], text: str) -> str:
+    def strip_brackets_and_quotes(self: Self, text: str) -> str:
         """
         Strips any and all pairs of brackets and quotes from start and end of a string, but only if they're paired.
 
@@ -347,31 +221,27 @@ class StringTools:
             "《》",
             "〘〙",
             "`",
-            "``",
+            "`",
             "”“",
             "''",
             '""',
         ]
         return StringTools.strip_paired(text, pieces)
 
-    @classmethod
-    def strip_paired(cls: type[Self], text: str, pieces: Iterable[tuple[str, str] | str]) -> str:
+    def strip_paired(self: Self, text: str, pieces: Iterable[tuple[str, str] | str]) -> str:
         """
         Strips pairs of (start, end) from the ends of strings.
 
         Example:
-            .. code-block::
-                StringTools.strip_paired("[(abc]", [("()"), ("[]"))  # returns "(abc"
+
+            StringTools.strip_paired("[(abc]", [("()"), ("[]"))  # returns "(abc"
 
         See Also:
-            strip_brackets
+            [`strip_brackets`](pocketutils.tools.string_tools.StringUtils.strip_brackets)
         """
         if any(a for a in pieces if len(a) != 2):
             msg = f"Each item must be a string of length 2: (stard, end); got {pieces}"
-            raise XValueError(
-                msg,
-                value=str(pieces),
-            )
+            raise ValueIllegalError(msg, value=str(pieces))
         text = str(text)
         while len(text) > 0:
             yes = False
@@ -383,42 +253,38 @@ class StringTools:
                 break
         return text
 
-    @classmethod
-    def superscript(cls: type[Self], s: str | float) -> str:
+    def replace_digits_with_superscript_chars(self: Self, s: str | float) -> str:
         """
         Replaces digits, +, =, (, and ) with equivalent Unicode superscript chars (ex ¹).
         """
         return "".join(dict(zip("0123456789-+=()", "⁰¹²³⁴⁵⁶⁷⁸⁹⁻⁺⁼⁽⁾")).get(c, c) for c in s)
 
-    @classmethod
-    def subscript(cls: type[Self], s: str | float) -> str:
+    def replace_digits_with_subscript_chars(self: Self, s: str | float) -> str:
         """
         Replaces digits, +, =, (, and ) with equivalent Unicode subscript chars (ex ₁).
         """
         return "".join(dict(zip("0123456789+-=()", "₀₁₂₃₄₅₆₇₈₉₊₋₌₍₎")).get(c, c) for c in s)
 
-    @classmethod
-    def unsuperscript(cls: type[Self], s: str | float) -> str:
+    def replace_superscript_chars_with_digits(self: Self, s: str | float) -> str:
         """
         Replaces Unicode superscript digits, +, =, (, and ) with normal chars.
         """
         return "".join(dict(zip("⁰¹²³⁴⁵⁶⁷⁸⁹⁻⁺⁼⁽⁾", "0123456789-+=()")).get(c, c) for c in s)
 
-    @classmethod
-    def unsubscript(cls: type[Self], s: str | float) -> str:
+    def replace_subscript_chars_with_digits(self: Self, s: str | float) -> str:
         """
         Replaces Unicode superscript digits, +, =, (, and ) with normal chars.
         """
         return "".join(dict(zip("₀₁₂₃₄₅₆₇₈₉₊₋₌₍₎", "0123456789+-=()")).get(c, c) for c in s)
 
-    @classmethod
-    def pretty_float(cls: type[Self], v: float | int, n_sigfigs: int | None = 5) -> str:
+    def pretty_float(self: Self, v: float | int, n_sigfigs: int | None = 5) -> str:
         """
         Represents a float as a string, with symbols for NaN and infinity.
-        The returned string always has a minus or + prepended. Strip off the plus with .lstrip('+').
+        The returned string always has a minus or + prepended. Strip off the plus with `.lstrip('+')`.
         If v is an integer (by isinstance), makes sure to display without a decimal point.
-        If n_sigfigs < 2, will never have a
-        For ex:
+        If `n_sigfigs < 2`, will never have a
+
+        For example:
             - StringTools.pretty_float(.2222222)       # '+0.22222'
             - StringTools.pretty_float(-.2222222)      # '-0.22222' (Unicode minus)
             - StringTools.pretty_float(-float('inf'))  # '-∞'
@@ -427,14 +293,12 @@ class StringTools:
         # TODO this seems absurdly long for what it does
         if n_sigfigs is None or n_sigfigs < 1:
             msg = f"Sigfigs of {n_sigfigs} is nonpositive"
-            raise OutOfRangeError(
+            raise ValueOutOfRangeError(
                 msg,
                 value=n_sigfigs,
                 minimum=1,
             )
         # first, handle NaN and infinities
-        if str(v) in {"nan", "NaN"}:
-            return "⌀"
         if v == float("-Inf"):
             return "-∞"
         if v == float("Inf"):
@@ -445,7 +309,7 @@ class StringTools:
             return "NaT"
         # sweet. it's a regular float or int.
         if n_sigfigs is None:
-            s = cls.strip_empty_decimal(str(v))
+            s = str(v).removesuffix(".0")
         else:
             # yes, this is weird. we need to convert from str to float then back to str
             s = str(float(str(("%." + str(n_sigfigs) + "g") % v)))
@@ -454,7 +318,7 @@ class StringTools:
         # and if n_sigfigs<1, it definitely can't
         # and ... %g does this.
         if isinstance(v, int) or n_sigfigs is not None and n_sigfigs < 2:
-            s = cls.strip_empty_decimal(s)
+            s = s.removesuffix(".0")
         # prepend + or - (unless 0)
         if float(s) == 0.0:
             return s
@@ -465,68 +329,64 @@ class StringTools:
             s = s[0] + "0." + s[2:]
         return s
 
-    @classmethod
-    def pretty_function(
-        cls: type[Self],
-        function: Callable,
-        *,
-        with_address: bool = False,
-    ) -> str:
+    def pretty_function(self: Self, function: Callable, *, with_addr: bool = False) -> str:
         n_args = str(function.__code__.co_argcount) if hasattr(function, "__code__") else "?"
-        pat = regex.compile(r"^<bound method [^ .]+\.([^ ]+) of (.+)>$", flags=regex.V1)
+        pat = re.compile(r"^<bound method [^ .]+\.([^ ]+) of (.+)>$")
         boundmatch = pat.fullmatch(str(function))
-        addr = " @ " + hex(id(function)) if with_address else ""
-        if _is_lambda(function):
-            # simplify lambda functions!
-            return "⟨" + "λ(" + n_args + ")" + addr + "⟩"
-        elif boundmatch is not None:
+        addr = " @ " + hex(id(function)) if with_addr else ""
+        # if isinstance(function, FunctionType):
+        #    # simplify lambda functions!
+        #    return "⟨" + "λ(" + n_args + ")" + addr + "⟩"
+        if boundmatch is not None:
             # it's a method (bound function)
             # don't show the address of the instance AND its method
-            pat = regex.compile(r"@ ?0x[0-9a-hA-H]+\)?$", flags=regex.V1)
+            pat = re.compile(r"@ ?0x[0-9a-hA-H]+\)?$")
             s = pat.sub("", boundmatch.group(2)).strip()
             return "⟨" + "`" + s + "`." + boundmatch.group(1) + "(" + n_args + ")" + addr + "⟩"
         elif callable(function):
             # it's an actual function
+            name = function.__name__
+            if name is None:
+                return "⟨<fn>" + addr + "⟩"
+            if name == "<lambda>":
+                return "⟨λ" + addr + "⟩"
             return "⟨" + function.__name__ + addr + "⟩"
         msg = f"Wrong type {type(function)} for '{function}"
-        raise XTypeError(msg, actual=type(function).__name__)
+        raise ValueIllegalError(msg, value=type(function).__name__)
 
-    @classmethod
-    def pretty_repr(
-        cls: type[Self],
-        function: Any,
-        *,
-        with_address: bool = False,
-    ) -> str:
+    def pretty_object(self: Self, thing: Any, *, with_addr: bool = False) -> str:
         """
         Get a better and shorter name for a function than str(function).
-        Ex: pprint_function(lambda s: s)  == '<λ>'
+        Ex: `pprint_function(lambda s: s)  == '<λ>'`
+
         - Instead of '<bound method ...', you'll get '<name(nargs)>'
         - Instead of 'lambda ...', you'll get '<λ(nargs)>'
         - etc.
-        NOTE 1: If function is None, returns '⌀'
-        NOTE 2: If function does not have __name__, returns prefix + type(function) + <address> + suffix
-        NOTE 3: If it's a primitive, returns str(function)
+
+        Note:
+          - If function is None, returns '⌀'
+          - If function does not have __name__, returns prefix + type(function) + <address> + suffix
+          - If it's a primitive, returns str(function)
 
         Args:
-            function: Can be anything, but especially useful for functions
-            with_address: Include `@ hex-mem-addr` in the name
+            thing: Can be anything, but especially useful for functions
+            with_addr: Include `@ hex-mem-addr` in the name
         """
-        addr = " @ " + hex(id(function)) if with_address else ""
-        pat = regex.compile(r"<([A-Za-z0-9_.<>]+)[ ']*object", flags=regex.V1)
-        objmatch = pat.search(str(function))  # instance of global or local class
-        if function is None:
+        addr = " @ " + hex(id(thing)) if with_addr else ""
+        pat = re.compile(r"<([A-Za-z0-9_.<>]+)[ ']*object")
+        objmatch = pat.search(str(thing))  # instance of global or local class
+        if thing is None:
             return "⌀"
-        if isinstance(function, type):
+        if isinstance(thing, type):
             # it's a class
-            return "⟨" + "type:" + function.__name__ + "⟩"
-        elif callable(function):
-            return cls.pretty_function(function, with_address=with_address)
-        elif hasattr(function, "__dict__") and len(function.__dict__) > 0:
+            return "⟨" + "type:" + thing.__name__ + "⟩"
+        elif callable(thing):
+            return self.pretty_function(thing, with_addr=with_addr)
+        elif hasattr(thing, "__dict__") and len(thing.__dict__) > 0:
             # it's a member with attributes
             # it's interesting enough that it may have a good __str__
             # strip prefix and suffix because we'll re-add it
-            s = str(function).removeprefix("⟨").removesuffix("⟩")
+            s = str(thing).removeprefix("⟨").removesuffix("⟩")
             return "⟨" + s + addr + "⟩"
         elif objmatch is not None:
             # it's an instance without attributes
@@ -535,24 +395,21 @@ class StringTools:
                 s = s[s.rindex(".") + 1 :]
             return "⟨" + s + addr + "⟩"
         # it's a primitive, etc
-        return str(function)
+        return str(thing)
 
-    @classmethod
-    def greek_to_name(cls: type[Self]) -> Mapping[str, str]:
+    def greek_chars_to_letter_names(self: Self) -> Mapping[str, str]:
         """
         Returns a dict from Greek lowercase+uppercase Unicode chars to their full names.
         """
         return dict(StringTools._greek_alphabet)
 
-    @classmethod
-    def name_to_greek(cls: type[Self]) -> Mapping[str, str]:
+    def greek_letter_names_to_chars(self: Self) -> Mapping[str, str]:
         """
         Returns a dict from Greek lowercase+uppercase letter names to their Unicode chars.
         """
         return {v: k for k, v in StringTools._greek_alphabet.items()}
 
-    @classmethod
-    def fix_greek(cls: type[Self], s: str, lowercase: bool = False) -> str:
+    def replace_greek_letter_names_with_chars(self: Self, s: str, lowercase: bool = False) -> str:
         """
         Replaces Greek letter names with their Unicode equivalents.
         Does this correctly by replacing superstrings before substrings.
@@ -570,60 +427,18 @@ class StringTools:
         for k, v in greek:
             if k[0].isupper() and lowercase:
                 continue
-            s = regex.compile(k, flags=regex.V1 | regex.IGNORECASE).sub(v, s) if lowercase else s.replace(k, v)
+            s = re.compile(k | regex.IGNORECASE).sub(v, s) if lowercase else s.replace(k, v)
         return s
 
-    @classmethod
-    def join(
-        cls: type[Self],
-        seq: Iterable[T],
-        *,
-        sep: str = "\t",
-        attr: str | None = None,
-        prefix: str = "",
-        suffix: str = "",
-    ) -> str:
-        """
-        Join elements into a str more easily than ''.join. Just simplifies potentially long expressions.
-        Won't break with ValueError if the elements aren't strs.
+    def dict_to_compact_str(self: Self, seq: Mapping[K_contra, V_co], *, eq: str = "=", sep: str = ", ") -> str:
+        return self.dict_to_str(seq, sep=sep, eq=eq)
 
-        Example:
-            ``python
-                - StringTools.join([1,2,3])  # "1    2    3"
-                - StringTools.join(cars, sep=',', attr='make', prefix="(", suffix=")")`  # "(Ford),(Ford),(BMW)"
-            ``
+    def dict_to_quote_str(self: Self, seq: Mapping[K_contra, V_co], *, eq: str = ": ", sep: str = "; ") -> str:
+        return self.dict_to_str(seq, sep=sep, eq=eq, prefix="'", suffix="'")
 
-        Args:
-            seq: Sequence of elements
-            sep: Delimiter
-            attr: Get this attribute from each element (in `seq`), or use the element itself if None
-            prefix: Prefix before each item
-            suffix: Suffix after each item
-
-        Returns:
-            A string
-        """
-        if attr is None:
-            return sep.join([prefix + str(s) + suffix for s in seq])
-        else:
-            return sep.join([prefix + str(getattr(s, attr)) + suffix for s in seq])
-
-    @classmethod
-    def join_kv_neat(cls: type[Self], seq: Mapping[T, V], *, eq: str = "=", sep: str = ", ") -> str:
-        return cls.join_kv(seq, sep=sep, eq=eq)
-
-    @classmethod
-    def join_kv_spaced(cls: type[Self], seq: Mapping[T, V], *, eq: str = ": ", sep: str = "; ") -> str:
-        return cls.join_kv(seq, sep=sep, eq=eq)
-
-    @classmethod
-    def join_kv_quoted(cls: type[Self], seq: Mapping[T, V], *, eq: str = ": ", sep: str = "; ") -> str:
-        return cls.join_kv(seq, sep=sep, eq=eq, prefix="'", suffix="'")
-
-    @classmethod
-    def join_kv(
-        cls: type[Self],
-        seq: Mapping[T, V],
+    def dict_to_str(
+        self: Self,
+        seq: Mapping[K_contra, V_co],
         *,
         sep: str = "\t",
         eq: str = "=",
@@ -640,9 +455,6 @@ class StringTools:
             eq: Separates a key with its value
             prefix: Prepend before every key
             suffix: Append after every value
-
-        Returns:
-            A string
         """
         return sep.join([prefix + str(k) + eq + str(v) + suffix for k, v in seq.items()])
 
@@ -698,4 +510,4 @@ class StringTools:
     }
 
 
-__all__ = ["StringTools"]
+StringTools = StringUtils()

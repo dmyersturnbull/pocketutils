@@ -1,24 +1,37 @@
+# SPDX-FileCopyrightText: Copyright 2020-2023, Contributors to pocketutils
+# SPDX-PackageHomePage: https://github.com/dmyersturnbull/pocketutils
+# SPDX-License-Identifier: Apache-2.0
 """
 Compression-aware reading and writing of files.
 """
+
 from __future__ import annotations
 
+import abc
 import bz2
 import gzip
 import lzma
 import os
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import UTC, datetime
 from pathlib import Path, PurePath
 from typing import TYPE_CHECKING, Any, Self, TypeVar
 
-from pocketutils.core.exceptions import WritePermissionsError, XFileExistsError
+from pocketutils.core.exceptions import AccessDeniedError, KeyReusedError, PathExistsError
 
 if TYPE_CHECKING:
-    from collections.abc import Callable, Mapping
+    from collections.abc import Callable, Iterable, Mapping
+
 
 PathLike = str | PurePath
 T = TypeVar("T")
+
+
+@dataclass(frozen=True, slots=True)
+class CompressedPath:
+    parent: Path
+    stem: str
+    suffix: str
 
 
 @dataclass(frozen=True, slots=True)
@@ -28,17 +41,30 @@ class Compression:
     compress: Callable[[bytes], bytes]
     decompress: Callable[[bytes], bytes]
 
-    def compress_file(self: Self, source: PurePath | str, dest: PurePath | str | None = None) -> None:
-        source = Path(source)
-        dest = source.parent / (source.name + self.suffixes[0]) if dest is None else Path(dest)
-        data = self.compress(source.read_bytes())
-        dest.write_bytes(data)
+    def split_path(self: Self, path: PurePath | str) -> CompressedPath:
+        path = Path(path)
+        for suffix in self.suffixes:
+            if path.suffix == suffix:
+                return CompressedPath(path.parent, path.stem, suffix)
+        return CompressedPath(path.parent, path.stem, "")
 
-    def decompress_file(self: Self, source: PurePath | str, dest: PurePath | str | None = None) -> None:
+    def compress_file(self: Self, source: PurePath | str, dest: PurePath | str, atomic: bool = False) -> None:
         source = Path(source)
-        dest = source.with_suffix("") if dest is None else Path(dest)
+        dest = Path(dest)
+        temp = dest.parent / ("~" + dest.name + ".part") if atomic else dest
+        data = self.compress(source.read_bytes())
+        temp.write_bytes(data)
+        if atomic:
+            temp.rename(dest)
+
+    def decompress_file(self: Self, source: PurePath | str, dest: PurePath | str, atomic: bool = False) -> None:
+        source = Path(source)
+        dest = Path(dest)
+        temp = dest.parent / ("~" + dest.name + ".part") if atomic else dest
         data = self.decompress(source.read_bytes())
-        dest.write_bytes(data)
+        temp.write_bytes(data)
+        if atomic:
+            temp.rename(dest)
 
 
 def identity(x: T) -> T:
@@ -58,7 +84,7 @@ class CompressionSet:
         already = {v for k, v in self.mapping.items() if k in new}
         if len(already) > 1 or len(already) == 1 and already != {fmt}:
             msg = f"Keys from {fmt} already mapped to {already}"
-            raise ValueError(msg)
+            raise KeyReusedError(msg, key=fmt.name, original_value=already)
         return CompressionSet(self.mapping | new)
 
     def __sub__(self: Self, fmt: Compression) -> CompressionSet:
@@ -75,7 +101,8 @@ class CompressionSet:
         Case-insensitive.
 
         Example:
-            `Compression.of("gzip").suffix  # ".gz"`
+
+            Compression.of("gzip").suffix  # ".gz"
         """
         if isinstance(t, Compression):
             return t
@@ -90,42 +117,30 @@ class CompressionSet:
             return self[""]
 
 
-def _get_compressions() -> CompressionSet:
-    import brotli
-    import lz4.frame
-    import snappy
-    import zstandard
-
-    return (
-        CompressionSet.empty()
-        + Compression("gzip", [".gz", ".gzip"], gzip.compress, gzip.decompress)
-        + Compression("brotli", [".br", ".brotli"], brotli.compress, brotli.decompress)
-        + Compression("zstandard", [".zst", ".zstd"], zstandard.compress, zstandard.decompress)
-        + Compression("lz4", [".lz4"], lz4.frame.compress, lz4.frame.decompress)
-        + Compression("snappy", [".snappy"], snappy.compress, snappy.decompress)
-        + Compression("bzip2", [".bz2", ".bzip2"], bz2.compress, bz2.decompress)
-        + Compression("xz", [".xz"], lzma.compress, lzma.decompress)
-        + Compression("lzma", [".lzma"], lzma.compress, lzma.decompress)
-    )
-
-
 @dataclass(frozen=True, slots=True)
-class SmartIo:
-    __COMPRESSIONS = None
+class AbstractSmartIo(metaclass=abc.ABCMeta):
+    _compressions: CompressionSet | None = None
 
-    @classmethod
-    def mapping(cls: type[Self]) -> Mapping[str, Compression]:
-        return cls.compressions().mapping
+    @property
+    def mapping(self: Self) -> Mapping[str, Compression]:
+        return self.compressions.mapping
 
-    @classmethod
-    def compressions(cls: type[Self]) -> CompressionSet:
-        if cls.__COMPRESSIONS is None:
-            _COMPRESSIONS = _get_compressions()
-        return cls.__COMPRESSIONS
+    @property
+    def compressions(self: Self) -> CompressionSet:
+        if self._compressions is None:
+            self._compressions = self._new_compression_list()
+        return self._compressions
 
-    @classmethod
+    @property
+    def all_suffixes(self: Self) -> Iterable[str]:
+        for c in self.compressions:
+            yield from c.suffixes
+
+    def _new_compression_list(self: Self) -> CompressionSet:
+        raise NotImplementedError()
+
     def write(
-        cls: type[Self],
+        self: Self,
         data: Any,
         path: PathLike,
         *,
@@ -134,47 +149,64 @@ class SmartIo:
         exist_ok: bool = False,
     ) -> None:
         path = Path(path)
-        compressed = cls.compressions().guess(path).compress(data)
+        compressed = self.compressions.guess(path).compress(data)
         if path.exists() and not path.is_file():
-            msg = f"Path {path} is not a file"
-            raise WritePermissionsError(msg, path=path)
+            raise PathExistsError(filename=str(path))
         if path.exists() and not exist_ok:
-            msg = f"Path {path} exists"
-            raise XFileExistsError(msg, path=path)
+            raise PathExistsError(filename=str(path))
         if path.exists() and not os.access(path, os.W_OK):
-            msg = f"Cannot write to {path}"
-            raise WritePermissionsError(msg, path=path)
+            raise AccessDeniedError(filename=str(path))
         if mkdirs:
             path.parent.mkdir(parents=True, exist_ok=True)
         if atomic:
-            tmp = cls.tmp_path(path)
+            tmp = self.tmp_path(path)
             path.write_bytes(compressed)
             tmp.rename(path)
         else:
             path.write_bytes(compressed)
 
-    @classmethod
-    def read_text(cls: type[Self], path: PathLike, encoding: str = "utf-8") -> str:
+    def read_text(self: Self, path: PathLike, encoding: str = "utf-8") -> str:
         """
         Similar to :meth:`read_bytes`, but then converts to UTF-8.
         """
-        return cls.read_bytes(path).decode(encoding=encoding)
+        return self.read_bytes(path).decode(encoding=encoding)
 
-    @classmethod
-    def read_bytes(cls: type[Self], path: PathLike) -> bytes:
+    def read_bytes(self: Self, path: PathLike) -> bytes:
         """
         Reads, decompressing according to the filename suffix.
         """
         data = Path(path).read_bytes()
-        return cls.compressions().guess(path).decompress(data)
+        return self.compressions.guess(path).decompress(data)
 
-    @classmethod
-    def tmp_path(cls: type[Self], path: PathLike, extra: str = "tmp") -> Path:
-        now = datetime.now().isoformat(timespec="microsecond")
+    def tmp_path(self: Self, path: PathLike, extra: str = "tmp") -> Path:
+        now = datetime.now(tz=UTC).isoformat(timespec="microsecond")
         now = now.replace(":", "").replace("-", "")
         path = Path(path)
         suffix = "".join(path.suffixes)
         return path.parent / f".part_{extra}.{now}{suffix}"
 
 
-__all__ = ["Compression", "CompressionSet", "SmartIo"]
+@dataclass(frozen=True, slots=True)
+class SmartIoUtil(AbstractSmartIo, metaclass=abc.ABCMeta):
+    def _new_compression_list(self: Self) -> CompressionSet:
+        import brotli
+        import lz4.frame
+        import snappy
+        import zstandard
+
+        return (
+            CompressionSet.empty()
+            + Compression("gzip", [".gz", ".gzip"], gzip.compress, gzip.decompress)
+            + Compression("brotli", [".br", ".brotli"], brotli.compress, brotli.decompress)
+            + Compression("zstandard", [".zst", ".zstd"], zstandard.compress, zstandard.decompress)
+            + Compression("lz4", [".lz4"], lz4.frame.compress, lz4.frame.decompress)
+            + Compression("snappy", [".snappy"], snappy.compress, snappy.decompress)
+            + Compression("bzip2", [".bz2", ".bzip2"], bz2.compress, bz2.decompress)
+            + Compression("xz", [".xz"], lzma.compress, lzma.decompress)
+            + Compression("lzma", [".lzma"], lzma.compress, lzma.decompress)
+        )
+
+
+SmartIo = SmartIoUtil()
+
+__all__ = ["Compression", "CompressionSet", "SmartIo", "SmartIoUtil"]

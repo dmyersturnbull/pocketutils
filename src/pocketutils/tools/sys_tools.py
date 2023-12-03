@@ -1,6 +1,10 @@
+# SPDX-FileCopyrightText: Copyright 2020-2023, Contributors to pocketutils
+# SPDX-PackageHomePage: https://github.com/dmyersturnbull/pocketutils
+# SPDX-License-Identifier: Apache-2.0
 """
 Low-level tools (e.g. memory management).
 """
+
 import atexit
 import importlib
 import importlib.metadata
@@ -20,6 +24,8 @@ from getpass import getuser
 from typing import Any, NamedTuple, Self
 
 from pocketutils.core.input_output import Writeable
+
+__all__ = ["Frame", "SerializedException", "SignalHandler", "ExitHandler", "SystemUtils", "SystemTools"]
 
 logger = logging.getLogger("pocketutils")
 
@@ -66,26 +72,18 @@ class ExitHandler:
             self.sink.write(line)
 
 
-class SystemTools:
-    @classmethod
-    def is_linux(cls: type[Self]) -> bool:
+@dataclass(slots=True, frozen=True)
+class SystemUtils:
+    def is_linux(self: Self) -> bool:
         return sys.platform == "linux"
 
-    @classmethod
-    def is_windows(cls: type[Self]) -> bool:
+    def is_windows(self: Self) -> bool:
         return sys.platform == "win32"
 
-    @classmethod
-    def is_macos(cls: type[Self]) -> bool:
+    def is_macos(self: Self) -> bool:
         return sys.platform == "darwin"
 
-    @classmethod
-    def get_env_info(
-        cls: type[Self],
-        *,
-        extended: bool = False,
-        insecure: bool = False,
-    ) -> Mapping[str, str]:
+    def get_env_info(self: Self, *, extended: bool = False, insecure: bool = False) -> Mapping[str, str]:
         """
         Get a dictionary of some system and environment information.
         Includes os_release, hostname, username, mem + disk, shell, etc.
@@ -176,8 +174,7 @@ class SystemTools:
             )
         return {k: str(v) for k, v in dict(data).items()}
 
-    @classmethod
-    def list_package_versions(cls: type[Self]) -> Mapping[str, str]:
+    def list_package_versions(self: Self) -> Mapping[str, str]:
         """
         Returns installed packages and their version numbers.
         Reliable; uses importlib (Python 3.8+).
@@ -191,22 +188,17 @@ class SystemTools:
             dct[meta["name"]] = meta["version"]
         return dct
 
-    @classmethod
-    def serialize_exception(cls: type[Self], e: BaseException | None) -> SerializedException:
+    def serialize_exception(self: Self, e: BaseException) -> SerializedException:
         tbe = traceback.TracebackException.from_exception(e)
-        msg = [] if e is None else list(tbe.format_exception_only())
-        tb = SystemTools.build_traceback(e)
+        msg = list(tbe.format_exception_only())
+        tb = self.build_traceback(e)
         return SerializedException(msg, tb)
 
-    @classmethod
-    def serialize_exception_msg(cls: type[Self], e: BaseException | None) -> Sequence[str]:
+    def serialize_exception_msg(self: Self, e: BaseException) -> Sequence[str]:
         tbe = traceback.TracebackException.from_exception(e)
-        return [] if e is None else list(tbe.format_exception_only())
+        return list(tbe.format_exception_only())
 
-    @classmethod
-    def build_traceback(cls: type[Self], e: BaseException | None) -> Sequence[Frame]:
-        if e is None:
-            return []
+    def build_traceback(self: Self, e: BaseException) -> Sequence[Frame]:
         tb = []
         current = None
         tbe = traceback.TracebackException.from_exception(e)
@@ -230,8 +222,7 @@ class SystemTools:
             tb.append(current)
         return tb
 
-    @classmethod
-    def trace_signals(cls: type[Self], sink: Writeable = sys.stderr) -> None:
+    def trace_signals(self: Self, sink: Writeable = sys.stderr) -> None:
         """
         Registers signal handlers for all signals that log the traceback.
         Uses `signal.signal`.
@@ -240,12 +231,11 @@ class SystemTools:
             handler = SignalHandler(sig.name, sig.value, signal.strsignal(sig), sink)
             signal.signal(sig.value, handler)
 
-    @classmethod
-    def trace_exit(cls: type[Self], sink: Writeable = sys.stderr) -> None:
+    def trace_exit(self: Self, sink: Writeable = sys.stderr) -> None:
         """
         Registers an exit handler via `atexit.register` that logs the traceback.
         """
         atexit.register(ExitHandler(sink))
 
 
-__all__ = ["SignalHandler", "ExitHandler", "SystemTools"]
+SystemTools = SystemUtils()

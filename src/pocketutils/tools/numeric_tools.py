@@ -1,28 +1,34 @@
+# SPDX-FileCopyrightText: Copyright 2020-2023, Contributors to pocketutils
+# SPDX-PackageHomePage: https://github.com/dmyersturnbull/pocketutils
+# SPDX-License-Identifier: Apache-2.0
+"""
+
+"""
+
 import math
 from collections.abc import Sequence
+from dataclasses import dataclass
 from typing import Self, SupportsFloat, SupportsInt, SupportsRound
 
+__all__ = ["NumericUtils", "NumericTools"]
 
-class NumericTools:
-    @classmethod
-    def float_opt(cls: type[Self], f: SupportsFloat | None) -> float:
+
+@dataclass(slots=True, frozen=True)
+class NumericUtils:
+    def float_opt(self: Self, f: SupportsFloat | None) -> float:
         return None if f is None else float(f)
 
-    @classmethod
-    def round_opt(cls: type[Self], f: SupportsRound | None) -> int:
+    def round_opt(self: Self, f: SupportsRound | None) -> int:
         return None if f is None else int(round(f))
 
-    @classmethod
-    def ceil_opt(cls: type[Self], f: SupportsFloat | None) -> int:
+    def ceil_opt(self: Self, f: SupportsFloat | None) -> int:
         return None if f is None else int(math.ceil(f))
 
-    @classmethod
-    def floor_opt(cls: type[Self], f: SupportsFloat | None) -> int:
+    def floor_opt(self: Self, f: SupportsFloat | None) -> int:
         return None if f is None else int(math.floor(f))
 
-    @classmethod
     def slice(
-        cls: type[Self],
+        self: Self,
         arr: Sequence[SupportsRound],
         i: SupportsInt | None,
         j: SupportsInt | None,
@@ -42,9 +48,8 @@ class NumericTools:
         start, stop = int(max(0, i)), int(min(len(arr), j))
         return arr[start:stop]
 
-    @classmethod
     def clamp(
-        cls: type[Self],
+        self: Self,
         arr: Sequence[SupportsFloat],
         floor: SupportsFloat,
         ceil: SupportsFloat,
@@ -52,4 +57,4 @@ class NumericTools:
         return [max([min([float(x), float(ceil)]), float(floor)]) for x in arr]
 
 
-__all__ = ["NumericTools"]
+NumericTools = NumericUtils()
