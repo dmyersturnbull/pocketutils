@@ -104,7 +104,7 @@ class CommonUtils:
         return str(n_bytes // scale) + space + suffix
 
     def limit(self: Self, items: Iterable[V_co], n: int) -> Iterator[V_co]:
-        for _i, x in zip(range(n), items):
+        for _i, x in zip(range(n), items, strict=False):
             yield x
 
     def is_float(self: Self, s: Any) -> bool:
@@ -182,7 +182,7 @@ class CommonUtils:
             - x is iterable and has 0 elements (will call `__iter__`)
 
         Raises:
-            RefusingRequestError If `x` is an Iterator. Calling this would empty the iterator, which is dangerous.
+            RefusingRequestError: If `x` is an Iterator. Calling this would empty the iterator, which is dangerous.
         """
         if isinstance(v, Iterator):
             msg = "Do not call is_empty on an iterator."
@@ -190,7 +190,7 @@ class CommonUtils:
         try:
             if self.is_null(v):
                 return True
-        except (ValueError, TypeError):
+        except (ValueError, TypeError):  # noqa: S110
             pass
         return hasattr(v, "__len__") and len(v) == 0 or hasattr(v, "__iter__") and len(list(iter(v))) == 0
 
@@ -209,8 +209,7 @@ class CommonUtils:
             - `[None]`
 
         Raises:
-            TypeError If `x` is an Iterator.
-                      Calling this would empty the iterator, which is dangerous.
+            TypeError: If `x` is an Iterator. Calling this would empty the iterator, which is dangerous.
         """
         return self.is_empty(v) or str(v).lower() in {"nan", "n/a", "na", "null", "none", "<NA>", "NaT"}
 
@@ -351,8 +350,8 @@ class CommonUtils:
             The first item the sequence.
 
         Raises:
-            LookupError If the sequence is empty
-            MultipleMatchesError If there is more than one unique item.
+            LookupError: If the sequence is empty
+            MultipleMatchesError: If there is more than one unique item.
         """
 
         def _only(sq: Iterable[T]):

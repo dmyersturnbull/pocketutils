@@ -7,7 +7,7 @@ Adheres to [Semantic Versioning 2.0](https://semver.org/spec/v2.0.0.html) and
 
 ### Changed
 
-- A lot
+- Everything
 
 ## [0.9.0] - 2022-08-11
 

@@ -68,6 +68,6 @@ jobs:
 
   test:
     name: Test
-    uses: ./.github/workflows/_test.yaml
+    uses: ./.github/workflows/test.yaml
     secrets: inherit
     if: ${{ !github.event.pull_request.draft && github.event.pull_request.ready_for_review }}

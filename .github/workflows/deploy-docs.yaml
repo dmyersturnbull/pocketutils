@@ -24,17 +24,17 @@ jobs:
   docs-deploy:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-python@v4
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
         with:
-          python-version: "3.11"
+          python-version: "3.12"
       - name: Deploy docs for ${{ github.ref_name }}
         run: |
           pip install hatch
           git fetch origin gh-pages  # prevent conflicts
           hatch run deploy-docs ${{ github.ref_name }} --update-aliases --push
       - name: Checkout gh-pages
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           ref: gh-pages
       - name: Upload artifact

@@ -347,7 +347,7 @@ class FilesysUtils:
             shutil.rmtree(str(path), ignore_errors=True)  # ignore_errors because of Windows
             try:
                 path.unlink(missing_ok=True)  # again, because of Windows
-            except OSError:
+            except OSError:  # noqa: S110
                 pass  # almost definitely because it doesn't exist
         else:
             path.unlink(missing_ok=True)

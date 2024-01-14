@@ -23,7 +23,7 @@ concurrency:
 jobs:
   test:
     name: Test
-    uses: ./.github/workflows/_test.yaml
+    uses: ./.github/workflows/test.yaml
     secrets: inherit
 
   send-coverage:
@@ -32,7 +32,7 @@ jobs:
       matrix:
         os: ["ubuntu-latest", "windows-latest", "macos-latest"]
         # :tyranno: python: ${tool.hatch.envs.all.matrix.python~[0]~}
-        python: ["3.11"]
+        python: ["3.12"]
     runs-on: ${{ matrix.os }}
     steps:
       - name: Download coverage artifact for ${{ matrix.os }}/${{ matrix.python }}
@@ -61,19 +61,3 @@ jobs:
         with:
           parallel-finished: true
           file: coverage.xml
-
-  make-changelog:
-    runs-on: ubuntu-latest
-    needs: [send-coverage]
-    steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-python@v4
-        with:
-          python-version: "3.11"
-      - run: |
-          pip install commitizen
-          cz changelog
-      - uses: stefanzweifel/git-auto-commit-action@v4
-        with:
-          commit_message: "chore: auto-generate changelog"
-          file_pattern: CHANGELOG.md

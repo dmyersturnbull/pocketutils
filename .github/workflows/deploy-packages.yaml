@@ -53,7 +53,7 @@ jobs:
         with:
           name: dist
       - name: Install hatch
-        run: pip install hatch~=1.7
+        run: pip install hatch~=1.9
       - name: Publish to PyPi
         run: hatch publish
         env:

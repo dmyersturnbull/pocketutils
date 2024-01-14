@@ -208,7 +208,7 @@ class PickleMixin(metaclass=abc.ABCMeta):
     def from_pickle(cls: type[Self], data: bytes) -> Self:
         if not isinstance(data, bytes):
             data = bytes(data)
-        return cls(pickle.loads(data))
+        return cls(pickle.loads(data))  # noqa: S301
 
     def to_pickle(self: Self) -> bytes:
         """

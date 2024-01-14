@@ -4,7 +4,7 @@
 
 import contextlib
 import logging
-import subprocess  # nosec
+import subprocess  # noqa: S404
 from collections.abc import Callable, Generator, Mapping, Sequence
 from copy import copy
 from dataclasses import dataclass
@@ -67,7 +67,7 @@ class CallUtils:
             encoding="utf-8",
             **kwargs,
         )
-        x = subprocess.run(**calling)  # nosec
+        x = subprocess.run(**calling)  # noqa: S603,S607
         log_fn(f"stdout: '{x.stdout}'")
         log_fn(f"stderr: '{x.stderr}'")
         x.stdout = x.stdout.strip()
@@ -121,7 +121,7 @@ class CallUtils:
         cmd = [str(p) for p in cmd]
         logger.debug("Streaming '{}'".format(" ".join(cmd)))
         calling = dict(stdout=subprocess.PIPE, stderr=subprocess.PIPE, **kwargs)
-        p = subprocess.Popen(cmd, **calling)  # nosec
+        p = subprocess.Popen(cmd, **calling)  # noqa: S603,S607
         try:
             q = Queue()
             Thread(target=self._reader, args=[False, p.stdout, q]).start()

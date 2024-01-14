@@ -6,7 +6,7 @@
 """
 
 import re
-import subprocess  # nosec
+import subprocess  # noqa: S404
 from dataclasses import dataclass
 from pathlib import Path, PurePath
 from typing import Self
@@ -116,7 +116,7 @@ class GitUtils:
         cmd = "git describe --long --dirty --broken --abbrev=40 --tags".split(" ")
         # ignoring bandit security warning because we explain the security concerns
         # in the class docstring
-        x = subprocess.run(cmd, **cmd_args)  # nosec
+        x = subprocess.run(cmd, **cmd_args)  # noqa: S603,S607
         return self._parse(x.stdout.strip())
 
     def _parse(self: Self, text: str):

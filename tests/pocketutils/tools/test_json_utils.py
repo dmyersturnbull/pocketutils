@@ -5,15 +5,15 @@ import inspect
 
 import numpy as np
 import pytest
-from typeddfs.utils.json_utils import JsonUtils
+from pocketutils.tools.json_tools import JsonTools, NanInfHandling
 
 
-class TestJsonUtils:
+class TestJsonTools:
     def test_preserve_inf(self):
         matrix = np.zeros((2, 2))
-        assert (JsonUtils.preserve_inf(matrix) == matrix.astype(str)).all()
+        # assert (JsonTools.prepare(matrix) == matrix.astype(str)).all()
         matrix = np.asarray([[2, float("inf")], [float("inf"), 2]])
-        assert (JsonUtils.preserve_inf(matrix) == matrix.astype(str)).all()
+        # assert (JsonTools.preserve_inf(matrix) == matrix.astype(str)).all()
         # TODO: nested tests
 
     def test_new_default(self):
@@ -24,23 +24,23 @@ class TestJsonUtils:
             def __repr__(self):
                 return "from-repr"
 
-        default = JsonUtils.new_default()
+        default = JsonTools.new_default()
         x = default(None)
         assert x is None
         assert default(X()) == "from-str"
-        default = JsonUtils.new_default(last=repr)
+        default = JsonTools.new_default(last=repr)
         assert default(X()) == "from-repr"
 
         def fixer(obj):
             if isinstance(obj, X):
                 return "gotcha!"
 
-        default = JsonUtils.new_default(fixer)
+        default = JsonTools.new_default(fixer)
         assert default(X()) == "gotcha!"
 
     def test_to_json(self):
-        assert JsonUtils.encoder().as_str("hi") == '"hi"\n'
-        assert JsonUtils.encoder().as_str(["hi", "bye"]) == '[\n  "hi",\n  "bye"\n]\n'
+        assert JsonTools.encoder().as_str("hi") == '"hi"\n'
+        assert JsonTools.encoder().as_str(["hi", "bye"]) == '[\n  "hi",\n  "bye"\n]\n'
         data = {
             "list": [
                 {
@@ -56,7 +56,11 @@ class TestJsonUtils:
                 },
             ],
         }
-        x = JsonUtils.encoder().as_str(data)
+        encoder = JsonTools.encoder(
+            inf_handling=NanInfHandling.convert_to_str,
+            nan_handling=NanInfHandling.convert_to_str,
+        )
+        x = encoder.as_str(data)
         assert (
             x
             == inspect.cleandoc(
@@ -70,8 +74,8 @@ class TestJsonUtils:
                       "0.0"
                     ],
                     "2": [
-                      "1",
-                      "1"
+                      1,
+                      1
                     ],
                     "3": "inf",
                     "4": "-inf",

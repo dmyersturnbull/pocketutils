@@ -24,14 +24,14 @@ jobs:
       matrix:
         os: ["ubuntu-latest", "windows-latest", "macos-latest"]
         # :tyranno: python: ${tool.hatch.envs.all.matrix.python~[0]~}
-        python: ["3.11", "3.12-dev"]
+        python: ["3.12"]
     runs-on: ${{ matrix.os }}
     name: Run tests for ${{ matrix.os }}/py${{ matrix.python }}
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           ref: ${{ inputs.ref }}
-      - uses: actions/setup-python@v4
+      - uses: actions/setup-python@v5
         with:
           python-version: "${{ matrix.python }}"
       - name: Test on ${{ matrix.os }}/py${{ matrix.python }}
@@ -45,18 +45,6 @@ jobs:
           path: coverage.xml
           if-no-files-found: error
 
-  test-docker:
-    strategy:
-      matrix:
-        os: [ubuntu-latest, windows-latest]
-    runs-on: ${{ matrix.os }}
-    steps:
-      - uses: actions/checkout@v3
-        with:
-          ref: ${{ inputs.ref }}
-      - name: "docker build on ${{ matrix.os }}"
-        run: docker build .
-
   codeql:
     name: Analyze with CodeQL
     runs-on: ubuntu-latest
@@ -67,7 +55,7 @@ jobs:
         language: [python]
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           ref: ${{ inputs.ref }}
       - name: Initialize CodeQL
@@ -86,13 +74,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           ref: ${{ inputs.ref }}
       - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
-          python-version: "3.11"
+          python-version: "3.12"
       - name: Run Bandit
         run: |
           pip install hatch
@@ -103,12 +91,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           ref: ${{ inputs.ref }}
-      - uses: actions/setup-python@v4
+      - uses: actions/setup-python@v5
         with:
-          python-version: "3.11"
+          python-version: "3.12"
       - name: Install
         run: |
           pip install hatch

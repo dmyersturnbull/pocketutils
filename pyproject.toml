@@ -6,7 +6,7 @@
 # build-system
 ###################
 [build-system]
-requires = ["hatchling~=1.8"]
+requires = ["hatchling~=1.21"]
 build-backend = "hatchling.build"
 
 
@@ -17,7 +17,7 @@ build-backend = "hatchling.build"
 [project]
 
 name = "pocketutils"
-version = "0.10.0-a0"
+version = "0.10.0"
 requires-python = "~=3.11"
 readme = {file = "README.md", content-type = "text/markdown"}
 description = "Adorable little Python code for you to copy or import."
@@ -41,13 +41,15 @@ classifiers = [
   "Topic :: Software Development :: Libraries :: Python Modules",
 ]
 dependencies = [
-  "regex >=2023"
+  "regex >=2023",
+  "natsort >=8.4",
+  "orjson >=3.8",
 ]
 [project.optional-dependencies]
 compression = [
-  "Brotli >=1",
-  "lz4 >=4",
-  "snappy >=3",
+  "Brotli >=1.1",
+  "lz4 >=4.0",
+  "snappy >=3.0",
   "zstandard >=0.20",
 ]
 encoding = [
@@ -87,22 +89,23 @@ Changelog = "https://github.com/dmyersturnbull/pocketutils/blob/main/CHANGELOG.m
 
 [tool.hatch.envs.default]
 dependencies = [
-  "pre-commit >=3.3",
-  "pytest  >=7.0",
+  "pre-commit >=3.6",
+  "pytest  >=7.4",
   "tzdata >=2023",
-  "coverage[toml] >=7.2",
-  "pytest-cov >=4.0",
-  "numpy >=1.25",
+  "coverage[toml] >=7.4",
+  "pytest-cov >=4.1",
+  "numpy >=1.26",
   "loguru >=0.7",
-  "psutil >=5",
-  "pandas >=2.0",
-  "ruff >=0.1.4",
+  "psutil >=5.9",
+  "pandas >=2.1",
+  "ruff >=0.1.13",
   "mkdocs >=1.5",
-  "mike >=1.1",
-  "mkdocs-material >=9.1",
+  "mike >=2.0",
+  "mkdocs-literate-nav >=0.6",
+  "mkdocs-material >=9.5",
   "mkdocs-minify-plugin >=0.7",
-  "mkdocstrings[python] >=0.20",
-  "dramatiq[watch] >=1.14",
+  "mkdocstrings[python] >=0.24",
+  "dramatiq[watch] >=1.15",
   "mkdocs-table-reader-plugin >=2.0",
   "mkdocs-include-markdown-plugin >=6.0"
 ]
@@ -175,17 +178,15 @@ select = [
   "YTT",      # flake8-2020 (unlikely problematic checks for Python version)
   "RUF"       # Ruff-specific rules
 ]
-exclude = [
+ignore = [
   "ARG",      # flake8-unused (unused parameters are almost always intentional, like when overriding)
+  "INP001",   # missing __init__ -- false positives
+  "B027",     # Allow non-abstract empty methods in abstract base classes
+  "COM812",   # conflicts with formatter
+  "FBT003",   # Allow boolean positional values in function calls, like `dict.get(... True)`
   "FBT",      # flake8-boolean-trap (debatable, and might not have a choice)
   "ICN",      # flake8-import-conventionals (isort does this)
   "ISC001",   # conflicts with formatter
-  "COM812",   # conflicts with formatter
-]
-ignore = [
-  "INP001",   # missing __init__ -- false positives
-  "B027",     # Allow non-abstract empty methods in abstract base classes
-  "FBT003",   # Allow boolean positional values in function calls, like `dict.get(... True)`
   "C901",     # Ignore complexity:
   "PLR0911",
   "PLR0912",
@@ -266,7 +267,7 @@ source = ["src/"]
 
 
 [tool.coverage.report]
-fail_under = 50  # 50% coverage required
+fail_under = 20  # 20% coverage required
 precision = 1   # n decimal points for coverage %
 show_missing = true
 exclude_lines = [

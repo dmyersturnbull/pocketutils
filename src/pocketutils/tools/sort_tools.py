@@ -103,17 +103,21 @@ class SortUtils:
             A tuple of (set of flags, int) -- see :meth:`exact_natsort_alg`
         """
         st, x = set(), 0
-        match dtype:
-            case "str":
-                st.update(["COMPATIBILITYNORMALIZE", "GROUPLETTERS"])
-                x |= ns_enum.COMPATIBILITYNORMALIZE | ns_enum.GROUPLETTERS
-            case "int" | "bool":
-                st.update(["INT", "SIGNED"])
-                x |= ns_enum.INT | ns_enum.SIGNED
-            case "float":
-                st.update(["FLOAT", "SIGNED"])
-                x |= ns_enum.FLOAT | ns_enum.SIGNED  # same as ns_enum.REAL
-        return NatsortFlagsAndValue(st, x)
+        if dtype == str:
+            st.update(["COMPATIBILITYNORMALIZE", "GROUPLETTERS"])
+            x |= ns_enum.COMPATIBILITYNORMALIZE | ns_enum.GROUPLETTERS
+        if (
+            dtype == int
+            or dtype == bool
+            or repr(dtype).startswith("<class 'numpy.int")
+            or repr(dtype) == "<class 'numpy.bool_'>"
+        ):
+            st.update(["INT", "SIGNED"])
+            x |= ns_enum.INT | ns_enum.SIGNED
+        if dtype == float or repr(dtype).startswith("<class 'numpy.float"):
+            st.update(["FLOAT", "SIGNED"])
+            x |= ns_enum.FLOAT | ns_enum.SIGNED  # same as ns_enum.REAL
+        return NatsortFlagsAndValue(frozenset(st), x)
 
     def exact_natsort_alg(self: Self, flags: int | Collection[int | str] | None) -> NatsortFlagsAndValue:
         """
@@ -162,7 +166,7 @@ class SortUtils:
     def _ns_info_from_int_flag(self: Self, val: int) -> NatsortFlagsAndValue:
         good = self.core_natsort_flags()
         st = {k for k, v in good.items() if v & val != 0}
-        return NatsortFlagsAndValue(st, val)
+        return NatsortFlagsAndValue(frozenset(st), val)
 
 
 SortTools = SortUtils()

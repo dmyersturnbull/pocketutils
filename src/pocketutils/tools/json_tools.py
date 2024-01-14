@@ -29,11 +29,17 @@ try:
 except ImportError:
     orjson = None
 
-__all__ = ["JsonEncoder", "JsonDecoder", "JsonUtils", "JsonTools"]
+__all__ = ["NanInfHandling", "JsonEncoder", "JsonDecoder", "JsonUtils", "JsonTools"]
 
 INF = float("Inf")
 NEG_INF = float("-Inf")
 NAN = float("NaN")
+
+
+class NanInfHandling(enum.StrEnum):
+    convert_to_str = enum.auto()
+    convert_to_null = enum.auto()
+    raise_error = enum.auto()
 
 
 class MiscTypesJsonDefault(Callable[[Any], Any]):
@@ -94,18 +100,16 @@ class JsonEncoder:
     bytes_options: int
     str_options: int
     default: Callable[[Any], Any]
-    prep: Callable[[Any], Any] | None
-
-    def as_bytes(self: Self, data: Any) -> bytes | bytearray | memoryview:
-        if self.prep is not None:
-            data = self.prep(data)
-        return orjson.dumps(data, default=self.default, option=self.bytes_options)
+    prep: Callable[[Any], Any]
 
     def as_str(self: Self, data: Any) -> str:
-        if self.prep is not None:
-            data = self.prep(data)
+        data = self.prep(data)
         x = orjson.dumps(data, default=self.default, option=self.str_options)
         return x.decode(encoding="utf-8") + "\n"
+
+    def as_bytes(self: Self, data: Any) -> bytes | bytearray | memoryview:
+        data = self.prep(data)
+        return orjson.dumps(data, default=self.default, option=self.bytes_options)
 
 
 @dataclass(frozen=True, slots=True)
@@ -151,7 +155,7 @@ class JsonUtils:
             for t in then:
                 try:
                     return t(obj)
-                except TypeError:
+                except TypeError:  # noqa: S110
                     pass
                 if last is None:
                     raise TypeError()
@@ -168,7 +172,8 @@ class JsonUtils:
         *fallbacks: Callable[[Any], Any] | None,
         indent: bool = True,
         sort: bool = False,
-        preserve_inf: bool = True,
+        inf_handling: NanInfHandling = NanInfHandling.raise_error,
+        nan_handling: NanInfHandling = NanInfHandling.raise_error,
         last: Callable[[Any], Any] | None = str,
     ) -> JsonEncoder:
         """
@@ -177,9 +182,10 @@ class JsonUtils:
 
         Args:
             indent: Indent by 2 spaces
-            preserve_inf: Preserve infinite values with :meth:`preserve_inf`
+            inf_handling: How to handle Inf and -Inf values in lists and Numpy arrays of floats
+            nan_handling: How to handle NaN values in lists and Numpy arrays of floats
             sort: Sort keys with `orjson.OPT_SORT_KEYS`;
-                  only for :meth:`typeddfs.json_utils.JsonEncoder.as_str`
+                  only for :meth:`pocketutils.tools.json_tools.JsonEncoder.as_str`
             last: Last resort option to encode a value
         """
         import orjson
@@ -192,10 +198,19 @@ class JsonUtils:
         if indent:
             str_option |= orjson.OPT_INDENT_2
         default = self.new_default(*fallbacks, first=_misc_types_default, last=last)
-        prep = self.preserve_inf if preserve_inf else None
-        return JsonEncoder(default=default, bytes_options=bytes_option, str_options=str_option, prep=prep)
 
-    def preserve_inf(self: Self, data: Any) -> Any:
+        def prep_fn(d):
+            return self.prepare(d, inf_handling=inf_handling, nan_handling=nan_handling)
+
+        return JsonEncoder(default=default, bytes_options=bytes_option, str_options=str_option, prep=prep_fn)
+
+    def prepare(
+        self: Self,
+        data: Any,
+        *,
+        inf_handling: NanInfHandling,
+        nan_handling: NanInfHandling,
+    ):
         """
         Recursively replaces infinite float and numpy values with strings.
         Orjson encodes NaN, inf, and +inf as JSON null.
@@ -214,42 +229,75 @@ class JsonUtils:
         # Meanwhile, we only need to deal with floats:
         # - int and bool stay as-is
         # - str stays as-is
-        # - complex gets converted to
-        if isinstance(data, Mapping):
-            return {str(k): self.preserve_inf(v) for k, v in data.items()}
-        elif (
-            (isinstance(data, Sequence) or type(data).__name__ == "ndarray")
-            and not isinstance(data, str)
-            and not isinstance(data, bytes | bytearray | memoryview)
+        # - complex gets converted
+        # figure out the type
+        is_dict = hasattr(data, "items") and hasattr(data, "keys") and hasattr(data, "values")
+        is_list = isinstance(data, list)
+        is_list_with_inf = (
+            is_list and all(isinstance(e, float) for e in data) and not all((v > NEG_INF) == (v < INF) for v in data)
+        )
+        is_list_with_nan = (
+            is_list and all(isinstance(e, float) for e in data) and all(v == NEG_INF or v == INF for v in data)
+        )
+        is_np_array = type(data).__name__ == "ndarray" and hasattr(data, "dtype")
+        is_np_array_with_inf = bool(
+            is_np_array and str(data.dtype).startswith("float") and not all((v > NEG_INF) == (v < INF) for v in data),
+        )
+        is_np_array_with_nan = bool(
+            is_np_array and str(data.dtype).startswith("float") and all(v == NEG_INF or v == INF for v in data),
+        )
+        is_inf_scalar = bool(
+            (isinstance(data, float) or str(type(data)).startswith("<class 'numpy.float"))
+            and (data > NEG_INF) != (data < INF),
+        )
+        is_nan_scalar = bool(
+            (isinstance(data, float) or str(type(data)).startswith("<class 'numpy.float"))
+            and (data == NEG_INF or data == INF),
+        )
+        # fix it
+        if is_dict:
+            return {
+                str(k): self.prepare(v, inf_handling=inf_handling, nan_handling=nan_handling) for k, v in data.items()
+            }
+        if (is_list_with_inf or is_np_array_with_inf) and inf_handling is NanInfHandling.raise_error:
+            raise ValueError(f"Array '{data}' contains Inf or -Inf")
+        if (is_list_with_nan or is_np_array_with_nan) and nan_handling is NanInfHandling.raise_error:
+            raise ValueError(f"Array '{data}' contains NaN")
+        if is_inf_scalar and inf_handling is NanInfHandling.raise_error:
+            raise ValueError(f"Value '{data}' is Inf or -Inf")
+        if is_nan_scalar and nan_handling is NanInfHandling.raise_error:
+            raise ValueError(f"Value '{data}' is NaN")
+        if (
+            (is_list_with_inf or is_np_array_with_inf or is_list_with_nan or is_list_with_nan)
+            and inf_handling is NanInfHandling.convert_to_str
+            and nan_handling is NanInfHandling.convert_to_str
         ):
-            is_np_float_array = hasattr(data, "dtype") and str(data.dtype).startswith("dtype(float")
-            if (
-                is_np_float_array
-                or all(isinstance(v, float) for v in data)
-                and all((v > NEG_INF) != (v < INF) for v in data)
-            ):
-                # it's a list or array of floats containing -Inf or +Inf
-                # ==> convert to str to preserve
-                return [str(v) for v in data]
-            elif is_np_float_array:
-                # it's an array of other types, or of floats containing neither -Inf nor +Inf
-                # ==> convert to list (faster than recursing)
-                # noinspection PyUnresolvedReferences
-                return data.tolist()
-            else:
-                # it's an array of other types, or of floats containing neither -Inf nor +Inf
-                # ==> return float list as-is
-                return data
-        elif (isinstance(data, float) or (hasattr(data, "dtype") and str(data.dtype).startswith("dtype(float"))) and (
-            data > NEG_INF
-        ) != (data < INF):
-            # single float value with -Inf or +Inf
-            # ==> preserve inf
+            return [str(v) for v in data]
+        if (
+            (is_list_with_inf or is_np_array_with_inf)
+            and (is_list_with_nan or is_list_with_nan)
+            and inf_handling is NanInfHandling.convert_to_str
+            and nan_handling is NanInfHandling.convert_to_null
+        ):
+            return [None if float(v) == NAN else str(v) for v in data]
+        if (
+            (is_list_with_inf or is_np_array_with_inf)
+            and (is_list_with_nan or is_list_with_nan)
+            and inf_handling is NanInfHandling.convert_to_null
+            and nan_handling is NanInfHandling.convert_to_str
+        ):
+            return [None if float(v) == INF or float(v) == NEG_INF else str(v) for v in data]
+        if is_np_array:
+            return data.tolist()
+        if is_list:
+            return [self.prepare(e, inf_handling=inf_handling, nan_handling=nan_handling) for e in data]
+        if (
+            is_inf_scalar
+            and inf_handling is NanInfHandling.convert_to_str
+            or is_nan_scalar
+            and nan_handling is NanInfHandling.convert_to_str
+        ):
             return str(data)
-        elif type(data).__name__ == "ndarray" and hasattr(data, "dtype"):
-            # it's a non-float Numpy array
-            # ==> convert to list
-            return data.astype(str).tolist()
         return data
 
 
