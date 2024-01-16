@@ -23,7 +23,7 @@ jobs:
   publish-github-release:
     name: Publish GitHub Release
     needs: [bump]
-    runs-on: ${{ os }}
+    runs-on: ubuntu-latest
     steps:
       - name: Download artifacts
         uses: actions/download-artifact@v3
@@ -46,7 +46,7 @@ jobs:
   publish-pypi:
     name: Publish to PyPi
     needs: [bump]
-    runs-on: ${{ os }}
+    runs-on: ubuntu-latest
     steps:
       - name: Download artifacts
         uses: actions/download-artifact@v3
