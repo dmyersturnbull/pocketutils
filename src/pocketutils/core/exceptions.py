@@ -11,7 +11,6 @@ from __future__ import annotations
 import errno as _errno
 import os as _os
 from typing import Any as _Any
-from typing import Self
 from typing import Unpack as _Unpack
 
 
@@ -33,7 +32,7 @@ class ResultStrangeWarning(UserWarning):
 
 class TypedOSError(OSError):
     def __init__(
-        self: Self,
+        self,
         *,
         errno: int | None = None,
         winerror: int | None = None,
@@ -46,7 +45,7 @@ class TypedOSError(OSError):
 
 class TypedIOError(OSError):
     def __init__(
-        self: Self,
+        self,
         *,
         errno: int | None = _errno.EIO,
         winerror: int | None = None,
@@ -59,7 +58,7 @@ class TypedIOError(OSError):
 
 class PathMissingError(FileNotFoundError):
     def __init__(
-        self: Self,
+        self,
         *,
         errno: int | None = _errno.EEXIST,
         winerror: int | None = None,
@@ -72,7 +71,7 @@ class PathMissingError(FileNotFoundError):
 
 class PathExistsError(FileExistsError):
     def __init__(
-        self: Self,
+        self,
         *,
         errno: int | None = _errno.EEXIST,
         winerror: int | None = None,
@@ -85,7 +84,7 @@ class PathExistsError(FileExistsError):
 
 class AccessDeniedError(PermissionError):
     def __init__(
-        self: Self,
+        self,
         *,
         errno: int | None = _errno.EACCES,
         winerror: int | None = None,
@@ -98,7 +97,7 @@ class AccessDeniedError(PermissionError):
 
 class TypedIsADirectoryError(IsADirectoryError):
     def __init__(
-        self: Self,
+        self,
         *,
         errno: int | None = _errno.ENOTDIR,
         winerror: int | None = None,
@@ -111,7 +110,7 @@ class TypedIsADirectoryError(IsADirectoryError):
 
 class TypedNotADirectoryError(NotADirectoryError):
     def __init__(
-        self: Self,
+        self,
         *,
         errno: int | None = _errno.ENOTDIR,
         winerror: int | None = None,
@@ -124,7 +123,7 @@ class TypedNotADirectoryError(NotADirectoryError):
 
 class DeviceMissingError(OSError):
     def __init__(
-        self: Self,
+        self,
         *,
         errno: int | None = _errno.ENODEV,
         winerror: int | None = None,
@@ -140,15 +139,15 @@ class Error(Exception):
     Abstract exception with a message.
     """
 
-    def __init__(self: Self, message: str | None = None, **kwargs: _Unpack[str, _Any]) -> None:
-        self.message = message
-        super().__init__(message, list(kwargs.values()))
+    def __init__(self, message: str | None = None, **kwargs: _Unpack[str, _Any]) -> None:
+        super().__init__(message)
         self._args = list(kwargs.values())
 
-    def __str__(self) -> str:
-        return repr(self)
+    @property
+    def message(self) -> str:
+        return str(self)
 
-    def __repr__(self: Self) -> str:
+    def __repr__(self) -> str:
         args = str(dict(zip(["message"] + self._args, self.args)))[1:-1]
         extras = ", ".join(self.args[len(self._args) + 1 :])
         return self.__class__.__qualname__ + "{" + args + (" (" + extras + ")" if len(extras) > 0 else "") + "}"
@@ -225,7 +224,7 @@ class ResourceError(Error):
     """A problem finding or loading a resource that the application needs."""
 
     def __init__(
-        self: Self,
+        self,
         message: str | None = None,
         *,
         resource: str | None = None,
@@ -283,7 +282,7 @@ class KeyReservedError(Error):
     """A key is reserved by the code and cannot be used."""
 
     def __init__(
-        self: Self,
+        self,
         message: str | None = None,
         *,
         key: str | None = None,
@@ -299,7 +298,7 @@ class KeyReusedError(Error):
     """One or more keys were specified twice."""
 
     def __init__(
-        self: Self,
+        self,
         message: str | None = None,
         *,
         key: str | None = None,
@@ -319,10 +318,10 @@ class KeyReusedError(Error):
 
 
 class ValueIllegalError(Error):
-    """A high-level error about a invalid value."""
+    """A high-level error about an invalid value."""
 
     def __init__(
-        self: Self,
+        self,
         message: str | None = None,
         *,
         value: _Any = None,
@@ -358,7 +357,7 @@ class ValueOutOfRangeError(ValueIllegalError):
     """A numerical value is outside a required range."""
 
     def __init__(
-        self: Self,
+        self,
         message: str | None = None,
         *,
         value: _Any = None,
@@ -381,7 +380,7 @@ class DeviceError(Error):
     """Error related to hardware such as a printer."""
 
     def __init__(
-        self: Self,
+        self,
         message: str | None = None,
         *,
         device: str | None = None,
@@ -414,7 +413,7 @@ class NetworkError(Error):
     """
 
     def __init__(
-        self: Self,
+        self,
         message: str | None = None,
         *,
         uri: str | None = None,
@@ -442,7 +441,7 @@ class FilenameSuffixInvalidError(Error):
     """
 
     def __init__(
-        self: Self,
+        self,
         message: str | None = None,
         *,
         suffix: str | None = None,
@@ -466,7 +465,7 @@ class ValueNotUniqueError(Error):
     """
 
     def __init__(
-        self: Self,
+        self,
         message: str | None = None,
         *,
         key: str | None = None,
@@ -488,7 +487,7 @@ class ReadFailedError(Error):
     """
 
     def __init__(
-        self: Self,
+        self,
         message: str | None = None,
         *,
         filename: str | None = None,
@@ -508,7 +507,7 @@ class WriteFailedError(Error):
     """
 
     def __init__(
-        self: Self,
+        self,
         message: str | None = None,
         *,
         filename: str | None = None,
@@ -528,7 +527,7 @@ class HashFailedError(Error):
     """
 
     def __init__(
-        self: Self,
+        self,
         message: str | None = None,
         *,
         filename: str | None = None,
@@ -549,7 +548,7 @@ class HashIncorrectError(Error):
     """
 
     def __init__(
-        self: Self,
+        self,
         message: str | None = None,
         *,
         filename: str | None = None,
