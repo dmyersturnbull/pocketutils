@@ -36,7 +36,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - name: Download coverage artifact for ${{ matrix.os }}/${{ matrix.python }}
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4.1.7
         with:
           name: coverage-${{ matrix.os }}-${{ matrix.python }}
       - name: Send ${{ matrix.os }}/${{ matrix.python }} to coveralls
